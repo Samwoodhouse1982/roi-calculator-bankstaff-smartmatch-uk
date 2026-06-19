@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<title>Smart Match ROI Calculator — embed reference</title>
+</head>
+<body>
+<!--
+  ============================================================
+  EMBED SNIPPET — Smart Match Workforce ROI Calculator
+  ============================================================
+  Paste the <iframe> + <script> below into any host page (CMS,
+  landing page, HubSpot, etc.). The calculator auto-resizes its
+  iframe to fit its content via postMessage — no fixed height,
+  no inner scrollbar.
+
+  Notes:
+  - Point `src` at /roi-calculator.html (NOT / which redirects).
+  - Serve over HTTPS. The calculator loads React, Babel and jsPDF
+    from public CDNs inside the iframe (its own origin).
+  - The host page CSP must allow the calculator's domain in
+    frame-src, and the iframe's CSP must allow the CDNs.
+  ============================================================
+-->
+
+<iframe
+  id="smartmatch-roi"
+  src="https://YOUR-DOMAIN/roi-calculator.html"
+  title="Smart Match Workforce ROI Calculator"
+  scrolling="no"
+  loading="lazy"
+  style="width:100%;border:none;min-height:900px;display:block;"
+></iframe>
+
+<script>
+  (function () {
+    var iframe = document.getElementById("smartmatch-roi");
+    window.addEventListener("message", function (e) {
+      var d = e.data || {};
+      // Optional: verify e.origin === "https://YOUR-DOMAIN" before acting.
+      if (d.type === "smartmatch-roi-resize" && typeof d.height === "number") {
+        iframe.style.height = d.height + "px";
+      }
+      if (d.type === "smartmatch-roi-scroll-top") {
+        iframe.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  })();
+</script>
+
+</body>
+</html>

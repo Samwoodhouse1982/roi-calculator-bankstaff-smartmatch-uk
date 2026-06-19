@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Match — Workforce ROI Calculator | RLDatix</title>
+<meta name="description" content="Estimate the cash saving your NHS trust could release by improving bank-staff utilisation and displacing agency spend with RLDatix Smart Match.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231B2B4B'/%3E%3Cpath d='M18 44V20h12a8 8 0 0 1 2 15.7L34 44h-6l-2-8h-4v8z M24 31h5a3 3 0 0 0 0-6h-5z' fill='%23E8392A'/%3E%3C/svg%3E">
+<!-- Hosted web fonts (fixes v8's broken local file:/// font link) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    /* RLDatix corporate palette (navy + coral) */
+    --navy:        #1B2B4B;
+    --navy-dark:   #111D32;
+    --navy-mid:    #2C4070;
+    --navy-light:  #EEF1F7;
+    --coral:       #E8392A;
+    --coral-light: #FDECEA;
+    --coral-mid:   #F05C50;
+    --mid-grey:    #F4F4F2;
+    --border:      #DDE0E8;
+    --text:        #1B2B4B;
+    --text-mid:    #4A5568;
+    --text-light:  #8A95A8;
+    --white:       #ffffff;
+    --radius:      12px;
+    --radius-sm:   6px;
+    --shadow:      0 1px 3px rgba(27,43,75,.06), 0 6px 24px rgba(27,43,75,.05);
+  }
+
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: var(--mid-grey);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  #root { min-height: 100vh; }
+  .wrap { max-width: 900px; margin: 0 auto; }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform:none; } }
+  @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+  @keyframes barGrow { from { width:0; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulseDot { 0%,100% { transform: scaleY(.4); opacity:.5; } 50% { transform: scaleY(1); opacity:1; } }
+  @keyframes calFill { from { width:0; } to { width:100%; } }
+  @keyframes flash { 0% { background:#fff; } 30% { background:var(--coral-light); box-shadow:0 0 0 3px rgba(232,57,42,.25);} 100% { background:#fff; } }
+  .fade-up { animation: fadeUp .5s cubic-bezier(.16,1,.3,1) both; }
+  .flash-hl { animation: flash 1.6s ease; }
+
+  /* HEADER */
+  header { background: var(--navy); color: white; padding: 3rem 2rem 2.5rem; }
+  .logo { font-size: 18px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; opacity: .9; margin-bottom: 1.25rem; display:flex; align-items:center; flex-wrap:wrap; }
+  .logo b { color: var(--coral-mid); opacity: 1; font-size: 22px; letter-spacing: .04em; font-weight:700; }
+  .logo .divider { opacity: .3; font-size: 14px; margin: 0 8px; }
+  header h1 { font-family: 'DM Serif Display', Georgia, serif; font-size: clamp(2rem, 5vw, 3rem); font-weight: 400; line-height: 1.15; margin-bottom: 1rem; }
+  header h1 em { color: var(--coral-mid); font-style: normal; }
+  header p { font-size: 16px; opacity: .82; max-width: 600px; line-height: 1.7; }
+
+  /* EVIDENCE STRIP */
+  .evidence-strip { background: var(--coral); color: white; }
+  .evidence-inner { padding: 1rem 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0; }
+  .ev-stat { padding: .75rem 1.25rem; border-right: 1px solid rgba(255,255,255,.25); }
+  .ev-stat:last-child { border-right: none; }
+  .ev-num { font-size: 22px; font-weight: 700; line-height: 1.2; margin-bottom: 2px; }
+  .ev-label { font-size: 11px; opacity: .9; line-height: 1.4; }
+  .ev-source { font-size: 10px; opacity: .7; margin-top: 3px; font-style: italic; }
+
+  /* NARRATIVE */
+  .narrative { background: var(--white); border-bottom: 1px solid var(--border); }
+  .narrative-inner { padding: 2.5rem 2rem; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem; }
+  @media (max-width: 700px) { .narrative-inner { grid-template-columns: 1fr; gap:1.5rem; } }
+  .nar h3 { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.05rem; font-weight: 400; color: var(--navy); margin-bottom: .5rem; }
+  .nar h3::before { content:''; display:block; width:28px; height:3px; background:var(--coral); border-radius:2px; margin-bottom:8px; }
+  .nar p { font-size: 13.5px; color: var(--text-mid); line-height: 1.7; }
+
+  /* MAIN */
+  main { padding: 2rem; }
+  .section { margin-bottom: 2.5rem; }
+  .step-label { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+  .step-num { width: 28px; height: 28px; background: var(--coral); color: white; border-radius: 50%; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .step-label h2 { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.3rem; font-weight: 400; color: var(--navy); }
+  .step-sub { font-size: 13px; color: var(--text-light); margin: -.4rem 0 1rem 38px; }
+
+  /* INSTRUCTIONS */
+  .instructions { background: var(--navy-light); border: 1px solid #C8D0E0; border-radius: var(--radius); padding: 1.5rem; margin-bottom: 2rem; }
+  .instructions h3 { font-family: 'DM Serif Display', Georgia, serif; font-size: 1.05rem; font-weight: 400; color: var(--navy); margin-bottom: 1rem; }
+  .inst-steps { display: flex; flex-direction: column; gap: 10px; }
+  .inst-step { display: flex; gap: 12px; align-items: flex-start; }
+  .inst-num { width: 22px; height: 22px; border-radius: 50%; background: var(--navy); color: white; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .inst-step p { font-size: 13px; color: var(--text-mid); line-height: 1.6; }
+  .inst-step strong { color: var(--navy); font-weight: 600; }
+
+  /* PRESETS */
+  .presets { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:1.25rem; }
+  .preset { flex:1 1 150px; background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:.85rem 1rem; cursor:pointer; transition:.15s; text-align:left; font-family:inherit; }
+  .preset:hover { border-color:var(--coral-mid); box-shadow:var(--shadow); }
+  .preset.active { border-color:var(--coral); box-shadow:0 0 0 2px rgba(232,57,42,.15); background:var(--coral-light); }
+  .preset .pt { font-size:13px; font-weight:600; color:var(--navy); }
+  .preset .pd { font-size:11px; color:var(--text-light); margin-top:2px; line-height:1.4; }
+
+  /* STAFF CARDS */
+  .staff-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 12px; transition: box-shadow .2s; }
+  .staff-card:hover { box-shadow: var(--shadow); }
+  .staff-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
+  .staff-title { display: flex; align-items: center; gap: 10px; }
+  .band-pill { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
+  .staff-name { font-size: 14px; font-weight: 600; color: var(--navy); }
+  .saving-badge { font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: var(--radius-sm); background:var(--navy-light); color:var(--navy); }
+  .saving-badge-sub { font-size: 10px; color: var(--text-light); margin-top: 4px; line-height: 1.4; text-align:right; max-width:200px; }
+  .staff-inputs { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 12px; color: var(--text-light); display:flex; align-items:center; gap:5px; }
+  .field input[type=number] { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px; font-family: inherit; font-size: 14px; color: var(--navy); background: var(--mid-grey); width: 100%; transition: border-color .15s, box-shadow .15s; }
+  .field input[type=number]:focus { outline: none; border-color: var(--coral); box-shadow:0 0 0 3px rgba(232,57,42,.12); background:#fff; }
+  .hint { font-size: 11px; color: var(--text-light); line-height: 1.5; }
+  .adv-toggle { background:none; border:none; color:var(--navy-mid); font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; padding:6px 0 0; text-decoration:underline; }
+
+  /* PARAMS */
+  .params-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+  @media (max-width: 620px) { .params-grid { grid-template-columns: 1fr; } }
+  .slider-ctx { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-light); margin-top: 4px; }
+  input[type=range] { width: 100%; accent-color: var(--coral); margin-top: 8px; height:6px; }
+  .disp-note { margin-top: 12px; font-size: 12px; border-radius: var(--radius-sm); padding: 9px 13px; line-height:1.5; }
+  .contested { display:inline-block; font-size:10px; font-weight:600; color:var(--coral); background:var(--coral-light); padding:1px 7px; border-radius:10px; margin-left:6px; vertical-align:middle; }
+
+  /* RESULTS */
+  .results-box { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow:var(--shadow); }
+  .roi-header { background: var(--navy); color: white; padding: 1.5rem; }
+  .roi-eyebrow { font-size:11px; text-transform:uppercase; letter-spacing:.1em; opacity:.7; margin-bottom:.5rem; }
+  .roi-hero { font-family:'DM Serif Display',Georgia,serif; font-size: clamp(2.4rem, 7vw, 3.6rem); line-height:1; }
+  .roi-hero small { font-size:1rem; opacity:.7; font-family:'DM Sans',sans-serif; }
+  .roi-sub { font-size:14px; opacity:.85; margin-top:.6rem; display:flex; gap:1.5rem; flex-wrap:wrap; }
+  .roi-sub b { color:var(--coral-mid); }
+
+  /* SUMMARY CARDS */
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); border-bottom: 1px solid var(--border); }
+  .s-card { padding: 1.1rem 1.25rem; border-right: 1px solid var(--border); border-bottom:1px solid var(--border); }
+  .s-card.hl { background: var(--navy-light); }
+  .s-lbl { font-size: 11px; color: var(--text-light); margin-bottom: 4px; display:flex; align-items:center; gap:5px; }
+  .s-card.hl .s-lbl { color: var(--navy-mid); }
+  .s-val { font-size: 20px; font-weight: 700; color: var(--text); }
+  .s-card.hl .s-val { color: var(--navy); }
+  .s-sub { font-size: 11px; color: var(--text-light); margin-top: 3px; line-height:1.4; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-weight: 600; font-size: 11px; color: var(--text-light); padding: 10px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.total-row td { background: var(--navy-light); font-weight: 700; color: var(--navy); border-bottom: none; }
+
+  /* BARS */
+  .panel { padding: 1.25rem 1.5rem; border-top: 1px solid var(--border); }
+  .panel-title { font-size: 11px; font-weight: 600; color: var(--text-light); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: .08em; }
+  .bar-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+  .blbl { font-size: 12px; color: var(--text-mid); width: 170px; flex-shrink: 0; }
+  .btrack { flex: 1; height: 8px; background: var(--mid-grey); border-radius: 4px; overflow: hidden; margin-top: 4px; }
+  .bfill { height: 100%; border-radius: 4px; animation: barGrow .6s cubic-bezier(.16,1,.3,1); transition: width .4s ease; }
+  .bval { font-size: 12px; font-weight: 600; color: var(--navy); width: 110px; text-align: right; font-variant-numeric:tabular-nums; }
+
+  /* CAPACITY PANEL (non-cash) */
+  .capacity { padding:1.25rem 1.5rem; border-top:1px solid var(--border); background:repeating-linear-gradient(135deg, #fbfcfe, #fbfcfe 10px, #f7f9fc 10px, #f7f9fc 20px); }
+  .cap-tag { display:inline-block; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--navy-mid); background:var(--navy-light); padding:2px 8px; border-radius:10px; margin-bottom:.75rem; }
+  .cap-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1rem; }
+  .cap-item .cv { font-size:22px; font-weight:700; color:var(--navy); }
+  .cap-item .cl { font-size:12px; color:var(--text-mid); margin-top:2px; line-height:1.4; }
+
+  /* CALLOUTS */
+  .callout { margin: 1.25rem 1.5rem; padding: 1.1rem 1.25rem; border-radius: var(--radius-sm); }
+  .callout.navy { background: var(--navy-light); border-left: 4px solid var(--coral); }
+  .callout.quote { background:#fff; border:1px solid var(--border); }
+  .callout p { font-size: 13px; color: var(--text-mid); line-height: 1.6; }
+  .callout .title { font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: .4rem; }
+  .quote-txt { font-size: 14px; color: var(--navy); line-height: 1.7; font-style: italic; margin-bottom:.6rem; }
+  .quote-by { font-size: 12px; color: var(--text-light); font-weight: 600; }
+
+  /* METHODOLOGY */
+  .assumptions { padding: 1.25rem 1.5rem; border-top: 1px solid var(--border); }
+  .arow { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--text-mid); gap:1rem; }
+  .arow:last-child { border-bottom: none; }
+  .arow > span:last-child { font-weight: 600; color: var(--navy); text-align: right; white-space:nowrap; }
+  .arow.explain { flex-direction: column; gap: 3px; }
+  .arow.explain .albl { font-weight: 600; color: var(--navy); font-size: 12px; display:flex; align-items:center; gap:6px; }
+  .arow.explain .adesc { font-size: 11px; color: var(--text-light); line-height: 1.5; text-align:left; font-weight:400; white-space:normal; }
+  .conf { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:1px 6px; border-radius:8px; }
+  .conf.high { background:#E6F4EC; color:#1B7F5C; }
+  .conf.med { background:#FFF4E0; color:#B7791F; }
+  .conf.low { background:var(--coral-light); color:var(--coral); }
+  details.method { border:1px solid var(--border); border-radius:var(--radius-sm); margin-top:.5rem; }
+  details.method > summary { cursor:pointer; padding:8px 12px; font-size:12px; font-weight:600; color:var(--navy-mid); list-style:none; }
+  details.method > summary::-webkit-details-marker { display:none; }
+  details.method > summary::before { content:'▸ '; }
+  details.method[open] > summary::before { content:'▾ '; }
+  details.method .mbody { padding:0 12px 12px; font-size:12px; color:var(--text-mid); line-height:1.6; }
+  code.formula { display:block; background:var(--navy-dark); color:#cfe; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; padding:8px 10px; border-radius:6px; margin:6px 0; white-space:pre-wrap; }
+
+  /* ACTIONS */
+  .actions { display:flex; gap:10px; flex-wrap:wrap; padding:1.25rem 1.5rem; border-top:1px solid var(--border); }
+  .btn { font-family:inherit; font-size:14px; font-weight:600; padding:11px 20px; border-radius:var(--radius-sm); cursor:pointer; border:1px solid var(--border); background:#fff; color:var(--navy); transition:.15s; }
+  .btn:hover { box-shadow:var(--shadow); }
+  .btn.primary { background:var(--coral); color:#fff; border-color:var(--coral); }
+  .btn.primary:hover { background:var(--coral-mid); }
+  .btn:disabled { opacity:.6; cursor:wait; }
+
+  /* LEAD FORM */
+  .lead { margin:1.25rem 1.5rem; padding:1.25rem; border:1px dashed var(--border); border-radius:var(--radius); background:#fcfdff; }
+  .lead h4 { font-family:'DM Serif Display',Georgia,serif; font-weight:400; color:var(--navy); font-size:1.05rem; margin-bottom:.25rem; }
+  .lead p.sub { font-size:12px; color:var(--text-light); margin-bottom:.85rem; }
+  .lead-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  @media (max-width:560px){ .lead-grid{ grid-template-columns:1fr; } }
+  .lead input { border:1px solid var(--border); border-radius:var(--radius-sm); padding:9px 11px; font-family:inherit; font-size:14px; width:100%; background:#fff; }
+  .lead input:focus { outline:none; border-color:var(--coral); }
+  .lead .consent { font-size:11px; color:var(--text-light); margin-top:.6rem; line-height:1.5; }
+
+  /* CALIBRATING */
+  .cal-overlay { position:fixed; inset:0; background:rgba(27,43,75,.55); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; z-index:1000; animation:fadeIn .3s; }
+  .cal-card { background:#fff; border-radius:16px; padding:2rem 2.5rem; max-width:380px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.3); }
+  .cal-dots { display:flex; gap:5px; justify-content:center; height:32px; align-items:center; margin-bottom:1rem; }
+  .cal-dots span { width:6px; height:28px; background:var(--coral); border-radius:3px; animation:pulseDot 1s ease-in-out infinite; }
+  .cal-dots span:nth-child(2){animation-delay:.12s} .cal-dots span:nth-child(3){animation-delay:.24s} .cal-dots span:nth-child(4){animation-delay:.36s} .cal-dots span:nth-child(5){animation-delay:.48s}
+  .cal-card h3 { font-family:'DM Serif Display',Georgia,serif; font-weight:400; color:var(--navy); font-size:1.2rem; margin-bottom:.4rem; }
+  .cal-card p { font-size:13px; color:var(--text-light); margin-bottom:1rem; }
+  .cal-bar { height:6px; background:var(--navy-light); border-radius:3px; overflow:hidden; }
+  .cal-bar i { display:block; height:100%; background:linear-gradient(90deg,var(--coral),var(--coral-mid)); animation:calFill 1.6s ease forwards; }
+
+  /* FOOTER */
+  footer { background: var(--navy-dark); color: rgba(255,255,255,.5); padding: 2rem; text-align: center; font-size: 12px; }
+  footer strong { color: var(--coral-mid); }
+  footer a { color: rgba(255,255,255,.7); }
+
+  @media (max-width: 480px) {
+    header, main, .narrative-inner, .evidence-inner { padding-left:1.25rem; padding-right:1.25rem; }
+    .roi-sub { gap:.75rem 1.25rem; }
+  }
+  @media print {
+    .cal-overlay, .actions, .lead, .adv-toggle, header p { display:none !important; }
+    body { background:#fff; font-size:11pt; }
+    .results-box { box-shadow:none; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.4/babel.min.js" crossorigin></script>
+<script>
+/* Pre-load jsPDF with multi-CDN fallback (PDF export) */
+(function(){
+  var sources=[
+    "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js",
+    "https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js",
+    "https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js"
+  ];
+  var i=0;
+  function load(){ if(i>=sources.length) return; var s=document.createElement("script"); s.src=sources[i++]; s.onerror=load; document.head.appendChild(s); }
+  load();
+})();
+</script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useMemo, useEffect, useRef } = React;
+
+/* ============================================================
+   THEME — RLDatix corporate (navy + coral)
+   ============================================================ */
+const C = {
+  bg:"#F4F4F2", surface:"#ffffff", border:"#DDE0E8",
+  navy:"#1B2B4B", navyDark:"#111D32", navyMid:"#2C4070", navyLight:"#EEF1F7",
+  coral:"#E8392A", coralMid:"#F05C50", coralLight:"#FDECEA",
+  text:"#1B2B4B", textMid:"#4A5568", textLight:"#8A95A8",
+};
+// Navy → coral ramp used for the per-group bar chart
+const RAMP = ["#1B2B4B","#2C4070","#E8392A","#F05C50","#8A95A8"];
+
+/* ============================================================
+   FORMATTERS — en-GB / £ (AU-ready: swap LOCALE + SYMBOL)
+   ============================================================ */
+const LOCALE="en-GB", SYMBOL="£";
+const fmt    = n => SYMBOL + Math.round(n||0).toLocaleString(LOCALE);
+const fmtK   = n => { n=n||0; return n>=1e6 ? `${SYMBOL}${(n/1e6).toFixed(2)}m` : n>=1000 ? `${SYMBOL}${Math.round(n/1000).toLocaleString(LOCALE)}k` : fmt(n); };
+const fmtNum = n => Math.round(n||0).toLocaleString(LOCALE);
+const pct    = n => `${Math.round(n)}%`;
+const num    = (v,f=0) => { const n=parseFloat(v); return isNaN(n)?f:n; };
+
+/* ============================================================
+   MODEL CONSTANTS  (all conservative; flagged for validation)
+   ------------------------------------------------------------
+   Saving model (corrected v9 — see brief §3):
+     bank_hourly      = salary / 1957.5            (AfC divisor)
+     bank_shift_cost  = bank_hourly * hrs * (1+oncost)
+     agency_shift_cost= bank_shift_cost * (1+premium)
+     baseline_shifts  = agency_spend / agency_shift_cost
+     displaced_shifts = baseline_shifts * displacement
+     AGENCY SAVING    = displaced_shifts * (agency_shift_cost - bank_shift_cost)
+                      = displaced_shifts * bank_shift_cost * premium
+   Cash saving is anchored to AGENCY SPEND, never bank payroll.
+   ============================================================ */
+const AFC_DIVISOR = 1957.5;       // NHS T&Cs hours/year (37.5h * 52.143wk)
+const SHIFT_HOURS_DEFAULT = 8;
+const BANK_ONCOST_DEFAULT = 0.20; // employer NI + partial pension (affects shift counts only, not the cash headline)
+const PLATFORM_COST_DEFAULT = 17000;
+
+/* AfC 2025/26 England midpoints (NHS Employers, +3.6% from 1 Apr 2025) */
+const STAFF_GROUPS = [
+  { id:"rn",  role:"Registered nurses",        band:"Band 5",     pillBg:"#EEF1F7", pillText:"#1B2B4B", bankPay:34400, headcount:240, shifts:5, agencySpend:4000000 },
+  { id:"sn",  role:"Senior nurses",            band:"Band 6",     pillBg:"#FDECEA", pillText:"#9B1C12", bankPay:42600, headcount:120, shifts:5, agencySpend:1500000 },
+  { id:"ahp", role:"AHPs (physio / OT / etc)", band:"Band 5/6",   pillBg:"#EEF1F7", pillText:"#2C4070", bankPay:37000, headcount:100, shifts:4, agencySpend:800000  },
+  { id:"hca", role:"Healthcare assistants",    band:"Band 2/3",   pillBg:"#F4F4F2", pillText:"#4A5568", bankPay:24900, headcount:160, shifts:6, agencySpend:700000  },
+  { id:"doc", role:"Medics (locum / bank)",    band:"ST3+ / SAS", pillBg:"#1B2B4B", pillText:"#FFFFFF", bankPay:62000, headcount:40,  shifts:3, agencySpend:3000000 },
+];
+
+/* Organisation templates — scale a typical mid-sized acute profile */
+const PRESETS = {
+  community: { label:"Community / specialist", desc:"~250 bank staff · lower agency reliance", scale:0.4 },
+  typical:   { label:"Typical acute trust",    desc:"~660 bank staff · ~£10m agency spend",    scale:1.0 },
+  large:     { label:"Large acute trust",      desc:"~1,200 bank staff · ~£18m agency spend",  scale:1.8 },
+  group:     { label:"ICS / multi-trust group",desc:"~2,300 bank staff · ~£35m agency spend",  scale:3.5 },
+};
+function applyPreset(scale){
+  return STAFF_GROUPS.map(g => ({
+    ...g,
+    headcount: Math.round(g.headcount*scale),
+    agencySpend: Math.round(g.agencySpend*scale/1000)*1000,
+  }));
+}
+
+/* Displacement stance (share of agency shifts displaced by better bank utilisation) */
+function stance(d){
+  if (d<=12) return { key:"Conservative", color:C.navy, bg:C.navyLight,
+    note:"Conservative: only a small share of agency shifts is assumed to move to bank. Closest to a defensible business-case default." };
+  if (d<=22) return { key:"Moderate", color:C.navyMid, bg:C.navyLight,
+    note:"Moderate: a meaningful share of agency shifts moves to bank as utilisation improves. Reasonable where agency dependency is well documented." };
+  return { key:"Optimistic", color:"#9B1C12", bg:C.coralLight,
+    note:"Optimistic: approaches the pilot's observed upper end (26% relative agency-fill reduction). Use only with strong, trust-specific evidence." };
+}
+
+/* ============================================================
+   PURE CALC ENGINE  (shared logic; no DOM side-effects)
+   ============================================================ */
+function calc(input){
+  const { groups, premium, displacement, shiftHours, oncost, platformCost, admin, fillRateNow } = input;
+  const p = premium/100, d = displacement/100, oc = oncost/100;
+
+  let totAgencySpend=0, totSaving=0, totDisplaced=0, totBaseline=0, totHead=0, totCapacityValue=0;
+  const rows = groups.map(g => {
+    const head = num(g.headcount), spend = num(g.agencySpend), pay = num(g.bankPay);
+    const bankHourly = pay / AFC_DIVISOR;
+    const bankShiftCost = bankHourly * shiftHours * (1+oc);
+    const agencyShiftCost = bankShiftCost * (1+p);
+    const baselineShifts = agencyShiftCost>0 ? spend/agencyShiftCost : 0;
+    const displaced = baselineShifts * d;
+    const saving = displaced * (agencyShiftCost - bankShiftCost); // = displaced * bankShiftCost * p
+    const capacityValue = displaced * bankShiftCost;              // gross bank backfill cost (NON-cash)
+    totAgencySpend+=spend; totSaving+=saving; totDisplaced+=displaced;
+    totBaseline+=baselineShifts; totHead+=head; totCapacityValue+=capacityValue;
+    return { ...g, head, spend, bankShiftCost, agencyShiftCost, baselineShifts, displaced, saving, capacityValue };
+  });
+
+  // B — admin saving (separate, optional). Scales by shift-admin staff (not bank headcount).
+  const adminSaving = admin.enabled
+    ? num(admin.staff) * num(admin.hoursPerWeek) * 52 * num(admin.loadedHourly)
+    : 0;
+
+  const grossBenefit = totSaving + adminSaving;
+  const netSaving = grossBenefit - num(platformCost);
+  const roiPct = platformCost>0 ? (netSaving/platformCost)*100 : 0;
+  const paybackMonths = grossBenefit>0 ? (platformCost/(grossBenefit/12)) : null;
+
+  // Guardrail: cash saving can never exceed total agency spend
+  const exceedsSpend = totSaving > totAgencySpend && totAgencySpend>0;
+  const implausibleRoi = roiPct > 3000;
+
+  // Capacity narrative: agency reliance reduced
+  const fillNow = num(fillRateNow);
+  const fillAfter = totBaseline>0 ? fillNow * (1 - d) : fillNow;
+
+  return {
+    rows, totAgencySpend, totSaving, totDisplaced, totBaseline, totHead, totCapacityValue,
+    adminSaving, grossBenefit, netSaving, roiPct, paybackMonths,
+    exceedsSpend, implausibleRoi, fillNow, fillAfter,
+  };
+}
+
+/* ============================================================
+   HOOKS + SMALL COMPONENTS
+   ============================================================ */
+function useCountUp(target, ms=900){
+  const [v,setV]=useState(target); const prev=useRef(target); const raf=useRef();
+  useEffect(()=>{
+    const from=prev.current, to=target, start=performance.now();
+    cancelAnimationFrame(raf.current);
+    const tick=now=>{ const t=Math.min(1,(now-start)/ms); const e=1-Math.pow(1-t,3);
+      setV(from+(to-from)*e); if(t<1) raf.current=requestAnimationFrame(tick); else prev.current=to; };
+    raf.current=requestAnimationFrame(tick);
+    return ()=>cancelAnimationFrame(raf.current);
+  },[target,ms]);
+  return v;
+}
+const AnimMoney = ({v}) => fmt(useCountUp(v));
+const AnimNum   = ({v}) => fmtNum(useCountUp(v));
+
+function InfoTip({text}){
+  const [open,setOpen]=useState(false);
+  return (
+    <span style={{position:"relative",display:"inline-flex"}}>
+      <button type="button" aria-label={"More info: "+text} onClick={()=>setOpen(o=>!o)} onBlur={()=>setOpen(false)}
+        style={{width:16,height:16,borderRadius:"50%",border:"1px solid "+C.border,background:"#fff",
+          color:C.textLight,fontSize:10,fontWeight:700,cursor:"pointer",lineHeight:1,padding:0}}>i</button>
+      {open && <span role="tooltip" style={{position:"absolute",bottom:"130%",left:"50%",transform:"translateX(-50%)",
+        background:C.navy,color:"#fff",fontSize:11,fontWeight:400,lineHeight:1.5,padding:"8px 10px",borderRadius:8,
+        width:230,boxShadow:"0 8px 24px rgba(0,0,0,.25)",zIndex:50}}>{text}</span>}
+    </span>
+  );
+}
+
+function Field({label, value, onChange, min, step=1, prefix, info, hint}){
+  return (
+    <div className="field">
+      <label htmlFor={"f_"+label.replace(/\W/g,"")}>{label}{info && <InfoTip text={info}/>}</label>
+      <div style={{position:"relative",display:"flex",alignItems:"center"}}>
+        {prefix && <span style={{position:"absolute",left:10,color:C.textLight,fontSize:14}}>{prefix}</span>}
+        <input id={"f_"+label.replace(/\W/g,"")} type="number" value={value} min={min} step={step}
+          style={prefix?{paddingLeft:22}:null}
+          onChange={e=>onChange(e.target.value)} />
+      </div>
+      {hint && <span className="hint">{hint}</span>}
+    </div>
+  );
+}
+
+function Method({formula, your, source, strength}){
+  return (
+    <details className="method">
+      <summary>How we calculated this</summary>
+      <div className="mbody">
+        {formula && <><b>Formula</b><code className="formula">{formula}</code></>}
+        {your && <><b>Your numbers</b><div style={{margin:"4px 0 8px"}}>{your}</div></>}
+        {source && <><b>Source</b> {strength && <span className={"conf "+strength.c}>{strength.t}</span>}<div style={{marginTop:4}}>{source}</div></>}
+      </div>
+    </details>
+  );
+}
+
+/* ============================================================
+   CALIBRATING SPLASH (Galen design signature — initial load only)
+   ============================================================ */
+function Calibrating(){
+  return (
+    <div className="cal-overlay">
+      <div className="cal-card">
+        <div className="cal-dots"><span></span><span></span><span></span><span></span><span></span></div>
+        <h3>Calibrating your model</h3>
+        <p>Mapping your bank pool and agency exposure…</p>
+        <div className="cal-bar"><i></i></div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   MAIN APP
+   ============================================================ */
+function App(){
+  const [groups,setGroups]   = useState(applyPreset(1));
+  const [preset,setPreset]   = useState("typical");
+  const [premium,setPremium] = useState(20);
+  const [displacement,setDisp]= useState(10);
+  const [platformCost,setPC] = useState(PLATFORM_COST_DEFAULT);
+  const [shiftHours,setSH]   = useState(SHIFT_HOURS_DEFAULT);
+  const [oncost,setOncost]   = useState(BANK_ONCOST_DEFAULT*100);
+  const [fillRateNow,setFill]= useState(8);
+  const [admin,setAdmin]     = useState({enabled:false, staff:8, hoursPerWeek:2, loadedHourly:22});
+  const [showAdv,setAdv]     = useState(false);
+  const [calibrating,setCal] = useState(true);
+  const [lead,setLead]       = useState({name:"",email:"",org:"",sent:false});
+  const [pdfBusy,setPdfBusy] = useState(false);
+
+  useEffect(()=>{ const t=setTimeout(()=>setCal(false),1700); return ()=>clearTimeout(t); },[]);
+
+  const r = useMemo(()=>calc({groups,premium,displacement,shiftHours,oncost,platformCost,admin,fillRateNow}),
+    [groups,premium,displacement,shiftHours,oncost,platformCost,admin,fillRateNow]);
+
+  const setG = (i,k,v)=> setGroups(gs=>gs.map((g,j)=>j===i?{...g,[k]:num(v)}:g));
+  const choosePreset = key => { setPreset(key); setGroups(applyPreset(PRESETS[key].scale)); };
+  const st = stance(displacement);
+  const maxSaving = Math.max(...r.rows.map(x=>x.saving), 1);
+
+  /* iframe auto-resize */
+  useEffect(()=>{
+    if(window.self===window.top) return;
+    const post=()=>window.parent.postMessage({type:"smartmatch-roi-resize",height:document.documentElement.scrollHeight},"*");
+    const ro=new ResizeObserver(post); ro.observe(document.documentElement);
+    post(); const iv=setInterval(post,800);
+    return ()=>{ro.disconnect();clearInterval(iv);};
+  });
+
+  function submitLead(e){
+    e.preventDefault();
+    /* HubSpot integration scaffold (open-access v1 — not gating).
+       TODO: confirm SmartMatch HubSpot portal + form GUID + GDPR consent copy. */
+    const HUBSPOT_PORTAL="REPLACE_PORTAL_ID", HUBSPOT_FORM="REPLACE_FORM_GUID", REGION="eu1";
+    try{
+      fetch(`https://forms-${REGION}.hsforms.com/submissions/v3/integration/submit/${HUBSPOT_PORTAL}/${HUBSPOT_FORM}`,{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({fields:[
+          {name:"firstname",value:lead.name},{name:"email",value:lead.email},{name:"company",value:lead.org},
+        ],context:{pageName:"Smart Match ROI Calculator"}})
+      }).catch(()=>{});
+    }catch(_){}
+    setLead(l=>({...l,sent:true}));
+  }
+
+  async function downloadPDF(){
+    if(!(window.jspdf&&window.jspdf.jsPDF)){ alert("PDF library still loading — please try again in a moment."); return; }
+    setPdfBusy(true);
+    try{
+      const { jsPDF }=window.jspdf; const doc=new jsPDF({unit:"mm",format:"a4"});
+      const W=210; let y=18;
+      doc.setFillColor(27,43,75); doc.rect(0,0,W,30,"F");
+      doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(16);
+      doc.text("Smart Match — Workforce ROI Estimate",14,16);
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(240,92,80);
+      doc.text("RLDatix · indicative · "+new Date().toLocaleDateString(LOCALE),14,23); y=40;
+      doc.setTextColor(27,43,75); doc.setFont("helvetica","bold"); doc.setFontSize(11);
+      doc.text("Headline",14,y); y+=6; doc.setFont("helvetica","normal"); doc.setFontSize(10);
+      const lines=[
+        ["Net annual cash saving", fmt(r.netSaving)],
+        ["Gross annual benefit", fmt(r.grossBenefit)],
+        ["Payback", r.paybackMonths?r.paybackMonths.toFixed(1)+" months":"—"],
+        ["Return on investment (net)", Math.round(r.roiPct)+"%"],
+        ["Agency premium displaced", fmt(r.totSaving)],
+        ["Admin saving (optional)", fmt(r.adminSaving)],
+        ["Total agency spend (anchor)", fmt(r.totAgencySpend)],
+        ["Agency premium / displacement", premium+"% / "+displacement+"% ("+st.key+")"],
+        ["Platform cost (denominator)", fmt(platformCost)+"/yr"],
+      ];
+      lines.forEach(([k,v])=>{ doc.text(k,14,y); doc.text(String(v),196,y,{align:"right"}); y+=6; });
+      y+=4; doc.setFont("helvetica","bold"); doc.text("Saving by staff group",14,y); y+=2;
+      if(doc.autoTable){
+        doc.autoTable({ startY:y+2, head:[["Staff group","Agency spend","Shifts displaced","Cash saving"]],
+          body:r.rows.map(x=>[x.role,fmt(x.spend),fmtNum(x.displaced),fmt(x.saving)]),
+          styles:{fontSize:9},headStyles:{fillColor:[27,43,75]},margin:{left:14,right:14} });
+        y=doc.lastAutoTable.finalY+8;
+      }
+      doc.setFontSize(8); doc.setTextColor(120,130,150);
+      const note="Indicative only. Cash saving = agency premium displaced when improved bank utilisation moves shifts off agency; it excludes the cost of the bank shifts themselves (which is not a saving). Capacity gains (additional shifts filled) are reported separately and are not included in this saving. Figures use 2025/26 NHS AfC midpoints and conservative, editable assumptions; validate with your trust's own bank and agency rates.";
+      doc.text(doc.splitTextToSize(note,182),14,y);
+      doc.save("smart-match-roi-estimate.pdf");
+    } finally { setPdfBusy(false); }
+  }
+
+  return (
+    <div>
+      {calibrating && <Calibrating/>}
+
+      <header>
+        <div className="wrap">
+          <div className="logo"><b>RLDatix</b><span className="divider">·</span>Smart Match<span className="divider">·</span>Workforce Intelligence</div>
+          <h1>Your Workforce<br/><em>ROI Calculator</em></h1>
+          <p>See the cash your trust could release by improving bank-staff utilisation — moving shifts off expensive agency and onto your own bank. The saving is the <em>agency premium displaced</em>, not the cost of the shifts you fill.</p>
+        </div>
+      </header>
+
+      <div className="evidence-strip"><div className="wrap evidence-inner">
+        <div className="ev-stat"><div className="ev-num">+17%</div><div className="ev-label">more bank workers engaged</div><div className="ev-source">Smart Match pilot (n=3), 2025 — indicative</div></div>
+        <div className="ev-stat"><div className="ev-num">8.1%→6.0%</div><div className="ev-label">agency fill rate (one site)</div><div className="ev-source">Pilot, 2025 — partly attributable</div></div>
+        <div className="ev-stat"><div className="ev-num">+26%</div><div className="ev-label">bank self-booking</div><div className="ev-source">Pilot, 2025 — indicative</div></div>
+        <div className="ev-stat"><div className="ev-num">3</div><div className="ev-label">NHS trusts in pilot programme</div><div className="ev-source">Community & healthcare sites</div></div>
+      </div></div>
+
+      <div className="narrative"><div className="wrap narrative-inner">
+        <div className="nar"><h3>The opportunity</h3><p>Every trust has a gap between the temporary shifts that need filling and the bank staff who could fill them. When that gap isn't closed, trusts turn to agency — at a premium over their own bank rate. Closing it is both a financial and a workforce-productivity win.</p></div>
+        <div className="nar"><h3>How Smart Match helps</h3><p>Smart Match uses AI to connect the right bank staff to the right shifts at the right time. In NHS pilots, bank engagement rose and agency fill fell — alongside wider scheduling and engagement improvements. Outcomes vary by trust.</p></div>
+        <div className="nar"><h3>An honest model</h3><p>This calculator counts only the <strong>agency premium displaced</strong> as cash. Filling a bank shift still costs money, so the gross shift value is shown separately as <strong>capacity</strong>, never as a saving. Enter your own figures for the most credible result.</p></div>
+      </div></div>
+
+      <main className="wrap">
+
+        <div className="instructions">
+          <h3>How to use this calculator</h3>
+          <div className="inst-steps">
+            <div className="inst-step"><div className="inst-num">1</div><p><strong>Pick a profile or your own numbers.</strong> Start from an organisation template, then set each staff group's bank headcount and <strong>annual agency spend</strong> — agency spend is the anchor for the saving.</p></div>
+            <div className="inst-step"><div className="inst-num">2</div><p><strong>Set the agency premium</strong> (how much more agency costs than your bank rate — default 20%, contested at shift level so use your own rate) and the <strong>displacement stance</strong> (how much agency you believe better bank utilisation can move).</p></div>
+            <div className="inst-step"><div className="inst-num">3</div><p><strong>Read the headline.</strong> We lead with <strong>net annual cash saving</strong> and <strong>payback</strong>. Capacity gains (extra shifts filled) are shown separately and excluded from the saving. Everything is editable and labelled <em>indicative</em>.</p></div>
+          </div>
+        </div>
+
+        {/* STEP 1 */}
+        <div className="section">
+          <div className="step-label"><div className="step-num">1</div><h2>Your bank pool & agency exposure</h2></div>
+          <p className="step-sub">Pre-filled for a typical mid-sized acute trust. Agency spend per group is the anchor for the saving — use your trust's own figures where you can.</p>
+
+          <div className="presets">
+            {Object.entries(PRESETS).map(([k,p])=>(
+              <button key={k} className={"preset"+(preset===k?" active":"")} onClick={()=>choosePreset(k)}>
+                <div className="pt">{p.label}</div><div className="pd">{p.desc}</div>
+              </button>
+            ))}
+          </div>
+
+          {groups.map((g,i)=>(
+            <div className="staff-card" key={g.id}>
+              <div className="staff-header">
+                <div className="staff-title">
+                  <span className="band-pill" style={{background:g.pillBg,color:g.pillText}}>{g.band}</span>
+                  <span className="staff-name">{g.role}</span>
+                </div>
+                <div>
+                  <span className="saving-badge">{fmt(r.rows[i].saving)} / yr</span>
+                  <div className="saving-badge-sub">cash saving (agency premium displaced)</div>
+                </div>
+              </div>
+              <div className="staff-inputs">
+                <Field label="Bank pool headcount" value={g.headcount} min="0" onChange={v=>setG(i,"headcount",v)} hint="People on your bank in this group"/>
+                <Field label="Annual agency spend" prefix="£" value={g.agencySpend} min="0" step={50000} onChange={v=>setG(i,"agencySpend",v)} info="Your trust's yearly spend on agency for this staff group — the anchor for the saving." hint="The anchor for the saving"/>
+                <Field label="Bank pay (£/yr)" value={g.bankPay} min="0" step={500} onChange={v=>setG(i,"bankPay",v)} info="Actual bank rate preferred; otherwise 2025/26 AfC midpoint. Affects shift counts, not the cash headline."/>
+                {showAdv && <Field label="Avg bank shifts / month" value={g.shifts} min="0" onChange={v=>setG(i,"shifts",v)} info="Used for capacity context only — bank work is top-up, so keep this realistic."/>}
+              </div>
+            </div>
+          ))}
+          <button className="adv-toggle" onClick={()=>setAdv(a=>!a)}>{showAdv?"Hide":"Show"} advanced inputs (shift volumes, on-costs, shift length)</button>
+        </div>
+
+        {/* STEP 2 */}
+        <div className="section">
+          <div className="step-label"><div className="step-num">2</div><h2>Agency parameters</h2></div>
+          <div className="params-grid">
+            <Field label="Agency premium over bank rate (%)" value={premium} min="0" max="150" step={5} onChange={v=>setPremium(num(v,20))}
+              info="Agency cost above your bank rate. HoC Library cites ~20% on average but it is contested at shift level — use your trust's actual agency rate where possible." hint="Default 20% (official average) · nursing 35–50% · medics 80–120%"/>
+            <div className="field">
+              <label>Displacement stance — {displacement}%
+                <InfoTip text="The share of your baseline agency shifts that improved bank utilisation actually moves to bank. Conservative by default; the pilot's 26% is the observed upper end and is partly attributable to other factors."/>
+              </label>
+              <input type="range" min="5" max="30" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))}
+                aria-valuetext={displacement+"% — "+st.key}/>
+              <div className="slider-ctx"><span>5% — conservative</span><span>30% — optimistic</span></div>
+            </div>
+          </div>
+          <div className="disp-note" style={{background:st.bg,color:st.color}}>{st.note}</div>
+          <div style={{marginTop:12,display:"grid",gridTemplateColumns:"1fr 1fr",gap:"1.5rem"}} className="params-grid">
+            <Field label="Smart Match platform cost (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>setPC(num(v,17000))}
+              info="ROI denominator. Confirm this includes implementation, not licence alone. Indicative range £10,200–£36,000 by trust size." hint="Used for ROI & payback"/>
+            <Field label="Current agency fill rate (%)" value={fillRateNow} min="0" max="100" step={0.5} onChange={v=>setFill(num(v,8))}
+              info="Optional — used only for the capacity narrative (agency reliance reduced)."/>
+            {showAdv && <Field label="Shift length (hours)" value={shiftHours} min="1" step={0.5} onChange={v=>setSH(num(v,8))}/>}
+            {showAdv && <Field label="Bank on-cost (%)" value={oncost} min="0" step={1} onChange={v=>setOncost(num(v))} info="Employer NI + pension where applicable. Affects shift counts only, not the cash headline."/>}
+          </div>
+
+          <div style={{marginTop:12,background:"#fff",border:"1px solid "+C.border,borderRadius:12,padding:"1rem 1.25rem"}}>
+            <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600,color:C.navy,cursor:"pointer"}}>
+              <input type="checkbox" checked={admin.enabled} onChange={e=>setAdmin(a=>({...a,enabled:e.target.checked}))}/>
+              Include modelled admin saving (off by default)
+              <InfoTip text="Time released in the temporary-staffing office from self-booking automation. Modelled bottom-up and conservative; substantiate before relying on it."/>
+            </label>
+            {admin.enabled && <div className="staff-inputs" style={{marginTop:12}}>
+              <Field label="Shift-admin staff (FTE)" value={admin.staff} min="0" onChange={v=>setAdmin(a=>({...a,staff:num(v)}))}/>
+              <Field label="Hours saved / week each" value={admin.hoursPerWeek} min="0" step={0.5} onChange={v=>setAdmin(a=>({...a,hoursPerWeek:num(v)}))}/>
+              <Field label="Loaded hourly rate (£)" prefix="£" value={admin.loadedHourly} min="0" onChange={v=>setAdmin(a=>({...a,loadedHourly:num(v)}))}/>
+            </div>}
+          </div>
+        </div>
+
+        {/* STEP 3 — RESULTS */}
+        <div className="section">
+          <div className="step-label"><div className="step-num">3</div><h2>Your potential saving</h2></div>
+          <div className="results-box">
+            <div className="roi-header">
+              <div className="roi-eyebrow">Estimated net annual cash saving</div>
+              <div className="roi-hero"><AnimMoney v={r.netSaving}/> <small>net / yr</small></div>
+              <div className="roi-sub">
+                <span>Payback <b>{r.paybackMonths?r.paybackMonths.toFixed(1)+" months":"—"}</b></span>
+                <span>Gross benefit <b>{fmtK(r.grossBenefit)}</b></span>
+                <span>ROI (net) <b>{r.implausibleRoi?"⚠ ":""}{Math.round(r.roiPct).toLocaleString(LOCALE)}%</b></span>
+                <span>Agency spend <b>{fmtK(r.totAgencySpend)}</b></span>
+              </div>
+            </div>
+
+            <div className="summary-grid">
+              <div className="s-card hl"><div className="s-lbl">Net annual saving</div><div className="s-val"><AnimMoney v={r.netSaving}/></div><div className="s-sub">after {fmt(platformCost)} platform cost</div></div>
+              <div className="s-card"><div className="s-lbl">Agency premium displaced</div><div className="s-val"><AnimMoney v={r.totSaving}/></div><div className="s-sub">the genuine cash saving</div></div>
+              <div className="s-card"><div className="s-lbl">Admin saving {admin.enabled?"":"(off)"}</div><div className="s-val"><AnimMoney v={r.adminSaving}/></div><div className="s-sub">{admin.enabled?"modelled, optional":"enable in step 2"}</div></div>
+              <div className="s-card"><div className="s-lbl">Payback period</div><div className="s-val">{r.paybackMonths?r.paybackMonths.toFixed(1):"—"}<span style={{fontSize:13}}> mo</span></div><div className="s-sub">platform cost ÷ monthly benefit</div></div>
+            </div>
+
+            {r.exceedsSpend && <div className="callout navy"><p className="title">⚠ Check your inputs</p><p>The modelled saving exceeds your total agency spend, which isn't possible — lower the premium or displacement, or check the agency-spend figures.</p></div>}
+
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>Staff group</th><th className="num">Bank pool</th><th className="num">Agency spend</th><th className="num">Shifts displaced</th><th className="num">Cash saving</th></tr></thead>
+                <tbody>
+                  {r.rows.map(x=>(
+                    <tr key={x.id}>
+                      <td>{x.role}</td>
+                      <td className="num">{fmtNum(x.head)}</td>
+                      <td className="num">{fmt(x.spend)}</td>
+                      <td className="num">{fmtNum(x.displaced)}</td>
+                      <td className="num">{fmt(x.saving)}</td>
+                    </tr>
+                  ))}
+                  <tr className="total-row">
+                    <td>Total</td><td className="num">{fmtNum(r.totHead)}</td><td className="num">{fmt(r.totAgencySpend)}</td>
+                    <td className="num">{fmtNum(r.totDisplaced)}</td><td className="num">{fmt(r.totSaving)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="panel">
+              <div className="panel-title">Cash saving by staff group</div>
+              {r.rows.map((x,i)=>(
+                <div className="bar-row" key={x.id}>
+                  <div className="blbl">{x.role}</div>
+                  <div className="btrack"><div className="bfill" style={{width:Math.round((x.saving/maxSaving)*100)+"%",background:RAMP[i%RAMP.length]}}></div></div>
+                  <div className="bval">{fmt(x.saving)}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* CAPACITY — non-cash */}
+            <div className="capacity">
+              <span className="cap-tag">Capacity — not a cash saving</span>
+              <div className="cap-grid">
+                <div className="cap-item"><div className="cv"><AnimNum v={r.totDisplaced}/></div><div className="cl">agency shifts/yr re-covered by your own bank</div></div>
+                <div className="cap-item"><div className="cv">{fmtK(r.totCapacityValue)}</div><div className="cl">bank backfill cost to deliver them <b>(spend, not saving)</b></div></div>
+                <div className="cap-item"><div className="cv">{r.fillNow?pct(r.fillNow)+" → "+r.fillAfter.toFixed(1)+"%":"—"}</div><div className="cl">illustrative agency reliance reduction</div></div>
+              </div>
+              <p style={{fontSize:11.5,color:C.textLight,marginTop:".85rem",lineHeight:1.6}}>This is where v8's "utilisation uplift" belongs: better utilisation delivers more covered shifts and resilience, but filling a bank shift is expenditure — only the agency-vs-bank premium above is cash saved.</p>
+            </div>
+
+            <div className="callout navy">
+              <p className="title">These figures don't capture the full picture.</p>
+              <p>They reflect quantifiable cash only. They exclude the significant time-releasing benefits for managers and admin teams who no longer chase shifts manually, and for bank staff who can find and book instantly — plus the quality uplift when staff choose shifts that fit their skills and lives, turning transactional staffing into genuine fit.</p>
+            </div>
+
+            <div className="callout quote">
+              <p className="quote-txt">"I've just received my first Smart Match duty offer. Clicking the notification took me straight to the shift details and I booked it straight away. I was so impressed with how easy it was — you're not constantly looking on a loop, frightened you'll miss something."</p>
+              <p className="quote-by">— Bank staff member, NHS trust Smart Match pilot</p>
+            </div>
+
+            {/* METHODOLOGY */}
+            <div className="assumptions">
+              <div className="panel-title">Assumptions & methodology</div>
+              <div className="arow"><span>Saving basis</span><span>Agency premium displaced (cash)</span></div>
+              <div className="arow explain"><span className="albl">Why not the full shift value? <span className="conf high">CORE</span></span><span className="adesc">Filling a bank shift is expenditure. A trust only saves when a shift that would have been agency is covered by bank instead — and the saving is the <b>difference</b> (the premium), not the whole shift. The gross shift value is reported under Capacity, never as a saving.</span></div>
+              <Method
+                formula={"bank_hourly      = pay / 1957.5\nbank_shift_cost  = bank_hourly × hours × (1 + on-cost)\nagency_shift_cost= bank_shift_cost × (1 + premium)\ndisplaced_shifts = (agency_spend / agency_shift_cost) × displacement\nCASH SAVING      = displaced_shifts × bank_shift_cost × premium"}
+                your={<>Agency spend {fmt(r.totAgencySpend)} · premium {premium}% · displacement {displacement}% ({st.key}) → <b>{fmt(r.totSaving)}</b> saved.</>}
+                source="Algebraically, cash saving = agency_spend × displacement × premium/(1+premium); it depends on agency spend, premium and displacement — not on bank payroll. This is the correction to v8."
+                strength={{c:"high",t:"method"}}/>
+              <div className="arow"><span>Agency premium (default, editable)</span><span>20% <span className="contested">contested</span></span></div>
+              <div className="arow explain"><span className="albl">Source — premium</span><span className="adesc">~20% average (House of Commons Library CBP-10539, Nov 2025); disputed at shift level — 2026 REC FOI data show bank can cost more than capped agency on some shifts. Most credible on your own rates.</span></div>
+              <div className="arow"><span>Displacement stance</span><span>{displacement}% — {st.key}</span></div>
+              <div className="arow explain"><span className="albl">Source — displacement <span className="conf low">low</span></span><span className="adesc">Conservative by default. The Smart Match pilot saw agency fill fall 8.1%→6.0% at one community site (26% relative) — the observed upper end, partly attributable to wider scheduling/engagement changes, not solely the platform. Health-economist validation pending.</span></div>
+              <div className="arow"><span>Bank-utilisation pilot signal</span><span>+17% workers engaged</span></div>
+              <div className="arow explain"><span className="albl">Source — pilot (n=3) <span className="conf low">low–mod</span></span><span className="adesc">170→199 workers (community), 342→348 (healthcare); self-booking 51→65 and 127→147. These are <b>engagement/fill</b> measures, not payroll uplift — they inform the stance, they are not multiplied into the saving (v8's error).</span></div>
+              <div className="arow"><span>Pay scale</span><span>2025/26 NHS AfC midpoints <span className="conf high">high</span></span></div>
+              <div className="arow explain"><span className="albl">Source — pay</span><span className="adesc">NHS Employers 2025/26 (+3.6% from 1 Apr 2025): Band 2 ~£24,465; Band 5 mid ~£34,400; Band 6 mid ~£42,600. Add London HCAS (Inner 20% / Outer 15% / Fringe 5%) where relevant.</span></div>
+              <div className="arow"><span>Hourly divisor</span><span>1,957.5 h/yr</span></div>
+              <div className="arow"><span>Shift length</span><span>{shiftHours} hours</span></div>
+              <div className="arow"><span>Platform cost (ROI denominator)</span><span>{fmt(platformCost)}/yr</span></div>
+              {admin.enabled && <><div className="arow"><span>Admin saving (optional)</span><span>{fmt(r.adminSaving)}</span></div>
+              <div className="arow explain"><span className="albl">Source — admin <span className="conf low">low</span></span><span className="adesc">{admin.staff} FTE × {admin.hoursPerWeek} h/wk × 52 × {fmt(admin.loadedHourly)}/h. Bottom-up, scaled by shift-admin staff (not bank headcount). No strong public benchmark — substantiate locally.</span></div></>}
+            </div>
+
+            {/* LEAD + ACTIONS (open access) */}
+            <div className="lead">
+              <h4>Want a copy, or to pressure-test these numbers?</h4>
+              <p className="sub">Optional — the calculator and PDF are open to everyone. Leave your details and a Smart Match specialist can validate the figures against your trust's own bank and agency rates.</p>
+              {lead.sent ? <p style={{color:C.navy,fontWeight:600,fontSize:14}}>Thanks — we'll be in touch. 👋</p> :
+              <form onSubmit={submitLead}>
+                <div className="lead-grid">
+                  <input placeholder="Name" value={lead.name} onChange={e=>setLead(l=>({...l,name:e.target.value}))}/>
+                  <input type="email" required placeholder="Work email" value={lead.email} onChange={e=>setLead(l=>({...l,email:e.target.value}))}/>
+                  <input placeholder="Trust / organisation" value={lead.org} onChange={e=>setLead(l=>({...l,org:e.target.value}))}/>
+                  <button className="btn primary" type="submit">Send to a specialist</button>
+                </div>
+                <p className="consent">By submitting you agree RLDatix may contact you about Smart Match. See the RLDatix privacy notice. (GDPR consent copy to be confirmed.)</p>
+              </form>}
+            </div>
+
+            <div className="actions">
+              <button className="btn primary" onClick={downloadPDF} disabled={pdfBusy}>{pdfBusy?"Generating…":"⬇ Download PDF estimate"}</button>
+              <button className="btn" onClick={()=>window.scrollTo({top:0,behavior:"smooth"})}>↑ Adjust inputs</button>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <footer>
+        <p>Built by <strong>RLDatix Smart Match</strong> · Cash saving = agency premium displaced (not gross shift value) · 2025/26 NHS AfC pay scales · Figures are <strong>indicative</strong>, conservative and editable — validate with your trust's own rates · n=3 vendor pilot, outcomes vary and are not solely attributable to the platform.</p>
+      </footer>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
