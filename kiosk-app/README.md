@@ -1,7 +1,7 @@
 # Smart Match — Bank-Staff Utilisation ROI (Kiosk)
 
 Touchscreen kiosk for the **RLDatix Smart Match** bank-staff utilisation ROI calculator (UK / NHS).
-Portrait 1080×1920 (9:16), dark navy + coral theme, touch-optimised. Currency en-GB (£).
+Portrait 1080×1920 (9:16), dark navy + teal theme, touch-optimised. Currency en-GB (£).
 
 ## The model
 
@@ -65,7 +65,7 @@ npx netlify-cli deploy --prod --dir=dist
 src/
   main.jsx              Entry point
   App.jsx               State, step routing, splash, calibrating, admin stats overlay
-  theme.js              Colours (navy + coral), fonts, £ formatters, step labels
+  theme.js              Colours (navy + teal), fonts, £ formatters, step labels
   calc/
     engine.js           calc() + the validated bank-staff ROI model constants
   components/

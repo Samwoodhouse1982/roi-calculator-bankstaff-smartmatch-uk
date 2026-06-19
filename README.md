@@ -2,7 +2,7 @@
 
 The **UK web-embed** version of the RLDatix **Smart Match** bank-staff utilisation
 ROI calculator. NHS terminology (bank/agency, AfC, Trust), pounds sterling,
-`en-GB` formatting. RLDatix corporate brand (navy + coral), built in the same
+`en-GB` formatting. RLDatix corporate brand (navy + teal), built in the same
 design system as the Galen ROI calculator suite.
 
 > This branch (`main`) holds the **single-file HTML web embed**. The
