@@ -1,11 +1,10 @@
 {
-  "cleanUrls": true,
-  "trailingSlash": false,
+  "framework": null,
+  "installCommand": "cd kiosk-app && npm install",
+  "buildCommand": "cd kiosk-app && npm run build",
+  "outputDirectory": "kiosk-app/dist",
   "rewrites": [
-    { "source": "/uk", "destination": "/roi-calculator.html" },
-    { "source": "/calc", "destination": "/roi-calculator.html" },
-    { "source": "/calculator", "destination": "/roi-calculator.html" },
-    { "source": "/roi-calculator", "destination": "/roi-calculator.html" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
     {
