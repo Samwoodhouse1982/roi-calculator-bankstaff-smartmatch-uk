@@ -2,13 +2,13 @@ export const C = {
   bg: "#0E1726", bgGrad1: "#0B1424", bgGrad2: "#16263F",
   surface: "#1B2B4B", surface2: "#22335A", border: "#2C4070", borderLight: "#243454",
   text: "#EEF1F7", textMid: "#A9B6CE", textMuted: "#7E8CA8",
-  accent: "#E8392A", accentMid: "#F05C50", accentSoft: "#33181B", accentPale: "#241317",
+  accent: "#00D4AA", accentMid: "#00FFC8", accentSoft: "#0A2A22", accentPale: "#0A2520",
   navy: "#1B2B4B", navyMid: "#2C4070", good: "#36C28B", amber: "#F0A848",
-  // Alias keys mapped to coral/navy so existing components that import them don't break.
-  accentLight: "#33181B",
+  // Alias keys (teal/seafoam family) so existing components that import them don't break.
+  accentLight: "#003328",
   green: "#36C28B", greenPale: "#13261D",
-  teal: "#E8392A", tealLight: "#F05C50", tealPale: "#241317",
-  rose: "#E8392A", rosePale: "#33181B",
+  teal: "#00D4AA", tealLight: "#00FFC8", tealPale: "#0A2A22",
+  rose: "#FF4F7A", rosePale: "#2A1020",
   blue: "#5B8DEF", purple: "#B07CF0",
 };
 export const F = { hero: 104, h1: 40, h2: 28, h3: 22, body: 18, small: 16, tiny: 14, label: 15 };

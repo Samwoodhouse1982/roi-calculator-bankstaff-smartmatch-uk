@@ -42,7 +42,7 @@ function makeParticle(w, h) {
     r: Math.random() * 3.5 + 0.8,
     speed: Math.random() * 0.8 + 0.2,
     opacity: Math.random() * 0.2 + 0.03,
-    hue: Math.random() * 18 - 2,           // coral/red range (~-2°..16°)
+    hue: Math.random() * 30 + 165,         // teal/aqua range (~165°..195°)
     glow: Math.random() > 0.92,            // ~8% of particles have a soft halo
     drift: (Math.random() - 0.5) * 0.3,
     phase: Math.random() * Math.PI * 2,

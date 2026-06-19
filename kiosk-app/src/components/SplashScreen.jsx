@@ -6,9 +6,9 @@ import rldatixLogo from '../assets/rldatix-logo.png';
 const CONVERGE_MS = 700;       // particles fly toward the button
 const WIPE_DELAY_MS = 500;     // radial wipe starts before convergence finishes (overlap)
 const WIPE_MS = 700;           // radial wipe duration
-// After the wipe peaks (coral core fully visible), a uniform dark overlay fades in
-// to neutralise the coral so the handoff to the calculator is seamless rather than a
-// jarring coral-to-navy snap.
+// After the wipe peaks (teal core fully visible), a uniform dark overlay fades in
+// to neutralise the teal so the handoff to the calculator is seamless rather than a
+// jarring teal-to-navy snap.
 const SETTLE_DELAY_MS = 900;   // starts before wipe finishes (overlaps the bright peak)
 const SETTLE_MS = 500;         // fade-in duration of the dark overlay
 const TOTAL_LAUNCH_MS = SETTLE_DELAY_MS + SETTLE_MS + 50; // 1450ms — 50ms buffer after settle completes
@@ -101,7 +101,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
         baseR: 0, // captured at launch start
         speed: Math.random() * 0.8 + 0.2,
         opacity: Math.random() * 0.2 + 0.03,
-        hue: Math.random() * 18 - 2,   // coral/red range (~-2°..16°)
+        hue: Math.random() * 30 + 165,   // teal/aqua range (~165°..195°)
         glow: Math.random() > 0.92,
         drift: (Math.random() - 0.5) * 0.3,
         phase: Math.random() * Math.PI * 2,
@@ -214,7 +214,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
       <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }} />
 
       <div style={{ position: 'absolute', inset: 0, zIndex: 1,
-        background: 'radial-gradient(ellipse at 30% 50%, rgba(232,57,42,0.07) 0%, transparent 60%), radial-gradient(ellipse at 70% 30%, rgba(240,92,80,0.05) 0%, transparent 50%)',
+        background: 'radial-gradient(ellipse at 30% 50%, rgba(0,212,170,0.07) 0%, transparent 60%), radial-gradient(ellipse at 70% 30%, rgba(0,180,255,0.05) 0%, transparent 50%)',
       }} />
 
       <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', maxWidth: 1000, padding: '75px 80px', marginTop: '15vh',
@@ -235,7 +235,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
           Your Workforce ROI
         </h1>
 
-        {/* Coral accent line under the title */}
+        {/* Teal accent line under the title */}
         <div style={{
           width: 160, height: 6, borderRadius: 3, margin: '0 auto 32px',
           background: `linear-gradient(90deg, ${C.accent}, ${C.accentMid})`,
@@ -252,15 +252,15 @@ export function SplashScreen({ onStart, onAdminReveal }) {
         <button ref={buttonRef} onClick={handleStart} style={{
           display: 'block', margin: '0 auto',
           padding: '30px 90px', borderRadius: 80, border: `3px solid ${C.accent}`,
-          background: 'rgba(232,57,42,0.18)', color: '#fff',
+          background: 'rgba(0,212,170,0.18)', color: '#fff',
           fontSize: 30, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
           letterSpacing: 4,
           textTransform: 'uppercase',
           // During launch, freeze the pulse and brighten/scale to look like the button is
           // absorbing the converging particles.
           boxShadow: launching
-            ? '0 0 200px rgba(232,57,42,0.95), inset 0 0 80px rgba(232,57,42,0.4)'
-            : '0 0 80px rgba(232,57,42,0.35), inset 0 0 60px rgba(232,57,42,0.08)',
+            ? '0 0 200px rgba(0,212,170,0.95), inset 0 0 80px rgba(0,212,170,0.4)'
+            : '0 0 80px rgba(0,212,170,0.35), inset 0 0 60px rgba(0,212,170,0.08)',
           transform: launching ? 'scale(1.08)' : 'scale(1)',
           transition: 'box-shadow 600ms ease-out, transform 600ms ease-out',
           animation: launching ? 'none' : 'splashPulseBig 2s ease-in-out infinite',
@@ -270,8 +270,8 @@ export function SplashScreen({ onStart, onAdminReveal }) {
 
         <style>{`
           @keyframes splashPulseBig {
-            0%, 100% { box-shadow: 0 0 80px rgba(232,57,42,0.35), inset 0 0 60px rgba(232,57,42,0.08); transform: scale(1); }
-            50% { box-shadow: 0 0 120px rgba(232,57,42,0.55), inset 0 0 80px rgba(232,57,42,0.15); transform: scale(1.02); }
+            0%, 100% { box-shadow: 0 0 80px rgba(0,212,170,0.35), inset 0 0 60px rgba(0,212,170,0.08); transform: scale(1); }
+            50% { box-shadow: 0 0 120px rgba(0,212,170,0.55), inset 0 0 80px rgba(0,212,170,0.15); transform: scale(1.02); }
           }
           @keyframes radialWipe {
             0%   { width: 0;      height: 0;      opacity: 1; }
@@ -311,7 +311,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
           width: 0,
           height: 0,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(232,57,42,0.95) 0%, rgba(60,30,40,0.95) 55%, #0E1726 100%)',
+          background: 'radial-gradient(circle, rgba(0,212,170,0.95) 0%, rgba(10,40,50,0.95) 55%, #0E1726 100%)',
           transform: 'translate(-50%, -50%)',
           animation: `radialWipe ${WIPE_MS}ms cubic-bezier(0.4, 0, 0.2, 1) ${WIPE_DELAY_MS}ms forwards`,
           zIndex: 50,

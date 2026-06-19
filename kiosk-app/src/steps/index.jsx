@@ -5,7 +5,7 @@ import { Card, SectionTitle, TouchSlider, Stepper, InfoTip } from '../components
 /* ────────────────────────────────────────────────────────────────────────
    Smart Match — three simple inputs (plus the modelling-stance slider that
    lives on the Results screen). Each step is one clear question with a short
-   helper line. Coral accent, navy surfaces, en-GB throughout.
+   helper line. Teal accent, navy surfaces, en-GB throughout.
    ──────────────────────────────────────────────────────────────────────── */
 
 function Helper({ children }) {
