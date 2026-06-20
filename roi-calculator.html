@@ -308,6 +308,16 @@ function calc(input){
     exceedsSpend, implausibleRoi, fillNow, fillAfter };
 }
 
+/* ===== TIME PROJECTION — phased ramp + cumulative (Galen migration pattern) ===== */
+const RAMP_PCTS = { 3:[0.40,0.80,1.00], 5:[0.20,0.40,0.60,0.80,1.00] };
+function project(grossAnnual, platformCost, years){
+  const pcts = RAMP_PCTS[years] || RAMP_PCTS[3];
+  const yrGross = pcts.map(p=>grossAnnual*p);
+  const yrNet   = yrGross.map(g=>g - platformCost);
+  return { years, pcts, yrGross, yrNet,
+    cumGross: yrGross.reduce((a,b)=>a+b,0), cumNet: yrNet.reduce((a,b)=>a+b,0) };
+}
+
 /* Build the engine input for the SIMPLE 3-input variant */
 function simpleToInput(s, shared){
   const a = num(s.agencyFillRate)/100;
@@ -376,7 +386,8 @@ function App(){
   // shared parameters
   const [premium,setPremium]=useState(20), [displacement,setDisp]=useState(10), [platformCost,setPC]=useState(PLATFORM_COST_DEFAULT);
   const [shiftHours,setSH]=useState(SHIFT_HOURS_DEFAULT), [oncost,setOncost]=useState(BANK_ONCOST_DEFAULT*100);
-  const [showAdv,setAdv]=useState(false), [calibrating,setCal]=useState(true);
+  const [showAdv,setAdv]=useState(false), [calibrating,setCal]=useState(false);
+  const [calculated,setCalculated]=useState(false), [rampYears,setRampYears]=useState(3);
   const [lead,setLead]=useState({name:"",email:"",org:"",sent:false}), [pdfBusy,setPdfBusy]=useState(false);
   // simple state
   const [simple,setSimple]=useState({ bankPool:660, agencyFillRate:8, numManagers:12 });
@@ -385,7 +396,7 @@ function App(){
   const [admin,setAdmin]=useState({ enabled:false, managers:12, hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY });
   const [recruit,setRecruit]=useState({ enabled:false, workers:50, costPerWorker:RECRUIT_COST_PER_WORKER, recoveryRate:RECRUIT_RECOVERY_RATE });
 
-  useEffect(()=>{ const t=setTimeout(()=>setCal(false),1700); return ()=>clearTimeout(t); },[]);
+  function runCalc(){ setCal(true); setTimeout(()=>{ setCal(false); setCalculated(true); requestAnimationFrame(()=>{ const el=document.getElementById("results"); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); }); }, 1600); }
 
   const shared={ premium, displacement, platformCost, shiftHours, oncost };
   const r = useMemo(()=>{
@@ -573,7 +584,14 @@ function App(){
         )}
 
         {/* RESULTS (shared) */}
-        <div className="section">
+        {!calculated && (
+          <div className="section" style={{textAlign:"center",padding:"1.5rem 0 0"}}>
+            <button className="btn primary" style={{fontSize:16,padding:"14px 34px"}} onClick={runCalc}>Calculate my savings →</button>
+            <p className="step-sub" style={{margin:"12px 0 0"}}>We'll model your bank pool and agency exposure — then adjust anything and the report updates live.</p>
+          </div>
+        )}
+        {calculated && (
+        <div className="section" id="results">
           <div className="step-label"><div className="step-num">{isQuick?2:3}</div><h2>Your potential impact</h2></div>
           <div className="results-box">
             <div className="roi-header">
@@ -598,6 +616,33 @@ function App(){
             </div>
 
             {r.exceedsSpend && <div className="callout navy"><p className="title">⚠ Check your inputs</p><p>The modelled saving exceeds total agency spend, which isn't possible — lower the premium or displacement, or check the agency-spend figures.</p></div>}
+
+            {/* SAVINGS OVER TIME (#5 — phased ramp + cumulative) */}
+            <div className="panel">
+              <div className="panel-title" style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
+                <span>Savings over time</span>
+                <span style={{display:"inline-flex",gap:3,background:C.navyLight,borderRadius:999,padding:3}}>
+                  {[3,5].map(y=>(<button key={y} type="button" onClick={()=>setRampYears(y)} style={{border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:11,fontWeight:700,padding:"4px 12px",borderRadius:999,background:rampYears===y?C.teal:"transparent",color:rampYears===y?"#fff":C.textMid,transition:".15s"}}>{y}-year</button>))}
+                </span>
+              </div>
+              {(()=>{ const proj=project(r.grossBenefit,platformCost,rampYears), mx=Math.max(...proj.yrNet.map(v=>Math.abs(v)),1); return (
+                <div>
+                  <div style={{display:"flex",alignItems:"flex-end",gap:8,height:150}}>
+                    {proj.yrNet.map((v,i)=>(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end"}}>
+                      <div style={{fontSize:11,fontWeight:700,color:v<0?C.rose:C.navy,marginBottom:5}}>{fmtK(v)}</div>
+                      <div style={{width:"100%",maxWidth:50,height:Math.max(4,Math.round((Math.max(0,v)/mx)*112)),background:v<0?"#b25b76":"linear-gradient(180deg,"+C.tealMid+","+C.teal+")",borderRadius:"6px 6px 0 0",transition:"height .5s ease"}}></div>
+                      <div style={{fontSize:11,color:C.textMid,marginTop:6,fontWeight:600}}>Year {i+1}</div>
+                      <div style={{fontSize:9,color:C.textLight}}>{Math.round(proj.pcts[i]*100)}% ramp</div>
+                    </div>))}
+                  </div>
+                  <div style={{display:"flex",gap:12,marginTop:16,flexWrap:"wrap"}}>
+                    <div style={{flex:"1 1 150px",background:C.navyLight,borderRadius:10,padding:"12px 14px"}}><div style={{fontSize:11,color:C.navyMid}}>{rampYears}-year cumulative net</div><div style={{fontSize:22,fontWeight:700,color:C.navy}}>{fmt(proj.cumNet)}</div></div>
+                    <div style={{flex:"1 1 150px",background:C.navyLight,borderRadius:10,padding:"12px 14px"}}><div style={{fontSize:11,color:C.navyMid}}>{rampYears}-year gross benefit</div><div style={{fontSize:22,fontWeight:700,color:C.navy}}>{fmt(proj.cumGross)}</div></div>
+                  </div>
+                  <p style={{fontSize:11.5,color:C.textLight,marginTop:12,lineHeight:1.6}}>Benefits ramp as bank utilisation improves — modelled at {proj.pcts.map(p=>Math.round(p*100)+"%").join(" → ")} of the annual run-rate, with the platform cost recurring in full each year. Phasing mirrors the Galen migration model; figures are indicative.</p>
+                </div>
+              ); })()}
+            </div>
 
             {!isQuick && <div className="table-wrap"><table>
               <thead><tr><th>Staff group</th><th className="num">Bank pool</th><th className="num">Agency spend</th><th className="num">Duties displaced</th><th className="num">Cash saving</th></tr></thead>
@@ -679,6 +724,7 @@ function App(){
             </div>
           </div>
         </div>
+        )}
       </main>
 
       <footer><p>Built by <strong>RLDatix Smart Match</strong> · Cash saving = agency premium displaced (not gross shift value) · 2026/27 NHS AfC pay scales · Figures are <strong>indicative</strong>, conservative and editable — validate with your organisation's own rates ·Pilot = 2-site data within a 4-trust programme, anonymised pending client sign-off; outcomes vary and are not solely attributable to the platform.</p></footer>
