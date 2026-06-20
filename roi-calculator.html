@@ -12,10 +12,10 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --navy:#1B2B4B; --navy-dark:#111D32; --navy-mid:#2C4070; --navy-light:#EEF1F7;
-    --teal:#0F766E; --teal-light:#CCFBF1; --teal-mid:#14B8A6;
-    --mid-grey:#F4F4F2; --border:#DDE0E8; --text:#1B2B4B; --text-mid:#4A5568; --text-light:#8A95A8;
-    --white:#fff; --radius:12px; --radius-sm:6px; --shadow:0 1px 3px rgba(27,43,75,.06),0 6px 24px rgba(27,43,75,.05);
+    --navy:#0F4146; --navy-dark:#0A2F31; --navy-mid:#1A5459; --navy-light:#E8FAF6;
+    --teal:#0F4146; --teal-light:#D6F7EE; --teal-mid:#1A8A7A; --seafoam:#34DEC2;
+    --mid-grey:#EEF6F4; --border:#D4E0DD; --text:#0F4146; --text-mid:#3D5A5E; --text-light:#6E8A8E;
+    --white:#fff; --radius:14px; --radius-sm:8px; --shadow:0 1px 3px rgba(15,65,70,.07),0 8px 28px rgba(15,65,70,.06);
   }
   html { -webkit-text-size-adjust:100%; }
   body { font-family:'DM Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; background:var(--mid-grey); color:var(--text); line-height:1.6; font-size:15px; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
@@ -29,13 +29,13 @@
 
   header { background:var(--navy); color:#fff; padding:3rem 2rem 2.5rem; }
   .logo { font-size:18px; font-weight:500; letter-spacing:.08em; text-transform:uppercase; opacity:.9; margin-bottom:1.25rem; display:flex; align-items:center; flex-wrap:wrap; }
-  .logo b { color:var(--teal-mid); opacity:1; font-size:22px; letter-spacing:.04em; font-weight:700; }
+  .logo b { color:var(--seafoam); opacity:1; font-size:22px; letter-spacing:.04em; font-weight:700; }
   .logo .divider { opacity:.3; font-size:14px; margin:0 8px; }
   header h1 { font-family:'DM Serif Display',Georgia,serif; font-size:clamp(2rem,5vw,3rem); font-weight:400; line-height:1.15; margin-bottom:1rem; }
-  header h1 em { color:var(--teal-mid); font-style:normal; }
+  header h1 em { color:var(--seafoam); font-style:normal; }
   header p { font-size:16px; opacity:.82; max-width:600px; line-height:1.7; }
 
-  .evidence-strip { background:var(--teal); color:#fff; }
+  .evidence-strip { background:var(--teal-mid); color:#fff; }
   .evidence-inner { padding:1rem 2rem; display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); }
   .ev-stat { padding:.75rem 1.25rem; border-right:1px solid rgba(255,255,255,.25); }
   .ev-stat:last-child { border-right:none; }
@@ -111,7 +111,7 @@
   .roi-hero small { font-size:1rem; opacity:.7; font-family:'DM Sans',sans-serif; }
   .roi-cap { font-size:12px; opacity:.75; margin-top:.4rem; }
   .roi-sub { font-size:13px; opacity:.85; margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,.15); display:flex; gap:1.5rem; flex-wrap:wrap; }
-  .roi-sub b { color:var(--teal-mid); }
+  .roi-sub b { color:var(--seafoam); }
 
   .summary-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); border-bottom:1px solid var(--border); }
   .s-card { padding:1.1rem 1.25rem; border-right:1px solid var(--border); border-bottom:1px solid var(--border); }
@@ -137,7 +137,7 @@
   .bfill { height:100%; border-radius:4px; animation:barGrow .6s cubic-bezier(.16,1,.3,1); transition:width .4s ease; }
   .bval { font-size:12px; font-weight:600; color:var(--navy); width:110px; text-align:right; font-variant-numeric:tabular-nums; }
 
-  .capacity { padding:1.25rem 1.5rem; border-top:1px solid var(--border); background:repeating-linear-gradient(135deg,#fbfcfe,#fbfcfe 10px,#f7f9fc 10px,#f7f9fc 20px); }
+  .capacity { padding:1.25rem 1.5rem; border-top:1px solid var(--border); background:repeating-linear-gradient(135deg,#F4FBF9,#F4FBF9 10px,#E9F6F2 10px,#E9F6F2 20px); }
   .cap-tag { display:inline-block; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--navy-mid); background:var(--navy-light); padding:2px 8px; border-radius:10px; margin-bottom:.75rem; }
   .cap-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1rem; }
   .cap-item .cv { font-size:22px; font-weight:700; color:var(--navy); }
@@ -186,7 +186,7 @@
   .lead input:focus { outline:none; border-color:var(--teal); }
   .lead .consent { font-size:11px; color:var(--text-light); margin-top:.6rem; line-height:1.5; }
 
-  .cal-overlay { position:fixed; inset:0; background:rgba(27,43,75,.55); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; z-index:1000; animation:fadeIn .3s; }
+  .cal-overlay { position:fixed; inset:0; background:rgba(10,47,49,.55); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; z-index:1000; animation:fadeIn .3s; }
   .cal-card { background:#fff; border-radius:16px; padding:2rem 2.5rem; max-width:380px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.3); }
   .cal-dots { display:flex; gap:5px; justify-content:center; height:32px; align-items:center; margin-bottom:1rem; }
   .cal-dots span { width:6px; height:28px; background:var(--teal); border-radius:3px; animation:pulseDot 1s ease-in-out infinite; }
@@ -197,7 +197,7 @@
   .cal-bar i { display:block; height:100%; background:linear-gradient(90deg,var(--teal),var(--teal-mid)); animation:calFill 1.6s ease forwards; }
 
   footer { background:var(--navy-dark); color:rgba(255,255,255,.5); padding:2rem; text-align:center; font-size:12px; }
-  footer strong { color:var(--teal-mid); }
+  footer strong { color:var(--seafoam); }
 
   @media (max-width:480px){ header,main,.narrative-inner,.evidence-inner{ padding-left:1.25rem; padding-right:1.25rem; } .roi-co{ gap:1.5rem; } }
   @media print { .cal-overlay,.actions,.lead,.adv-toggle,.mode-toggle,header p{ display:none !important; } body{ background:#fff; font-size:11pt; } .results-box{ box-shadow:none; } }
@@ -217,9 +217,9 @@
 <script type="text/babel" data-presets="react">
 const { useState, useMemo, useEffect, useRef } = React;
 
-/* ===== THEME — RLDatix corporate (navy + teal) ===== */
-const C = { navy:"#1B2B4B", navyMid:"#2C4070", navyLight:"#EEF1F7", teal:"#0F766E", tealMid:"#14B8A6", tealLight:"#CCFBF1", border:"#DDE0E8", text:"#1B2B4B", textMid:"#4A5568", textLight:"#8A95A8" };
-const RAMP = ["#1B2B4B","#2C4070","#0F766E","#14B8A6","#8A95A8"];
+/* ===== THEME — RLDatix Galen suite (deep teal + seafoam) ===== */
+const C = { navy:"#0F4146", navyMid:"#1A5459", navyLight:"#E8FAF6", teal:"#0F4146", tealMid:"#1A8A7A", tealLight:"#D6F7EE", seafoam:"#34DEC2", border:"#D4E0DD", text:"#0F4146", textMid:"#3D5A5E", textLight:"#6E8A8E" };
+const RAMP = ["#0F4146","#1A8A7A","#34DEC2","#73D2E1","#8FB3AE"];
 
 /* ===== FORMATTERS — en-GB / £ (AU-ready: swap LOCALE + SYMBOL) ===== */
 const LOCALE="en-GB", SYMBOL="£";
@@ -247,30 +247,30 @@ const ADMIN_WORKING_DAYS = 225;
 const ADMIN_LOADED_HOURLY = 18;
 /* Simple variant embedded defaults */
 const SIMPLE_SHIFTS_PER_WORKER_YR = 60;   // bank work is ad-hoc/top-up, not full-time
-const SIMPLE_BLENDED_BANK_PAY = 33000;    // AfC band-mix weighted midpoint
+const SIMPLE_BLENDED_BANK_PAY = 34000;    // AfC 2026/27 band-mix weighted midpoint
 const RECRUIT_COST_PER_WORKER = 1000;     // recruit + onboard a bank worker
 const RECRUIT_RECOVERY_RATE = 0.10;       // share recovered by activating idle capacity
 
-/* AfC 2025/26 England midpoints (NHS Employers, +3.6% from 1 Apr 2025) */
+/* AfC 2026/27 England midpoints (NHS Employers, +3.3% confirmed from 1 Apr 2026) */
 const STAFF_GROUPS = [
-  { id:"rn",  role:"Registered nurses",        band:"Band 5",     pillBg:"#EEF1F7", pillText:"#1B2B4B", bankPay:34400, headcount:240, agencySpend:4000000 },
-  { id:"sn",  role:"Senior nurses",            band:"Band 6",     pillBg:"#CCFBF1", pillText:"#0F766E", bankPay:42600, headcount:120, agencySpend:1500000 },
-  { id:"ahp", role:"AHPs (physio / OT / etc)", band:"Band 5/6",   pillBg:"#EEF1F7", pillText:"#2C4070", bankPay:37000, headcount:100, agencySpend:800000  },
-  { id:"hca", role:"Healthcare assistants",    band:"Band 2/3",   pillBg:"#F4F4F2", pillText:"#4A5568", bankPay:24900, headcount:160, agencySpend:700000  },
-  { id:"doc", role:"Medics (locum / bank)",    band:"ST3+ / SAS", pillBg:"#1B2B4B", pillText:"#FFFFFF", bankPay:62000, headcount:40,  agencySpend:3000000 },
+  { id:"rn",  role:"Registered nurses",        band:"Band 5",     pillBg:"#E8FAF6", pillText:"#0F4146", bankPay:34592, headcount:240, agencySpend:4000000 },
+  { id:"sn",  role:"Senior nurses",            band:"Band 6",     pillBg:"#D6F7EE", pillText:"#0F4146", bankPay:42170, headcount:120, agencySpend:1500000 },
+  { id:"ahp", role:"AHPs (physio / OT / etc)", band:"Band 5/6",   pillBg:"#E8FAF6", pillText:"#1A5459", bankPay:38400, headcount:100, agencySpend:800000  },
+  { id:"hca", role:"Healthcare assistants",    band:"Band 2/3",   pillBg:"#EEF6F4", pillText:"#3D5A5E", bankPay:25900, headcount:160, agencySpend:700000  },
+  { id:"doc", role:"Medics (locum / SAS)",     band:"SAS / ST3+", pillBg:"#0F4146", pillText:"#FFFFFF", bankPay:60000, headcount:40,  agencySpend:3000000 },
 ];
 const PRESETS = {
-  community:{ label:"Community / specialist", desc:"~250 bank staff · lower agency reliance", scale:0.4 },
-  typical:  { label:"Typical acute trust",    desc:"~660 bank staff · ~£10m agency spend",    scale:1.0 },
-  large:    { label:"Large acute trust",      desc:"~1,200 bank staff · ~£18m agency spend",  scale:1.8 },
-  group:    { label:"ICS / multi-trust group",desc:"~2,300 bank staff · ~£35m agency spend",  scale:3.5 },
+  acute:    { label:"Acute trust",                  desc:"~660 bank staff · ~£10m agency spend",     scale:1.0 },
+  community:{ label:"Community / specialist",        desc:"~260 bank staff · lower agency reliance",  scale:0.4 },
+  mental:   { label:"Mental health trust",          desc:"~400 bank staff · nursing & HCA-led",      scale:0.6 },
+  ics:      { label:"ICS / provider collaborative", desc:"~2,300 bank staff · multi-organisation",   scale:3.5 },
 };
 const applyPreset = scale => STAFF_GROUPS.map(g=>({ ...g, headcount:Math.round(g.headcount*scale), agencySpend:Math.round(g.agencySpend*scale/1000)*1000 }));
 
 function stance(d){
   if (d<=12) return { key:"Conservative", color:C.navy, bg:C.navyLight, note:"Conservative: only a small share of agency shifts is assumed to move to bank. Closest to a defensible business-case default." };
   if (d<=22) return { key:"Moderate", color:C.navyMid, bg:C.navyLight, note:"Moderate: a meaningful share of agency shifts moves to bank as utilisation improves. Reasonable where agency dependency is well documented." };
-  return { key:"Optimistic", color:"#0F766E", bg:C.tealLight, note:"Optimistic: approaches the programme's observed upper end (one site, 26% relative agency-fill reduction). Use only with strong, trust-specific evidence." };
+  return { key:"Optimistic", color:C.teal, bg:C.tealLight, note:"Optimistic: approaches the programme's observed upper end (one site, 26% relative agency-fill reduction). Use only with strong, trust-specific evidence." };
 }
 
 /* ===== PURE CALC ENGINE (shared by Quick + Detailed + the kiosk variant) ===== */
@@ -381,7 +381,7 @@ function App(){
   // simple state
   const [simple,setSimple]=useState({ bankPool:660, agencyFillRate:8, numManagers:12 });
   // detailed state
-  const [groups,setGroups]=useState(applyPreset(1)); const [preset,setPreset]=useState("typical"); const [fillRateNow,setFill]=useState(8);
+  const [groups,setGroups]=useState(applyPreset(1)); const [preset,setPreset]=useState("acute"); const [fillRateNow,setFill]=useState(8);
   const [admin,setAdmin]=useState({ enabled:false, managers:12, hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY });
   const [recruit,setRecruit]=useState({ enabled:false, workers:50, costPerWorker:RECRUIT_COST_PER_WORKER, recoveryRate:RECRUIT_RECOVERY_RATE });
 
@@ -442,7 +442,7 @@ function App(){
       <header><div className="wrap">
         <div className="logo"><b>RLDatix</b><span className="divider">·</span>Smart Match<span className="divider">·</span>Workforce Intelligence</div>
         <h1>Your Workforce<br/><em>ROI Calculator</em></h1>
-        <p>See the cash your trust could release by improving bank-staff utilisation — moving duties off expensive agency and onto your own bank. The saving is the <em>agency premium displaced</em>, not the cost of the shifts you fill.</p>
+        <p>See the cash your NHS organisation could release by improving bank-staff utilisation — moving duties off expensive agency and onto your own bank. The saving is the <em>agency premium displaced</em>, not the cost of the shifts you fill.</p>
       </div></header>
 
       <div className="evidence-strip"><div className="wrap evidence-inner">
@@ -457,7 +457,7 @@ function App(){
       </div></div>
 
       <div className="narrative"><div className="wrap narrative-inner">
-        <div className="nar"><h3>The opportunity</h3><p>Every trust has a gap between the temporary duties that need filling and the bank staff who could fill them. When that gap isn't closed, trusts turn to agency — at a premium over their own bank rate. Closing it is both a financial and a workforce-productivity win.</p></div>
+        <div className="nar"><h3>The opportunity</h3><p>Every NHS organisation has a gap between the temporary duties that need filling and the bank staff who could fill them. When that gap isn't closed, they turn to agency — at a premium over their own bank rate. Closing it is both a financial and a workforce-productivity win.</p></div>
         <div className="nar"><h3>How Smart Match helps</h3><p>Smart Match uses AI to connect the right bank staff to the right duties at the right time. In an NHS programme, bank engagement rose and agency fill fell — alongside wider scheduling and engagement improvements. Outcomes vary by trust and are not solely attributable to the platform.</p></div>
         <div className="nar"><h3>An honest model</h3><p>This calculator counts only the <strong>agency premium displaced</strong> as cash. Filling a bank shift still costs money, so the gross shift value is shown separately as <strong>capacity</strong> (temp duties filled), never as a saving. Enter your own figures for the most credible result.</p></div>
       </div></div>
@@ -507,7 +507,7 @@ function App(){
           </div>
           <div className="section">
             <div className="step-label"><div className="step-num">1</div><h2>Your bank pool &amp; agency exposure</h2></div>
-            <p className="step-sub">Pre-filled for a typical mid-sized acute trust. Use your trust's own figures where you can.</p>
+            <p className="step-sub">Pick your organisation type below, then use your own figures where you can.</p>
             <div className="presets">{Object.entries(PRESETS).map(([k,p])=>(
               <button key={k} className={"preset"+(preset===k?" active":"")} onClick={()=>choosePreset(k)}><div className="pt">{p.label}</div><div className="pd">{p.desc}</div></button>))}
             </div>
@@ -647,13 +647,13 @@ function App(){
               <div className="arow"><span>Time saved / week (co-headline)</span><span>{Math.round(r.timeSavedWeek).toLocaleString(LOCALE)} hours</span></div>
               <div className="arow explain"><span className="albl">Admin model (per manager) <span className="conf low">low</span></span><span className="adesc">managers × hours/day × 5. Cash: × {ADMIN_WORKING_DAYS} working days × loaded rate. Roles: Roster Managers, Bank Staff Administrators, Temp/Agency Managers. Client suggested 2.5 h/day @ £18 — treated as optimistic; default is a conservative 1.0 h/day. Validate locally.</span></div>
               <div className="arow"><span>Agency premium (default, editable)</span><span>20% <span className="contested">contested</span></span></div>
-              <div className="arow explain"><span className="albl">Source — premium</span><span className="adesc">~20% average (House of Commons Library CBP-10539, Nov 2025); disputed at shift level — 2026 REC FOI data show bank can cost more than capped agency on some shifts. Most credible on your own rates.</span></div>
+              <div className="arow explain"><span className="albl">Source — premium</span><span className="adesc">~20% average (House of Commons Library CBP-10539, Mar 2026); disputed at shift level — May 2026 REC FOI data show NHS bank can cost more than price-capped agency on some shifts. Treat as a range (nursing ~35–50%, medics ~80–120%) and use your own rates.</span></div>
               <div className="arow"><span>Displacement stance</span><span>{displacement}% — {st.key}</span></div>
               <div className="arow explain"><span className="albl">Source — displacement <span className="conf low">low</span></span><span className="adesc">Conservative by default. The programme saw agency fill fall 8.1%→6.0% at one community site (26% relative) — the observed upper end, single-site, partly attributable to wider scheduling/engagement changes. Health-economist validation pending.</span></div>
               <div className="arow"><span>Bank-utilisation programme signal</span><span>+17% (one site)</span></div>
               <div className="arow explain"><span className="albl">Source — programme (4 trusts; 2-site data) <span className="conf low">low–mod</span></span><span className="adesc">Utilisation +17% at one community site (170→199 workers); the other reporting site was ~+1.75% (a "13%" figure in the client doc is a known error). Temp duties filled +17% (351→411) / +16%. Self-booking +26% / +15%. Engagement/coverage measures, not payroll uplift — they inform the stance, not the saving. Anonymised pending client sign-off.</span></div>
-              <div className="arow"><span>Pay scale</span><span>2025/26 NHS AfC midpoints <span className="conf high">high</span></span></div>
-              <div className="arow explain"><span className="albl">Source — pay</span><span className="adesc">NHS Employers 2025/26 (+3.6% from 1 Apr 2025): Band 2 ~£24,465; Band 5 mid ~£34,400; Band 6 mid ~£42,600. Add London HCAS (Inner 20% / Outer 15% / Fringe 5%) where relevant.</span></div>
+              <div className="arow"><span>Pay scale</span><span>2026/27 NHS AfC midpoints <span className="conf high">high</span></span></div>
+              <div className="arow explain"><span className="albl">Source — pay</span><span className="adesc">NHS Employers 2026/27 (+3.3% confirmed from 1 Apr 2026): Band 2 ~£25,272; Band 3 ~£26,618; Band 5 mid ~£34,592; Band 6 mid ~£42,170. Medics use the SAS / specialty-doctor scale (~£52.5k–£67.5k, 2026/27) — medical T&amp;Cs, not AfC. Add London HCAS (Inner 20% / Outer 15% / Fringe 5%) where relevant. Band 2/3 may rise further via the pending Staff Council structure reform.</span></div>
               <div className="arow"><span>Hourly divisor / shift length</span><span>1,957.5 h/yr · {shiftHours} h</span></div>
               <div className="arow"><span>Platform cost (ROI denominator)</span><span>{fmt(platformCost)}/yr</span></div>
               {r.recruitSaving>0 && <><div className="arow"><span>Recruitment waste recovered (optional)</span><span>{fmt(r.recruitSaving)}</span></div>
@@ -681,7 +681,7 @@ function App(){
         </div>
       </main>
 
-      <footer><p>Built by <strong>RLDatix Smart Match</strong> · Cash saving = agency premium displaced (not gross shift value) · 2025/26 NHS AfC pay scales · Figures are <strong>indicative</strong>, conservative and editable — validate with your trust's own rates · Pilot = 2-site data within a 4-trust programme, anonymised pending client sign-off; outcomes vary and are not solely attributable to the platform.</p></footer>
+      <footer><p>Built by <strong>RLDatix Smart Match</strong> · Cash saving = agency premium displaced (not gross shift value) · 2026/27 NHS AfC pay scales · Figures are <strong>indicative</strong>, conservative and editable — validate with your organisation's own rates ·Pilot = 2-site data within a 4-trust programme, anonymised pending client sign-off; outcomes vary and are not solely attributable to the platform.</p></footer>
     </div>
   );
 }
