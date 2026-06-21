@@ -294,12 +294,12 @@ function stance(d){
 
 /* ===== PURE CALC ENGINE (shared by Quick + Detailed + the kiosk variant) ===== */
 function calc(input){
-  const { groups, premium, displacement, shiftHours, oncost, platformCost, admin, recruit, fillRateNow } = input;
+  const { groups, premium, displacement, shiftHours, oncost, platformCost, admin, recruit, fillRateNow, perGroupPremium } = input;
   const p=premium/100, d=displacement/100, oc=oncost/100;
   let totSpend=0, totSaving=0, totDisplaced=0, totBaseline=0, totHead=0, totCapacityValue=0;
   const rows = groups.map(g=>{
     const head=num(g.headcount), spend=num(g.agencySpend), pay=num(g.bankPay);
-    const gp=(g.premium!=null?num(g.premium):premium)/100, gd=(g.displacement!=null?num(g.displacement):displacement)/100;
+    const gp=((perGroupPremium && g.premium!=null)?num(g.premium):premium)/100, gd=(g.displacement!=null?num(g.displacement):displacement)/100;
     const bankShiftCost = (pay/AFC_DIVISOR) * shiftHours * (1+oc);
     const agencyShiftCost = bankShiftCost * (1+gp);
     const baseline = agencyShiftCost>0 ? spend/agencyShiftCost : 0;
@@ -405,6 +405,7 @@ function App(){
   const [mode,setMode] = useState("quick");           // "quick" | "detailed"
   // shared parameters
   const [premium,setPremium]=useState(20), [displacement,setDisp]=useState(13), [platformCost,setPC]=useState(PLATFORM_COST_DEFAULT);
+  const [perGroupPremium,setPGP]=useState(false);
   const [shiftHours,setSH]=useState(SHIFT_HOURS_DEFAULT), [oncost,setOncost]=useState(BANK_ONCOST_DEFAULT*100);
   const [showAdv,setAdv]=useState(false), [calibrating,setCal]=useState(false);
   const [calculated,setCalculated]=useState(false), [rampYears,setRampYears]=useState(3);
@@ -421,8 +422,8 @@ function App(){
   const shared={ premium, displacement, platformCost, shiftHours, oncost };
   const r = useMemo(()=>{
     if(mode==="quick") return calc(simpleToInput(simple, shared));
-    return calc({ groups, premium, displacement, shiftHours, oncost, platformCost, admin, recruit, fillRateNow });
-  },[mode,simple,groups,premium,displacement,platformCost,shiftHours,oncost,admin,recruit,fillRateNow]);
+    return calc({ groups, premium, displacement, shiftHours, oncost, platformCost, admin, recruit, fillRateNow, perGroupPremium });
+  },[mode,simple,groups,premium,displacement,platformCost,shiftHours,oncost,admin,recruit,fillRateNow,perGroupPremium]);
 
   const setG=(i,k,v)=>setGroups(gs=>gs.map((g,j)=>j===i?{...g,[k]:num(v)}:g));
   const choosePreset=key=>{ setPreset(key); setGroups(applyPreset(PRESETS[key].scale)); };
@@ -535,7 +536,7 @@ function App(){
             <h3>How to use the detailed calculator</h3>
             <div className="inst-steps">
               <div className="inst-step"><div className="inst-num">1</div><p><strong>Pick your organisation type, or build your own.</strong> Set each group's headcount, <strong>annual agency spend</strong> (the anchor for the saving) and pay — add or remove staff groups as needed.</p></div>
-              <div className="inst-step"><div className="inst-num">2</div><p><strong>Set the agency premium once</strong> (default 20%, the official average — contested, so use your own rate) and pick a <strong>displacement stance</strong> (Conservative / Pilot / Optimistic). Optionally add admin and recruitment levers.</p></div>
+              <div className="inst-step"><div className="inst-num">2</div><p><strong>Set the agency premium</strong> (default 20%, the official average — contested, so use your own; tick to set it <strong>per group</strong>) and pick a <strong>displacement stance</strong> (Conservative / Pilot / Optimistic). Optionally add admin and recruitment levers.</p></div>
               <div className="inst-step"><div className="inst-num">3</div><p><strong>Read the co-headlines:</strong> net annual cash saving and admin time saved per week, with payback. Capacity (temp duties filled) is shown separately and excluded from the saving.</p></div>
             </div>
           </div>
@@ -558,6 +559,7 @@ function App(){
                   <Field label="Annual agency spend" prefix="£" value={g.agencySpend} min="0" step={50000} onChange={v=>setG(i,"agencySpend",v)} info="Yearly agency spend for this group — the anchor for the saving." hint="The anchor for the saving"/>
                   <Field label="Bank pay (£/yr)" value={g.bankPay} min="0" step={500} onChange={v=>setG(i,"bankPay",v)} info="Actual bank rate preferred; or pick an AfC band below (2026/27 midpoints). Different pay per group is what makes each column's saving differ."/>
                   <div className="field"><label>AfC band — auto-fills pay</label><select className="grp-band" value={AFC_BANDS.some(x=>x[1]===g.bankPay)?g.bankPay:""} onChange={e=>{const val=e.target.value; if(val){const bd=AFC_BANDS.find(x=>String(x[1])===val); setG(i,"bankPay",num(val)); if(bd) setG(i,"band",bd[0]);}}}><option value="">Custom / typed</option>{AFC_BANDS.map(([lbl,val])=>(<option key={lbl} value={val}>{lbl} — £{val.toLocaleString("en-GB")}</option>))}</select></div>
+                  {perGroupPremium && <Field label="Agency premium (%)" value={g.premium!=null?g.premium:premium} min="0" max="60" step={1} onChange={v=>setG(i,"premium",v)} info="This group's agency-over-bank premium. Defaults to the global premium; raise it for hard-to-fill groups (e.g. medics) where you have trust-specific evidence."/>}
                 </div>
               </div>
             ))}
@@ -567,7 +569,10 @@ function App(){
           <div className="section">
             <div className="step-label"><div className="step-num">2</div><h2>Agency parameters</h2></div>
             <div className="params-grid">
-              <Field label="Agency premium over bank (%)" value={premium} min="0" max="60" step={1} onChange={v=>setPremium(num(v,20))} info="A single agency-over-bank premium (House of Commons Library ~20% average). Contested at shift level — REC data show NHS bank can cost more than capped agency in hard-to-fill roles. Use your trust's actual rate where possible; applies across all groups." hint="Default 20% · official average · editable · contested"/>
+              <div>
+                <Field label={perGroupPremium?"Default agency premium (%)":"Agency premium over bank (%)"} value={premium} min="0" max="60" step={1} onChange={v=>setPremium(num(v,20))} info="A single agency-over-bank premium (House of Commons Library ~20% average). Contested at shift level — REC data show NHS bank can cost more than capped agency in hard-to-fill roles. Use your trust's actual rate where possible; applies across all groups unless you override per group." hint={perGroupPremium?"Default for any group you don't override below":"Default 20% · official average · editable · contested"}/>
+                <label style={{display:"flex",alignItems:"center",gap:7,fontSize:12,fontWeight:600,color:C.navy,cursor:"pointer",marginTop:8}}><input type="checkbox" checked={perGroupPremium} onChange={e=>setPGP(e.target.checked)}/> Set the agency premium per staff group <InfoTip text="Off by default — one official ~20% premium across all groups (the defensible business-case default). Tick to override the premium per column, e.g. higher for medics, where you have trust-specific agency rates."/></label>
+              </div>
               <div className="field">
                 <label>Displacement stance — {displacement}% · {st.key} <InfoTip text="Share of your baseline agency usage that improved bank utilisation moves to bank. Driven by the Smart Match pilot — agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; the commercial variant can show the Pilot case with a rep to frame the caveats."/></label>
                 <div className="stance-btns">{[["Conservative",13],["Pilot",26],["Optimistic",35]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
@@ -674,10 +679,10 @@ function App(){
             </div>
 
             {!isQuick && <div className="table-wrap"><table>
-              <thead><tr><th>Staff group</th><th className="num">Bank pool</th><th className="num">Agency spend</th><th className="num">Duties displaced</th><th className="num">Cash saving</th></tr></thead>
+              <thead><tr><th>Staff group</th><th className="num">Bank pool</th><th className="num">Agency spend</th>{perGroupPremium && <th className="num">Premium</th>}<th className="num">Duties displaced</th><th className="num">Cash saving</th></tr></thead>
               <tbody>
-                {r.rows.map(x=>(<tr key={x.id}><td>{x.role}</td><td className="num">{fmtNum(x.head)}</td><td className="num">{fmt(x.spend)}</td><td className="num">{fmtNum(x.displaced)}</td><td className="num">{fmt(x.saving)}</td></tr>))}
-                <tr className="total-row"><td>Total</td><td className="num">{fmtNum(r.totHead)}</td><td className="num">{fmt(r.totSpend)}</td><td className="num">{fmtNum(r.totDisplaced)}</td><td className="num">{fmt(r.totSaving)}</td></tr>
+                {r.rows.map(x=>(<tr key={x.id}><td>{x.role}</td><td className="num">{fmtNum(x.head)}</td><td className="num">{fmt(x.spend)}</td>{perGroupPremium && <td className="num">{(x.premium!=null?x.premium:premium)}%</td>}<td className="num">{fmtNum(x.displaced)}</td><td className="num">{fmt(x.saving)}</td></tr>))}
+                <tr className="total-row"><td>Total</td><td className="num">{fmtNum(r.totHead)}</td><td className="num">{fmt(r.totSpend)}</td>{perGroupPremium && <td className="num">—</td>}<td className="num">{fmtNum(r.totDisplaced)}</td><td className="num">{fmt(r.totSaving)}</td></tr>
               </tbody></table></div>}
 
             <div className="panel">
@@ -716,11 +721,11 @@ function App(){
               <div className="arow"><span>Saving basis</span><span>Agency premium displaced (cash)</span></div>
               <div className="arow explain"><span className="albl">Why not the full shift value? <span className="conf high">CORE</span></span><span className="adesc">Filling a bank shift is expenditure. A trust only saves when a duty that would have been agency is covered by bank instead — the saving is the <b>difference</b> (the premium), not the whole shift. Gross shift value sits under Capacity.</span></div>
               <Method formula={"bank_shift_cost  = (pay / 1957.5) × hours × (1 + on-cost)\nagency_shift_cost= bank_shift_cost × (1 + premium)\ndisplaced_duties = (agency_spend / agency_shift_cost) × displacement\nCASH SAVING      = displaced_duties × bank_shift_cost × premium"}
-                your={<>Agency spend {fmt(r.totSpend)} · premium {premium}% · displacement {displacement}% ({st.key}) → <b>{fmt(r.totSaving)}</b>.</>}
+                your={<>Agency spend {fmt(r.totSpend)} · premium {premium}%{perGroupPremium?" (default; per-group overrides on)":""} · displacement {displacement}% ({st.key}) → <b>{fmt(r.totSaving)}</b>.</>}
                 source="Cash saving = agency_spend × displacement × premium/(1+premium); driven by agency spend, premium and displacement — not bank payroll." strength={{c:"high",t:"method"}}/>
               <div className="arow"><span>Time saved / week (co-headline)</span><span>{Math.round(r.timeSavedWeek).toLocaleString(LOCALE)} hours</span></div>
               <div className="arow explain"><span className="albl">Admin model (per manager) <span className="conf low">low</span></span><span className="adesc">managers × hours/day × 5. Cash: × {ADMIN_WORKING_DAYS} working days × loaded rate. Roles: Roster Managers, Bank Staff Administrators, Temp/Agency Managers. Client suggested 2.5 h/day @ £18 — treated as optimistic; default is a conservative 1.0 h/day. Validate locally.</span></div>
-              <div className="arow"><span>Agency premium (default, editable)</span><span>20% <span className="contested">contested</span></span></div>
+              <div className="arow"><span>Agency premium {perGroupPremium?"(per staff group)":"(single, editable)"}</span><span>{premium}%{perGroupPremium?" default":""} <span className="contested">contested</span></span></div>
               <div className="arow explain"><span className="albl">Source — premium</span><span className="adesc">~20% average (House of Commons Library CBP-10539, Mar 2026); disputed at shift level — May 2026 REC FOI data show NHS bank can cost more than price-capped agency on some shifts. Treat as a range (nursing ~35–50%, medics ~80–120%) and use your own rates.</span></div>
               <div className="arow"><span>Displacement stance</span><span>{displacement}% — {st.key}</span></div>
               <div className="arow explain"><span className="albl">Source — displacement <span className="conf low">low</span></span><span className="adesc">Conservative by default. The programme saw agency fill fall 8.1%→6.0% at one community site (26% relative) — the observed upper end, single-site, partly attributable to wider scheduling/engagement changes. Health-economist validation pending.</span></div>
