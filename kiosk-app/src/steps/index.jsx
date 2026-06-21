@@ -1,6 +1,6 @@
 import React from 'react';
 import { C, F, fmtNum } from '../theme';
-import { Card, SectionTitle, TouchSlider, Stepper, InfoTip } from '../components';
+import { Card, SectionTitle, TouchSlider, Stepper, InfoTip, ToggleRow } from '../components';
 
 /* ────────────────────────────────────────────────────────────────────────
    Smart Match — three simple inputs (plus the modelling-stance slider that
@@ -59,7 +59,7 @@ export function AgencyStep({ agencyFillRate, setAgencyFillRate }) {
 }
 
 // STEP 2 — Your team: number of admin / roster managers
-export function TeamStep({ numManagers, setNumManagers }) {
+export function TeamStep({ numManagers, setNumManagers, includeAdmin, setIncludeAdmin }) {
   return <div>
     <SectionTitle number={3}>Your roster team</SectionTitle>
     <Lead>How many people spend their time booking, chasing and reconciling temporary shifts? Smart Match gives these colleagues back time.</Lead>
@@ -76,6 +76,14 @@ export function TeamStep({ numManagers, setNumManagers }) {
       <Helper>
         Include <strong style={{ color: C.text }}>Roster Managers</strong>, <strong style={{ color: C.text }}>Bank Staff Administrators</strong> and <strong style={{ color: C.text }}>Temp / Agency Managers</strong> — anyone whose day is spent placing and reconciling shifts.
       </Helper>
+      <div style={{ marginTop: 24, paddingTop: 22, borderTop: `1px solid ${C.border}` }}>
+        <ToggleRow
+          on={includeAdmin}
+          onToggle={setIncludeAdmin}
+          label="Include admin time saving in the cash total"
+          tip="On by default. The hours released are always shown as a per-week figure; with this on, their cash value (a conservative 1.0 h/day at a loaded £18/h) is also added to the headline saving. Turn off to show the agency premium saving on its own."
+        />
+      </div>
     </Card>
   </div>;
 }

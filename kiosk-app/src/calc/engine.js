@@ -18,7 +18,7 @@ export function stance(d) {
 export function calc(inp) {
   const { bankPool = 0, agencyFillRate = 0, numManagers = 0,
           premium = 20, displacement = 10, shiftHours = SHIFT_HOURS,
-          oncost = BANK_ONCOST * 100, platformCost = PLATFORM_COST } = inp;
+          oncost = BANK_ONCOST * 100, platformCost = PLATFORM_COST, includeAdmin = true } = inp;
   const p = premium / 100, d = displacement / 100, oc = oncost / 100, a = Math.min(0.99, agencyFillRate / 100);
   const bankShifts = bankPool * SIMPLE_SHIFTS_PER_WORKER_YR;
   const totalTemp = a < 1 ? bankShifts / (1 - a) : bankShifts;   // bank fills the non-agency share
@@ -28,8 +28,8 @@ export function calc(inp) {
   const agencySpend = agencyShifts * agencyShiftCost;
   const displaced = agencyShifts * d;                            // temp duties moved agency -> bank
   const agencySaving = displaced * bankShiftCost * p;            // = displaced × (agency-bank); CASH
-  const timeSavedWeek = numManagers * ADMIN_HRS_PER_DAY * 5;     // co-headline (hours/week)
-  const adminSaving = numManagers * ADMIN_HRS_PER_DAY * ADMIN_WORKING_DAYS * ADMIN_LOADED_HOURLY;
+  const timeSavedWeek = numManagers * ADMIN_HRS_PER_DAY * 5;     // co-headline (hours/week) — always shown
+  const adminSaving = includeAdmin ? numManagers * ADMIN_HRS_PER_DAY * ADMIN_WORKING_DAYS * ADMIN_LOADED_HOURLY : 0;
   const grossBenefit = agencySaving + adminSaving;
   const netSaving = grossBenefit - platformCost;
   const roiPct = platformCost > 0 ? (netSaving / platformCost) * 100 : 0;
@@ -84,7 +84,7 @@ export const applyPreset = scale => STAFF_GROUPS.map(g => ({ ...g, headcount: Ma
 
 export const DETAILED_DEFAULTS = {
   premium: 20, displacement: 13, perGroupPremium: false, platformCost: PLATFORM_COST, fillRateNow: 8,
-  admin:   { enabled: false, managers: 12, hoursPerDay: ADMIN_HRS_PER_DAY, workingDays: ADMIN_WORKING_DAYS, loadedHourly: ADMIN_LOADED_HOURLY },
+  admin:   { enabled: true, managers: 12, hoursPerDay: ADMIN_HRS_PER_DAY, workingDays: ADMIN_WORKING_DAYS, loadedHourly: ADMIN_LOADED_HOURLY },
   recruit: { enabled: false, workers: 50, costPerWorker: 1000, recoveryRate: 0.10 },
 };
 

@@ -184,6 +184,16 @@ export function SectionTitle({ number, children }) {
   </div>;
 }
 
+export function ToggleRow({ on, onToggle, label, tip }) {
+  return <div onClick={() => onToggle(!on)} style={{ display: "flex", alignItems: "center", gap: 14, cursor: "pointer", marginTop: 6 }}>
+    <div style={{ width: 58, height: 34, borderRadius: 17, background: on ? C.accent : C.border, position: "relative", transition: "background .2s", flexShrink: 0 }}>
+      <div style={{ position: "absolute", top: 3, left: on ? 27 : 3, width: 28, height: 28, borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
+    </div>
+    <span style={{ fontSize: F.body, fontWeight: 600, color: C.text }}>{label}</span>
+    {tip && <InfoTip text={tip} />}
+  </div>;
+}
+
 export function SegmentedControl({ options, value, onChange, label, info }) {
   return <div>
     {label && <div style={{ fontSize: F.body, fontWeight: 600, color: C.textMid, marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>

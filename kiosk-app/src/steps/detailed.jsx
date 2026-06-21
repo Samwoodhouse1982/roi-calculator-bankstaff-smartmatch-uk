@@ -1,6 +1,6 @@
 import React from 'react';
 import { C, F, fmt, fmtK, fmtNum } from '../theme';
-import { Card, SectionTitle, InfoTip, BigChoice, TouchSlider, Stepper } from '../components';
+import { Card, SectionTitle, BigChoice, TouchSlider, Stepper, ToggleRow } from '../components';
 import { BigNumberField } from '../components/NumPad';
 import { Icon } from '../components/Icons';
 import { PRESETS, AFC_BANDS, stance } from '../calc/engine';
@@ -17,15 +17,6 @@ function Lead({ children }) {
 function CTitle({ iconKey, children }) {
   return <div style={{ fontSize: F.body, fontWeight: 700, color: C.textMid, marginBottom: 18, display: "flex", alignItems: "center", gap: 10 }}>
     {iconKey && <Icon name={iconKey} size={24} stroke={C.accent} />} {children}
-  </div>;
-}
-function ToggleRow({ on, onToggle, label, tip }) {
-  return <div onClick={() => onToggle(!on)} style={{ display: "flex", alignItems: "center", gap: 14, cursor: "pointer", marginTop: 6 }}>
-    <div style={{ width: 58, height: 34, borderRadius: 17, background: on ? C.accent : C.border, position: "relative", transition: "background .2s", flexShrink: 0 }}>
-      <div style={{ position: "absolute", top: 3, left: on ? 27 : 3, width: 28, height: 28, borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
-    </div>
-    <span style={{ fontSize: F.body, fontWeight: 600, color: C.text }}>{label}</span>
-    {tip && <InfoTip text={tip} />}
   </div>;
 }
 function StanceButtons({ displacement, setDisplacement }) {
@@ -115,7 +106,7 @@ export function AssumptionsStep({ premium, setPremium, perGroupPremium, setPerGr
     </Card>
 
     <Card style={{ marginBottom: 18 }}>
-      <ToggleRow on={admin.enabled} onToggle={v => setAdmin(a => ({ ...a, enabled: v }))} label="Add admin time saving to the cash total" tip="Time released for roster managers, bank admins and temp/agency managers via self-booking automation. Time-saved-per-week is always shown; tick to add its cash value." />
+      <ToggleRow on={admin.enabled} onToggle={v => setAdmin(a => ({ ...a, enabled: v }))} label="Include admin time saving in the cash total" tip="On by default. Time released for roster managers, bank admins and temp/agency managers via self-booking automation. The hours-per-week figure is always shown; with this on, its cash value is also added to the headline. Turn off to show the agency saving alone." />
       {admin.enabled && <div style={{ marginTop: 20 }}>
         <Stepper label="Admin / roster managers" value={admin.managers} min={0} max={80} step={1} onChange={v => setAdmin(a => ({ ...a, managers: v }))} />
         <TouchSlider label="Hours saved / day each" value={admin.hoursPerDay} min={0} max={4} step={0.25} onChange={v => setAdmin(a => ({ ...a, hoursPerDay: v }))} format={v => v + " h"} tip="Client suggested 2.5 h/day — optimistic. Default 1.0 h is conservative." />

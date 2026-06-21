@@ -315,6 +315,7 @@ export default function App() {
   const [agencyFillRate, setAgencyFillRate] = useState(DEFAULTS.agencyFillRate);
   const [numManagers, setNumManagers] = useState(DEFAULTS.numManagers);
   const [displacement, setDisplacement] = useState(DEFAULTS.displacement);
+  const [includeAdmin, setIncludeAdmin] = useState(true);   // roster-manager time in the cash total (on by default)
 
   // Detailed / commercial variant inputs.
   const [dPreset, setDPreset] = useState("acute");
@@ -327,8 +328,8 @@ export default function App() {
   const [dAdmin, setDAdmin] = useState(DETAILED_DEFAULTS.admin);
   const [dRecruit, setDRecruit] = useState(DETAILED_DEFAULTS.recruit);
 
-  const rQuick = useMemo(() => calc({ bankPool, agencyFillRate, numManagers, displacement }),
-    [bankPool, agencyFillRate, numManagers, displacement]);
+  const rQuick = useMemo(() => calc({ bankPool, agencyFillRate, numManagers, displacement, includeAdmin }),
+    [bankPool, agencyFillRate, numManagers, displacement, includeAdmin]);
   const rDet = useMemo(() => calcDetailed({ groups: dGroups, premium: dPremium, displacement: dDisp, perGroupPremium: dPerGroup, platformCost: dPlatform, admin: dAdmin, recruit: dRecruit, fillRateNow: dFill }),
     [dGroups, dPremium, dDisp, dPerGroup, dPlatform, dAdmin, dRecruit, dFill]);
   const isDetailed = flow === "detailed";
@@ -353,7 +354,7 @@ export default function App() {
 
   const resetQuick = useCallback(() => {
     setBankPool(DEFAULTS.bankPool); setAgencyFillRate(DEFAULTS.agencyFillRate);
-    setNumManagers(DEFAULTS.numManagers); setDisplacement(DEFAULTS.displacement);
+    setNumManagers(DEFAULTS.numManagers); setDisplacement(DEFAULTS.displacement); setIncludeAdmin(true);
   }, []);
   const resetDetailed = useCallback(() => {
     setDPreset("acute"); setDGroups(applyPreset(1)); setDPremium(DETAILED_DEFAULTS.premium);
@@ -388,7 +389,7 @@ export default function App() {
     switch (kioskStep) {
       case 0: return <BankStep bankPool={bankPool} setBankPool={setBankPool} />;
       case 1: return <AgencyStep agencyFillRate={agencyFillRate} setAgencyFillRate={setAgencyFillRate} />;
-      case 2: return <TeamStep numManagers={numManagers} setNumManagers={setNumManagers} />;
+      case 2: return <TeamStep numManagers={numManagers} setNumManagers={setNumManagers} includeAdmin={includeAdmin} setIncludeAdmin={setIncludeAdmin} />;
       case 3: return <ResultsPage r={rQuick} displacement={displacement} setDisplacement={setDisplacement} onAdjust={handleAdjust} onStartOver={handleStartOver} />;
       default: return null;
     }
