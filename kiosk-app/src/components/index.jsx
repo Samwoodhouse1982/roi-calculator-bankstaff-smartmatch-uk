@@ -172,6 +172,7 @@ export function BigChoice({ options, value, onChange }) {
         </div>
         <div style={{ fontSize: F.h3, fontWeight: 700, color: value === opt.key ? C.accent : C.text, marginBottom: 8, lineHeight: 1.2 }}>{opt.label}</div>
         <div style={{ fontSize: F.small, color: C.textMuted, lineHeight: 1.5 }}>{opt.desc}</div>
+        {opt.tag && <div style={{ marginTop: 18, display: "inline-block", padding: "7px 14px", borderRadius: 999, background: value === opt.key ? C.accentSoft : C.surface2, border: `1px solid ${value === opt.key ? C.accent + "55" : C.border}`, fontSize: F.tiny, fontWeight: 700, color: value === opt.key ? C.accent : C.textMid, letterSpacing: 0.3 }}>{opt.tag}</div>}
       </button>;
     })}
   </div>;

@@ -295,8 +295,8 @@ function ModeChooser({ onChoose }) {
           </p>
         </div>
         <BigChoice value={null} onChange={onChoose} options={[
-          { key: "quick", iconKey: "clock", label: "Quick estimate", desc: "Three simple inputs — bank pool, agency reliance, roster team. A fast, conservative headline in under a minute. Ideal for events and a first look." },
-          { key: "detailed", iconKey: "network", label: "Detailed / commercial", desc: "Model agency spend by staff group, with per-group pay and AfC bands, an editable premium and optional admin & recruitment levers. For a guided commercial conversation." },
+          { key: "quick", iconKey: "clock", label: "Quick estimate", desc: "Three simple inputs — bank pool, agency reliance, roster team. A fast, conservative headline in under a minute. Ideal for events and a first look.", tag: "Best for operational managers" },
+          { key: "detailed", iconKey: "network", label: "Detailed / commercial", desc: "Model agency spend by staff group, with per-group pay and AfC bands, an editable premium and optional admin & recruitment levers. For a guided commercial conversation.", tag: "Best for Finance leads & Workforce Directors" },
         ]} />
       </div>
     </div>
