@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { C, F, fmt, fmtK, fmtNum } from '../theme';
 import { Icon } from '../components/Icons';
 import { Card } from '../components';
-import { stance } from '../calc/engine';
+import { stance, project, PLATFORM_COST } from '../calc/engine';
 
 /**
  * Animates a numeric value to a target over `duration` ms with ease-out cubic.
@@ -75,6 +75,7 @@ function KpiTile({ label, value, sub, iconKey }) {
 export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStartOver }) {
   if (!r) return null;
   const st = stance(displacement);
+  const [rampYears, setRampYears] = useState(3);
   const fmtMonths = m => m == null ? "—" : `${m.toFixed(1)} mo`;
   const fmtPct1 = v => `${(Math.round(v * 10) / 10).toLocaleString("en-GB")}%`;
 
@@ -135,18 +136,70 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
       <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6, marginBottom: 18 }}>
         How much of today's agency activity do you assume better bank utilisation moves onto your own bank? Drag to flex the model and watch every figure recompute.
       </div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <span style={{ fontSize: F.body, fontWeight: 600, color: C.textMid }}>Agency displacement</span>
         <span style={{ fontSize: F.h1, fontWeight: 800, color: C.accent }}>{displacement}%</span>
       </div>
-      <input type="range" min={5} max={30} step={1} value={displacement} onChange={e => setDisplacement(Number(e.target.value))} style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
+      <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+        {[["Conservative", 13], ["Pilot", 26], ["Optimistic", 35]].map(([lbl, v]) => {
+          const on = displacement === v;
+          return <button key={v} onClick={() => setDisplacement(v)} style={{
+            flex: 1, padding: "16px 8px", borderRadius: 14, cursor: "pointer", fontFamily: "inherit",
+            border: `1px solid ${on ? C.accent : C.border}`, background: on ? C.accent : C.surface2,
+            color: on ? "#fff" : C.textMid, fontWeight: 700, fontSize: F.small, transition: "all .15s",
+            display: "flex", flexDirection: "column", gap: 3, alignItems: "center"
+          }}>{lbl}<span style={{ fontSize: F.tiny, fontWeight: 600, opacity: 0.8 }}>{v}%</span></button>;
+        })}
+      </div>
+      <input type="range" min={8} max={40} step={1} value={displacement} onChange={e => setDisplacement(Number(e.target.value))} style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: F.tiny, color: C.textMuted, marginTop: 8 }}>
-        <span>Conservative</span><span>Moderate</span><span>Optimistic</span>
+        <span>8% · conservative</span><span>26% · pilot</span><span>40% · optimistic</span>
       </div>
       <div style={{ marginTop: 16, padding: "16px 20px", background: C.accentSoft, borderRadius: 14, border: `1px solid ${C.accent}30` }}>
         <div style={{ fontSize: F.body, fontWeight: 800, color: C.accent, marginBottom: 6 }}>{st.key}</div>
         <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6 }}>{st.note}</div>
       </div>
+    </Card>
+
+    {/* Savings over time — phased ramp (45/75/100 over 3yr) */}
+    <Card style={{ marginBottom: 28 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+        <CTitle iconKey="calendar">Savings over time</CTitle>
+        <div style={{ display: "inline-flex", gap: 6, background: C.surface2, borderRadius: 999, padding: 4 }}>
+          {[3, 5].map(y => <button key={y} onClick={() => setRampYears(y)} style={{
+            border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: F.small, fontWeight: 700,
+            padding: "8px 18px", borderRadius: 999, background: rampYears === y ? C.accent : "transparent",
+            color: rampYears === y ? "#fff" : C.textMid, transition: "all .15s"
+          }}>{y}-year</button>)}
+        </div>
+      </div>
+      {(() => {
+        const proj = project(r.grossBenefit, PLATFORM_COST, rampYears);
+        const mx = Math.max(...proj.yrNet.map(v => Math.abs(v)), 1);
+        return <div>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 12, height: 200 }}>
+            {proj.yrNet.map((v, i) => <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end" }}>
+              <div style={{ fontSize: F.small, fontWeight: 800, color: v < 0 ? C.amber : C.accent, marginBottom: 8 }}>{fmtK(v)}</div>
+              <div style={{ width: "100%", maxWidth: 90, height: Math.max(6, Math.round((Math.max(0, v) / mx) * 150)), background: v < 0 ? C.amber : `linear-gradient(180deg, ${C.accentMid}, ${C.accent})`, borderRadius: "8px 8px 0 0", transition: "height .5s ease" }} />
+              <div style={{ fontSize: F.small, color: C.textMid, marginTop: 10, fontWeight: 600 }}>Year {i + 1}</div>
+              <div style={{ fontSize: F.tiny, color: C.textMuted }}>{Math.round(proj.pcts[i] * 100)}% ramp</div>
+            </div>)}
+          </div>
+          <div style={{ display: "flex", gap: 14, marginTop: 22 }}>
+            <div style={{ flex: 1, padding: "18px 20px", background: C.surface2, borderRadius: 14, border: `1px solid ${C.borderLight}` }}>
+              <div style={{ fontSize: F.tiny, color: C.textMuted }}>{rampYears}-year cumulative net</div>
+              <div style={{ fontSize: F.h2, fontWeight: 800, color: C.accent, marginTop: 4 }}>{fmt(proj.cumNet)}</div>
+            </div>
+            <div style={{ flex: 1, padding: "18px 20px", background: C.surface2, borderRadius: 14, border: `1px solid ${C.borderLight}` }}>
+              <div style={{ fontSize: F.tiny, color: C.textMuted }}>{rampYears}-year gross benefit</div>
+              <div style={{ fontSize: F.h2, fontWeight: 800, color: C.text, marginTop: 4 }}>{fmt(proj.cumGross)}</div>
+            </div>
+          </div>
+          <div style={{ marginTop: 16, fontSize: F.small, color: C.textMuted, fontStyle: "italic", lineHeight: 1.6 }}>
+            Benefits ramp as bank utilisation improves — modelled at {proj.pcts.map(p => Math.round(p * 100) + "%").join(" → ")} of the annual run-rate, with the platform cost recurring in full each year. Indicative.
+          </div>
+        </div>;
+      })()}
     </Card>
 
     {/* Capacity panel — explicitly NOT a cash saving */}
@@ -180,7 +233,7 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
             <strong style={{ color: C.text }}>Admin time saving</strong> uses a per-manager model: each roster manager recovers a conservative <strong style={{ color: C.text }}>1 hour/day</strong> across 225 working days, valued at a loaded £18/hour (the client's 2.5 hours/day would be an optimistic upper bound). The same hours feed the "time saved per week" co-headline.
           </p>
           <p>
-            Pay assumptions use <strong style={{ color: C.text }}>2025/26 NHS Agenda for Change midpoints</strong> (a band-mix weighted blended bank pay), 1,957.5 AfC hours/year, 8-hour shifts and a 20% bank on-cost (on-cost affects duty counts, not the cash headline). Defaults are deliberately conservative.
+            Pay assumptions use <strong style={{ color: C.text }}>2026/27 NHS Agenda for Change midpoints</strong> (+3.3%; a band-mix weighted blended bank pay), 1,957.5 AfC hours/year, 8-hour shifts and a 20% bank on-cost (on-cost affects duty counts, not the cash headline). Defaults are deliberately conservative.
           </p>
           <p style={{ marginBottom: 0 }}>
             Outputs are <strong style={{ color: C.text }}>indicative</strong> and are recomputed live as you move the modelling-stance slider above.
