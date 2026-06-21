@@ -7,7 +7,7 @@ export const ADMIN_WORKING_DAYS = 225;
 export const ADMIN_LOADED_HOURLY = 18;
 export const SIMPLE_SHIFTS_PER_WORKER_YR = 60;   // bank work is ad-hoc, not full-time
 export const SIMPLE_BLENDED_BANK_PAY = 34000;    // AfC band-mix weighted midpoint (2026/27, +3.3%)
-export const DEFAULTS = { bankPool: 660, agencyFillRate: 8, numManagers: 12, premium: 20, displacement: 13 };
+export const DEFAULTS = { bankPool: 660, agencyFillRate: 15, numManagers: 12, premium: 20, displacement: 13 };
 
 export function stance(d) {
   if (d <= 18) return { key: "Conservative", note: "≈13% — about half the pilot's measured effect. The recommended default for public / self-serve use: defensible without trust-specific evidence." };

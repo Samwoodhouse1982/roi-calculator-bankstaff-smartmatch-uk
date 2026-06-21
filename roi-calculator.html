@@ -381,7 +381,7 @@ function App(){
   const [showAdv,setAdv]=useState(false), [calibrating,setCal]=useState(true);
   const [lead,setLead]=useState({name:"",email:"",org:"",sent:false}), [pdfBusy,setPdfBusy]=useState(false);
   // simple state
-  const [simple,setSimple]=useState({ bankPool:660, agencyFillRate:8, numManagers:12, includeAdmin:true });
+  const [simple,setSimple]=useState({ bankPool:660, agencyFillRate:15, numManagers:12, includeAdmin:true });
   // detailed state
   const [groups,setGroups]=useState(applyPreset(1)); const [preset,setPreset]=useState("typical"); const [fillRateNow,setFill]=useState(8);
   const [admin,setAdmin]=useState({ enabled:true, managers:12, hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY });
