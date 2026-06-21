@@ -62,8 +62,10 @@
 
   /* MODE TOGGLE */
   .mode-toggle { display:inline-flex; background:var(--navy-light); border:1px solid var(--border); border-radius:999px; padding:4px; margin-bottom:1.5rem; }
-  .mode-toggle button { font-family:inherit; font-size:13px; font-weight:600; border:none; background:none; color:var(--text-mid); padding:8px 18px; border-radius:999px; cursor:pointer; transition:.15s; }
+  .mode-toggle button { font-family:inherit; font-size:13px; font-weight:600; border:none; background:none; color:var(--text-mid); padding:8px 18px; border-radius:999px; cursor:pointer; transition:.15s; display:flex; flex-direction:column; align-items:center; gap:2px; line-height:1.25; }
   .mode-toggle button.active { background:var(--teal); color:#fff; }
+  .mode-toggle button small { font-size:10px; font-weight:500; opacity:.65; }
+  .mode-toggle button.active small { opacity:.85; }
 
   .instructions { background:var(--navy-light); border:1px solid #C8D0E0; border-radius:var(--radius); padding:1.5rem; margin-bottom:2rem; }
   .instructions h3 { font-family:'DM Serif Display',Georgia,serif; font-size:1.05rem; font-weight:400; color:var(--navy); margin-bottom:1rem; }
@@ -321,7 +323,7 @@ function simpleToInput(s, shared){
     groups:[{ id:"all", role:"Whole bank pool", bankPay:SIMPLE_BLENDED_BANK_PAY, headcount:num(s.bankPool), agencySpend }],
     premium:shared.premium, displacement:shared.displacement, shiftHours:shared.shiftHours, oncost:shared.oncost,
     platformCost:shared.platformCost, fillRateNow:s.agencyFillRate,
-    admin:{ enabled:true, managers:num(s.numManagers), hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY },
+    admin:{ enabled:s.includeAdmin!==false, managers:num(s.numManagers), hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY },
     recruit:{ enabled:false },
   };
 }
@@ -379,10 +381,10 @@ function App(){
   const [showAdv,setAdv]=useState(false), [calibrating,setCal]=useState(true);
   const [lead,setLead]=useState({name:"",email:"",org:"",sent:false}), [pdfBusy,setPdfBusy]=useState(false);
   // simple state
-  const [simple,setSimple]=useState({ bankPool:660, agencyFillRate:8, numManagers:12 });
+  const [simple,setSimple]=useState({ bankPool:660, agencyFillRate:8, numManagers:12, includeAdmin:true });
   // detailed state
   const [groups,setGroups]=useState(applyPreset(1)); const [preset,setPreset]=useState("typical"); const [fillRateNow,setFill]=useState(8);
-  const [admin,setAdmin]=useState({ enabled:false, managers:12, hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY });
+  const [admin,setAdmin]=useState({ enabled:true, managers:12, hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY });
   const [recruit,setRecruit]=useState({ enabled:false, workers:50, costPerWorker:RECRUIT_COST_PER_WORKER, recoveryRate:RECRUIT_RECOVERY_RATE });
 
   useEffect(()=>{ const t=setTimeout(()=>setCal(false),1700); return ()=>clearTimeout(t); },[]);
@@ -464,8 +466,8 @@ function App(){
 
       <main className="wrap">
         <div className="mode-toggle" role="tablist" aria-label="Calculator mode">
-          <button role="tab" aria-selected={isQuick} className={isQuick?"active":""} onClick={()=>setMode("quick")}>Quick estimate</button>
-          <button role="tab" aria-selected={!isQuick} className={!isQuick?"active":""} onClick={()=>setMode("detailed")}>Detailed (commercial)</button>
+          <button role="tab" aria-selected={isQuick} className={isQuick?"active":""} onClick={()=>setMode("quick")}>Quick estimate<small>For operational managers</small></button>
+          <button role="tab" aria-selected={!isQuick} className={!isQuick?"active":""} onClick={()=>setMode("detailed")}>Detailed (commercial)<small>For Finance leads &amp; Workforce Directors</small></button>
         </div>
 
         {isQuick ? (
@@ -478,6 +480,10 @@ function App(){
                 <Field label="Current agency fill rate (%)" value={simple.agencyFillRate} min="0" max="100" step={0.5} onChange={v=>setSimple(s=>({...s,agencyFillRate:num(v)}))} hint="Share of temp duties filled by agency" info="The % of temporary duties currently filled by agency. The pilot moved from 8.1% to 6.0% at one site."/>
                 <Field label="Admin / roster managers" value={simple.numManagers} min="0" onChange={v=>setSimple(s=>({...s,numManagers:num(v)}))} hint="Roster mgrs, bank admins, temp/agency mgrs" info="People who spend time arranging temporary cover. Drives the time-saved-per-week and admin saving."/>
               </div>
+              <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600,color:C.navy,cursor:"pointer",marginTop:14}}>
+                <input type="checkbox" checked={simple.includeAdmin!==false} onChange={e=>setSimple(s=>({...s,includeAdmin:e.target.checked}))}/> Include admin time saving in the cash total (on by default)
+                <InfoTip text="On by default. The hours released are always shown as a per-week figure; with this on, their cash value (a conservative 1.0 h/day at a loaded £18/h) is also added to the headline. Untick to show the agency premium saving on its own."/>
+              </label>
             </div>
             <div className="params-grid" style={{marginTop:12}}>
               <div className="field">
@@ -546,8 +552,8 @@ function App(){
 
             <div className="card" style={{marginTop:12}}>
               <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600,color:C.navy,cursor:"pointer"}}>
-                <input type="checkbox" checked={admin.enabled} onChange={e=>setAdmin(a=>({...a,enabled:e.target.checked}))}/> Include admin time saving in cash (off by default)
-                <InfoTip text="Time released for roster managers, bank admins and temp/agency managers via self-booking automation. Time-saved-per-week is always shown; tick to add its cash value to the saving total."/>
+                <input type="checkbox" checked={admin.enabled} onChange={e=>setAdmin(a=>({...a,enabled:e.target.checked}))}/> Include admin time saving in cash (on by default)
+                <InfoTip text="On by default. Time released for roster managers, bank admins and temp/agency managers via self-booking automation. Time-saved-per-week is always shown; untick to remove its cash value from the saving total."/>
               </label>
               <div className="inputs-grid" style={{marginTop:12}}>
                 <Field label="Admin / roster managers" value={admin.managers} min="0" onChange={v=>setAdmin(a=>({...a,managers:num(v)}))} info="Roster Managers, Bank Staff Administrators, Temp/Agency Managers."/>
@@ -582,6 +588,11 @@ function App(){
                 <div><div className="roi-hero"><AnimMoney v={r.netSaving}/></div><div className="roi-cap">net cash saving / year</div></div>
                 <div><div className="roi-hero">{Math.round(tswAnim).toLocaleString(LOCALE)}<small> hrs</small></div><div className="roi-cap">admin time saved / week</div></div>
               </div>
+              <div style={{display:"inline-flex",alignItems:"center",gap:10,marginTop:"1rem",padding:"7px 16px",borderRadius:999,background:r.roiPct<0?"rgba(248,113,113,.15)":"rgba(20,184,166,.16)",border:"1px solid "+(r.roiPct<0?"rgba(248,113,113,.55)":"rgba(20,184,166,.55)")}}>
+                <span style={{fontSize:18,fontWeight:800,letterSpacing:".02em",color:r.roiPct<0?"#FCA5A5":"#5EEAD4"}}>{r.implausibleRoi?"⚠ ":""}{Math.round(r.roiPct).toLocaleString(LOCALE)}% ROI</span>
+                <span style={{width:4,height:4,borderRadius:"50%",background:"rgba(255,255,255,.4)"}}></span>
+                <span style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,.85)"}}>{r.paybackMonths?r.paybackMonths.toFixed(1)+" mo":"—"} payback</span>
+              </div>
               <div className="roi-sub">
                 <span>Payback <b>{r.paybackMonths?r.paybackMonths.toFixed(1)+" mo":"—"}</b></span>
                 <span>Gross benefit <b>{fmtK(r.grossBenefit)}</b></span>
@@ -593,7 +604,7 @@ function App(){
             <div className="summary-grid">
               <div className="s-card hl"><div className="s-lbl">Net annual saving</div><div className="s-val"><AnimMoney v={r.netSaving}/></div><div className="s-sub">after {fmt(platformCost)} platform cost</div></div>
               <div className="s-card"><div className="s-lbl">Agency premium displaced</div><div className="s-val"><AnimMoney v={r.totSaving}/></div><div className="s-sub">the genuine cash saving</div></div>
-              <div className="s-card"><div className="s-lbl">Admin saving {(!isQuick&&!admin.enabled)?"(off)":""}</div><div className="s-val"><AnimMoney v={r.adminSaving}/></div><div className="s-sub">{r.adminSaving>0?"modelled, conservative":"tick to include"}</div></div>
+              <div className="s-card"><div className="s-lbl">Admin saving {r.adminSaving>0?"":"(off)"}</div><div className="s-val"><AnimMoney v={r.adminSaving}/></div><div className="s-sub">{r.adminSaving>0?"modelled, conservative":"toggle to include"}</div></div>
               <div className="s-card"><div className="s-lbl">Time saved / week</div><div className="s-val">{Math.round(r.timeSavedWeek).toLocaleString(LOCALE)}<span style={{fontSize:13}}> hrs</span></div><div className="s-sub">across the roster/admin team</div></div>
             </div>
 
