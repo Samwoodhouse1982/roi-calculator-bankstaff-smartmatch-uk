@@ -92,6 +92,11 @@
   .grp-band { width:100%; border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-family:inherit; font-size:13px; color:var(--navy); background:var(--mid-grey); cursor:pointer; }
   .add-group { background:var(--navy-light); border:1px dashed var(--teal-mid); color:var(--teal-mid); font-family:inherit; font-size:13px; font-weight:600; padding:12px; border-radius:var(--radius); cursor:pointer; width:100%; margin-top:12px; transition:.15s; }
   .add-group:hover { background:var(--teal-light); }
+  .stance-btns { display:flex; gap:6px; margin:2px 0 10px; }
+  .stance-btn { flex:1; border:1px solid var(--border); background:#fff; border-radius:8px; padding:7px 6px; font-family:inherit; font-size:12px; font-weight:700; color:var(--text-mid); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:1px; transition:.15s; }
+  .stance-btn small { font-weight:600; font-size:10px; opacity:.7; }
+  .stance-btn:hover { border-color:var(--teal-mid); }
+  .stance-btn.active { background:var(--navy); border-color:var(--navy); color:#fff; }
   .staff-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:8px; }
   .staff-title { display:flex; align-items:center; gap:10px; }
   .band-pill { font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; }
@@ -261,13 +266,15 @@ const SIMPLE_BLENDED_BANK_PAY = 34000;    // AfC 2026/27 band-mix weighted midpo
 const RECRUIT_COST_PER_WORKER = 1000;     // recruit + onboard a bank worker
 const RECRUIT_RECOVERY_RATE = 0.10;       // share recovered by activating idle capacity
 
-/* AfC 2026/27 England midpoints (NHS Employers, +3.3% confirmed from 1 Apr 2026) */
+/* AfC 2026/27 England midpoints (NHS Employers, +3.3% confirmed from 1 Apr 2026).
+   Per-group bank pay drives like-for-like costs; the agency PREMIUM is a single, official
+   cost mechanic (default 20%, editable) applied across groups — not a per-group figure. */
 const STAFF_GROUPS = [
-  { id:"rn",  role:"Registered nurses",        band:"Band 5",     pillBg:"#E8FAF6", pillText:"#0F4146", bankPay:34592, headcount:240, agencySpend:4000000, premium:40,  displacement:10 },
-  { id:"sn",  role:"Senior nurses",            band:"Band 6",     pillBg:"#D6F7EE", pillText:"#0F4146", bankPay:42170, headcount:120, agencySpend:1500000, premium:40,  displacement:10 },
-  { id:"ahp", role:"AHPs (physio / OT / etc)", band:"Band 5/6",   pillBg:"#E8FAF6", pillText:"#1A5459", bankPay:38400, headcount:100, agencySpend:800000,  premium:40,  displacement:10 },
-  { id:"hca", role:"Healthcare assistants",    band:"Band 2/3",   pillBg:"#EEF6F4", pillText:"#3D5A5E", bankPay:25900, headcount:160, agencySpend:700000,  premium:30,  displacement:10 },
-  { id:"doc", role:"Medics (locum / SAS)",     band:"SAS / ST3+", pillBg:"#0F4146", pillText:"#FFFFFF", bankPay:60000, headcount:40,  agencySpend:3000000, premium:100, displacement:10 },
+  { id:"rn",  role:"Registered nurses",        band:"Band 5",     pillBg:"#E8FAF6", pillText:"#0F4146", bankPay:34592, headcount:240, agencySpend:4000000 },
+  { id:"sn",  role:"Senior nurses",            band:"Band 6",     pillBg:"#D6F7EE", pillText:"#0F4146", bankPay:42170, headcount:120, agencySpend:1500000 },
+  { id:"ahp", role:"AHPs (physio / OT / etc)", band:"Band 5/6",   pillBg:"#E8FAF6", pillText:"#1A5459", bankPay:38400, headcount:100, agencySpend:800000  },
+  { id:"hca", role:"Healthcare assistants",    band:"Band 2/3",   pillBg:"#EEF6F4", pillText:"#3D5A5E", bankPay:25900, headcount:160, agencySpend:700000  },
+  { id:"doc", role:"Medics (locum / SAS)",     band:"SAS / ST3+", pillBg:"#0F4146", pillText:"#FFFFFF", bankPay:60000, headcount:40,  agencySpend:3000000 },
 ];
 const PRESETS = {
   acute:    { label:"Acute trust",                  desc:"~660 bank staff · ~£10m agency spend",     scale:1.0 },
@@ -280,9 +287,9 @@ const AFC_BANDS = [["Band 2",25272],["Band 3",26618],["Band 5",34592],["Band 5/6
 const applyPreset = scale => STAFF_GROUPS.map(g=>({ ...g, headcount:Math.round(g.headcount*scale), agencySpend:Math.round(g.agencySpend*scale/1000)*1000 }));
 
 function stance(d){
-  if (d<=12) return { key:"Conservative", color:C.navy, bg:C.navyLight, note:"Conservative: only a small share of agency shifts is assumed to move to bank. Closest to a defensible business-case default." };
-  if (d<=22) return { key:"Moderate", color:C.navyMid, bg:C.navyLight, note:"Moderate: a meaningful share of agency shifts moves to bank as utilisation improves. Reasonable where agency dependency is well documented." };
-  return { key:"Optimistic", color:C.teal, bg:C.tealLight, note:"Optimistic: approaches the programme's observed upper end (one site, 26% relative agency-fill reduction). Use only with strong, trust-specific evidence." };
+  if (d<=18) return { key:"Conservative", color:C.navy, bg:C.navyLight, note:"Conservative (≈13%) — about half the pilot's measured effect. Recommended default for public/self-serve use: defensible without trust-specific evidence." };
+  if (d<=30) return { key:"Pilot / Expected", color:C.navyMid, bg:C.navyLight, note:"Pilot / Expected (≈26%) — the effect measured at one community site (agency fill 8.1%→6.0%). Single-site and partly attributable, so best used in a guided commercial conversation." };
+  return { key:"Optimistic", color:C.teal, bg:C.tealLight, note:"Optimistic (≈35%) — above the pilot result. Use only with strong, trust-specific evidence." };
 }
 
 /* ===== PURE CALC ENGINE (shared by Quick + Detailed + the kiosk variant) ===== */
@@ -322,7 +329,7 @@ function calc(input){
 }
 
 /* ===== TIME PROJECTION — phased ramp + cumulative (Galen migration pattern) ===== */
-const RAMP_PCTS = { 3:[0.40,0.80,1.00], 5:[0.20,0.40,0.60,0.80,1.00] };
+const RAMP_PCTS = { 3:[0.45,0.75,1.00], 5:[0.30,0.55,0.75,0.90,1.00] };
 function project(grossAnnual, platformCost, years){
   const pcts = RAMP_PCTS[years] || RAMP_PCTS[3];
   const yrGross = pcts.map(p=>grossAnnual*p);
@@ -397,7 +404,7 @@ function Calibrating(){
 function App(){
   const [mode,setMode] = useState("quick");           // "quick" | "detailed"
   // shared parameters
-  const [premium,setPremium]=useState(20), [displacement,setDisp]=useState(10), [platformCost,setPC]=useState(PLATFORM_COST_DEFAULT);
+  const [premium,setPremium]=useState(20), [displacement,setDisp]=useState(13), [platformCost,setPC]=useState(PLATFORM_COST_DEFAULT);
   const [shiftHours,setSH]=useState(SHIFT_HOURS_DEFAULT), [oncost,setOncost]=useState(BANK_ONCOST_DEFAULT*100);
   const [showAdv,setAdv]=useState(false), [calibrating,setCal]=useState(false);
   const [calculated,setCalculated]=useState(false), [rampYears,setRampYears]=useState(3);
@@ -419,7 +426,7 @@ function App(){
 
   const setG=(i,k,v)=>setGroups(gs=>gs.map((g,j)=>j===i?{...g,[k]:num(v)}:g));
   const choosePreset=key=>{ setPreset(key); setGroups(applyPreset(PRESETS[key].scale)); };
-  const addGroup=()=>setGroups(gs=>[...gs,{ id:"g"+Date.now(), role:"New staff group", band:"Band 5", pillBg:"#E8FAF6", pillText:"#0F4146", bankPay:34592, headcount:50, agencySpend:500000, premium:40, displacement:num(displacement) }]);
+  const addGroup=()=>setGroups(gs=>[...gs,{ id:"g"+Date.now(), role:"New staff group", band:"Band 5", pillBg:"#E8FAF6", pillText:"#0F4146", bankPay:34592, headcount:50, agencySpend:500000 }]);
   const removeGroup=i=>setGroups(gs=>gs.length>1?gs.filter((_,j)=>j!==i):gs);
   const st=stance(displacement);
   const maxSaving=Math.max(...r.rows.map(x=>x.saving),1);
@@ -454,7 +461,7 @@ function App(){
         doc.autoTable({ startY:y+2, head:[["Staff group","Agency spend","Duties displaced","Cash saving"]], body:r.rows.map(x=>[x.role,fmt(x.spend),fmtNum(x.displaced),fmt(x.saving)]),
           styles:{fontSize:9}, headStyles:{fillColor:[27,43,75]}, margin:{left:14,right:14} }); y=doc.lastAutoTable.finalY+8; }
       doc.setFontSize(8); doc.setTextColor(120,130,150);
-      doc.text(doc.splitTextToSize("Indicative only. Cash saving = agency premium displaced when improved bank utilisation moves duties off agency; it excludes the cost of the bank shifts themselves (capacity, shown separately). 2025/26 NHS AfC midpoints; conservative, editable assumptions. Pilot figures are from 2 sites in a 4-trust programme, anonymised pending client sign-off, and are not solely attributable to the platform.",182),14,y);
+      doc.text(doc.splitTextToSize("Indicative only. Cash saving = agency premium displaced when improved bank utilisation moves duties off agency; it excludes the cost of the bank shifts themselves (capacity, shown separately). 2026/27 NHS AfC midpoints; conservative, editable assumptions. Pilot figures are from 2 sites in a 4-trust programme, anonymised pending client sign-off, and are not solely attributable to the platform.",182),14,y);
       doc.save("smart-match-roi-estimate.pdf");
     } finally { setPdfBusy(false); }
   }
@@ -507,9 +514,10 @@ function App(){
             </div>
             <div className="params-grid" style={{marginTop:12}}>
               <div className="field">
-                <label>Modelling stance — {displacement}% <InfoTip text="Share of baseline agency duties that improved bank utilisation displaces. Conservative by default; the programme's 26% (one site) is the observed upper end."/></label>
-                <input type="range" min="5" max="30" step="1" value={displacement} onChange={e=>{const v=num(e.target.value); setDisp(v); setGroups(gs=>gs.map(g=>({...g,displacement:v})));}} aria-valuetext={displacement+"% — "+st.key}/>
-                <div className="slider-ctx"><span>5% — conservative</span><span>30% — optimistic</span></div>
+                <label>Modelling stance — {displacement}% · {st.key} <InfoTip text="Share of current agency usage that improved bank utilisation moves to bank. Driven by the Smart Match pilot — agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable, so three stances are offered; public/self-serve defaults to Conservative."/></label>
+                <div className="stance-btns">{[["Conservative",13],["Pilot",26],["Optimistic",35]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
+                <input type="range" min="8" max="40" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-valuetext={displacement+"% — "+st.key}/>
+                <div className="slider-ctx"><span>8% conservative</span><span>26% pilot</span><span>40% optimistic</span></div>
               </div>
               <div style={{alignSelf:"center"}}><div className="disp-note" style={{marginTop:0,background:st.bg,color:st.color}}>{st.note}</div></div>
             </div>
@@ -527,7 +535,7 @@ function App(){
             <h3>How to use the detailed calculator</h3>
             <div className="inst-steps">
               <div className="inst-step"><div className="inst-num">1</div><p><strong>Pick your organisation type, or build your own.</strong> Set each group's headcount, <strong>annual agency spend</strong> (the anchor for the saving) and pay — add or remove staff groups as needed.</p></div>
-              <div className="inst-step"><div className="inst-num">2</div><p><strong>Set each group's agency premium</strong> (nursing ~40%, medics ~100% — contested, use your own) and the org-wide <strong>displacement stance</strong>. Optionally add admin and recruitment levers.</p></div>
+              <div className="inst-step"><div className="inst-num">2</div><p><strong>Set the agency premium once</strong> (default 20%, the official average — contested, so use your own rate) and pick a <strong>displacement stance</strong> (Conservative / Pilot / Optimistic). Optionally add admin and recruitment levers.</p></div>
               <div className="inst-step"><div className="inst-num">3</div><p><strong>Read the co-headlines:</strong> net annual cash saving and admin time saved per week, with payback. Capacity (temp duties filled) is shown separately and excluded from the saving.</p></div>
             </div>
           </div>
@@ -548,10 +556,8 @@ function App(){
                 <div className="inputs-grid">
                   <Field label="Bank headcount" value={g.headcount} min="0" onChange={v=>setG(i,"headcount",v)}/>
                   <Field label="Annual agency spend" prefix="£" value={g.agencySpend} min="0" step={50000} onChange={v=>setG(i,"agencySpend",v)} info="Yearly agency spend for this group — the anchor for the saving." hint="The anchor for the saving"/>
-                  <Field label="Bank pay (£/yr)" value={g.bankPay} min="0" step={500} onChange={v=>setG(i,"bankPay",v)} info="Actual bank rate preferred; or pick an AfC band below (2026/27 midpoints). Affects duty counts, not the cash headline."/>
+                  <Field label="Bank pay (£/yr)" value={g.bankPay} min="0" step={500} onChange={v=>setG(i,"bankPay",v)} info="Actual bank rate preferred; or pick an AfC band below (2026/27 midpoints). Different pay per group is what makes each column's saving differ."/>
                   <div className="field"><label>AfC band — auto-fills pay</label><select className="grp-band" value={AFC_BANDS.some(x=>x[1]===g.bankPay)?g.bankPay:""} onChange={e=>{const val=e.target.value; if(val){const bd=AFC_BANDS.find(x=>String(x[1])===val); setG(i,"bankPay",num(val)); if(bd) setG(i,"band",bd[0]);}}}><option value="">Custom / typed</option>{AFC_BANDS.map(([lbl,val])=>(<option key={lbl} value={val}>{lbl} — £{val.toLocaleString("en-GB")}</option>))}</select></div>
-                  <Field label="Agency premium (%)" value={g.premium} min="0" max="200" step={5} onChange={v=>setG(i,"premium",v)} info="Agency cost above THIS group's bank rate. Nursing ~35–50%, medics ~80–120% (contested — use your own rate)."/>
-                  <Field label="Displacement (%)" value={g.displacement} min="0" max="60" step={1} onChange={v=>setG(i,"displacement",v)} info="Share of this group's agency duties that improved bank utilisation moves to bank."/>
                 </div>
               </div>
             ))}
@@ -561,11 +567,12 @@ function App(){
           <div className="section">
             <div className="step-label"><div className="step-num">2</div><h2>Agency parameters</h2></div>
             <div className="params-grid">
-              <div className="field"><label>Agency premium <InfoTip text="The agency premium is now set per staff group above, since it varies so much by type."/></label><div className="disp-note" style={{marginTop:0,background:C.navyLight,color:C.textMid}}>Set <b>per staff group</b> above — nursing ~40%, medics ~100%. (HoC ~20% average is contested; use your own rates.)</div></div>
+              <Field label="Agency premium over bank (%)" value={premium} min="0" max="60" step={1} onChange={v=>setPremium(num(v,20))} info="A single agency-over-bank premium (House of Commons Library ~20% average). Contested at shift level — REC data show NHS bank can cost more than capped agency in hard-to-fill roles. Use your trust's actual rate where possible; applies across all groups." hint="Default 20% · official average · editable · contested"/>
               <div className="field">
-                <label>Displacement stance — {displacement}% <InfoTip text="Share of your baseline agency duties that improved bank utilisation moves to bank. Conservative by default; the programme's 26% (one site) is the observed upper end, partly attributable to other factors."/></label>
-                <input type="range" min="5" max="30" step="1" value={displacement} onChange={e=>{const v=num(e.target.value); setDisp(v); setGroups(gs=>gs.map(g=>({...g,displacement:v})));}} aria-valuetext={displacement+"% — "+st.key}/>
-                <div className="slider-ctx"><span>5% — conservative</span><span>30% — optimistic</span></div>
+                <label>Displacement stance — {displacement}% · {st.key} <InfoTip text="Share of your baseline agency usage that improved bank utilisation moves to bank. Driven by the Smart Match pilot — agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; the commercial variant can show the Pilot case with a rep to frame the caveats."/></label>
+                <div className="stance-btns">{[["Conservative",13],["Pilot",26],["Optimistic",35]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
+                <input type="range" min="8" max="40" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-valuetext={displacement+"% — "+st.key}/>
+                <div className="slider-ctx"><span>8% conservative</span><span>26% pilot</span><span>40% optimistic</span></div>
               </div>
             </div>
             <div className="disp-note" style={{background:st.bg,color:st.color}}>{st.note}</div>
