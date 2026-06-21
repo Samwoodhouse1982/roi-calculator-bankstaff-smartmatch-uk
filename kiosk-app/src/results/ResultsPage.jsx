@@ -130,6 +130,29 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
       <KpiTile iconKey="check" label="Net saving" value={<AnimVal value={r.netSaving} format={fmtK} />} sub="after platform cost" />
     </div>
 
+    {/* Per-group breakdown (detailed model only — carries rows) */}
+    {r.rows && <Card style={{ marginBottom: 28 }}>
+      <CTitle iconKey="dollar">Cash saving by staff group</CTitle>
+      {(() => { const mx = Math.max(...r.rows.map(x => x.saving), 1); return r.rows.map(x => (
+        <div key={x.id} style={{ marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6, gap: 12 }}>
+            <span style={{ fontSize: F.small, color: C.textMid }}>{x.role}{r.perGroupPremium ? ` · ${x.premiumPct}% premium` : ""}</span>
+            <span style={{ fontSize: F.body, fontWeight: 800, color: C.accent, whiteSpace: "nowrap" }}>{fmtK(x.saving)}</span>
+          </div>
+          <div style={{ height: 14, borderRadius: 7, background: C.surface2, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: Math.round((x.saving / mx) * 100) + "%", background: `linear-gradient(90deg, ${C.accentMid}, ${C.accent})`, borderRadius: 7, transition: "width .6s ease" }} />
+          </div>
+        </div>
+      )); })()}
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 18, paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
+        <span style={{ fontSize: F.body, fontWeight: 700, color: C.textMid }}>Total agency premium displaced</span>
+        <span style={{ fontSize: F.h3, fontWeight: 800, color: C.accent }}>{fmt(r.totSaving)}</span>
+      </div>
+      <div style={{ marginTop: 10, fontSize: F.tiny, color: C.textMuted }}>
+        Anchored to {fmt(r.totSpend)} total agency spend across {r.rows.length} staff group{r.rows.length === 1 ? "" : "s"}{r.recruitSaving > 0 ? ` · incl. ${fmtK(r.recruitSaving)} recruitment waste recovered` : ""}.
+      </div>
+    </Card>}
+
     {/* Modelling-stance slider (live) */}
     <Card style={{ marginBottom: 28 }}>
       <CTitle iconKey="search">Modelling stance</CTitle>
@@ -233,7 +256,7 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
             <strong style={{ color: C.text }}>Admin time saving</strong> uses a per-manager model: each roster manager recovers a conservative <strong style={{ color: C.text }}>1 hour/day</strong> across 225 working days, valued at a loaded £18/hour (the client's 2.5 hours/day would be an optimistic upper bound). The same hours feed the "time saved per week" co-headline.
           </p>
           <p>
-            Pay assumptions use <strong style={{ color: C.text }}>2026/27 NHS Agenda for Change midpoints</strong> (+3.3%; a band-mix weighted blended bank pay), 1,957.5 AfC hours/year, 8-hour shifts and a 20% bank on-cost (on-cost affects duty counts, not the cash headline). Defaults are deliberately conservative.
+            Pay assumptions use <strong style={{ color: C.text }}>2026/27 NHS Agenda for Change midpoints</strong> (+3.3%; {r.rows ? "per staff group" : "a band-mix weighted blended bank pay"}), 1,957.5 AfC hours/year, 8-hour shifts and a 20% bank on-cost (on-cost affects duty counts, not the cash headline). Defaults are deliberately conservative.
           </p>
           <p style={{ marginBottom: 0 }}>
             Outputs are <strong style={{ color: C.text }}>indicative</strong> and are recomputed live as you move the modelling-stance slider above.

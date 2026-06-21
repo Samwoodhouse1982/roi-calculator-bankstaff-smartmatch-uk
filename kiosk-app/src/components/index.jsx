@@ -27,9 +27,9 @@ const STEP_CONTEXT = [
   { title: "Why this matters", text: "The people who book, chase and reconcile temporary shifts spend real hours on admin. Smart Match gives a conservative slice of that time back per person — which we value as cash and also show as hours saved per week." },
 ];
 
-export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate, onStartOver }) {
+export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate, onStartOver, context = STEP_CONTEXT }) {
   if (step >= totalSteps - 1) return null;
-  const ctx = STEP_CONTEXT[step];
+  const ctx = context[step];
   return <div style={{ borderTop: `1px solid ${C.border}` }}>
     {ctx && <div style={{ margin: "20px 56px 0", padding: "16px 20px", background: `${C.accent}08`, border: `1px solid ${C.accent}20`, borderRadius: 14, display: "flex", gap: 12, alignItems: "flex-start" }}>
       <span style={{ flexShrink: 0, marginTop: 1 }}><Icon name="lightbulb" size={20} stroke={C.accent} /></span>
