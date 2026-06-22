@@ -249,7 +249,7 @@ const ADMIN_WORKING_DAYS = 225;
 const ADMIN_LOADED_HOURLY = 18;
 /* Simple variant embedded defaults */
 const SIMPLE_SHIFTS_PER_WORKER_YR = 60;   // bank work is ad-hoc/top-up, not full-time
-const SIMPLE_BLENDED_BANK_PAY = 33000;    // AfC band-mix weighted midpoint
+const SIMPLE_BLENDED_BANK_PAY = 34000;    // AfC band-mix weighted midpoint (2026/27, +3.3%)
 const RECRUIT_COST_PER_WORKER = 1000;     // recruit + onboard a bank worker
 const RECRUIT_RECOVERY_RATE = 0.10;       // share recovered by activating idle capacity
 
@@ -270,9 +270,9 @@ const PRESETS = {
 const applyPreset = scale => STAFF_GROUPS.map(g=>({ ...g, headcount:Math.round(g.headcount*scale), agencySpend:Math.round(g.agencySpend*scale/1000)*1000 }));
 
 function stance(d){
-  if (d<=12) return { key:"Conservative", color:C.navy, bg:C.navyLight, note:"Conservative: only a small share of agency shifts is assumed to move to bank. Closest to a defensible business-case default." };
-  if (d<=22) return { key:"Moderate", color:C.navyMid, bg:C.navyLight, note:"Moderate: a meaningful share of agency shifts moves to bank as utilisation improves. Reasonable where agency dependency is well documented." };
-  return { key:"Optimistic", color:"#0F766E", bg:C.tealLight, note:"Optimistic: approaches the programme's observed upper end (one site, 26% relative agency-fill reduction). Use only with strong, trust-specific evidence." };
+  if (d<=18) return { key:"Conservative", color:C.navy, bg:C.navyLight, note:"≈13%, about half the pilot's measured effect. The recommended default for public / self-serve use: defensible without trust-specific evidence." };
+  if (d<=30) return { key:"Pilot / Expected", color:"#0F766E", bg:C.tealLight, note:"≈26%, the effect measured at one community site (agency fill 8.1%→6.0%). Single-site and partly attributable, so best framed in a guided conversation." };
+  return { key:"Optimistic", color:C.navyMid, bg:C.navyLight, note:"≈35%, above the pilot result. Use only with strong, trust-specific evidence." };
 }
 
 /* ===== PURE CALC ENGINE (shared by Quick + Detailed + the kiosk variant) ===== */
@@ -376,7 +376,7 @@ function Calibrating(){
 function App(){
   const [mode,setMode] = useState("quick");           // "quick" | "detailed"
   // shared parameters
-  const [premium,setPremium]=useState(20), [displacement,setDisp]=useState(10), [platformCost,setPC]=useState(PLATFORM_COST_DEFAULT);
+  const [premium,setPremium]=useState(20), [displacement,setDisp]=useState(13), [platformCost,setPC]=useState(PLATFORM_COST_DEFAULT);
   const [shiftHours,setSH]=useState(SHIFT_HOURS_DEFAULT), [oncost,setOncost]=useState(BANK_ONCOST_DEFAULT*100);
   const [showAdv,setAdv]=useState(false), [calibrating,setCal]=useState(true);
   const [lead,setLead]=useState({name:"",email:"",org:"",sent:false}), [pdfBusy,setPdfBusy]=useState(false);
@@ -487,9 +487,9 @@ function App(){
             </div>
             <div className="params-grid" style={{marginTop:12}}>
               <div className="field">
-                <label>Modelling stance: {displacement}% <InfoTip text="Share of baseline agency duties that improved bank utilisation displaces. Conservative by default; the programme's 26% (one site) is the observed upper end."/></label>
-                <input type="range" min="5" max="30" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-valuetext={displacement+"%, "+st.key}/>
-                <div className="slider-ctx"><span>5% · conservative</span><span>30% · optimistic</span></div>
+                <label>Modelling stance: {displacement}% <InfoTip text="Share of baseline agency duties that improved bank utilisation displaces. Conservative by default; the programme's 26% (one site) is the measured pilot effect."/></label>
+                <input type="range" min="8" max="40" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-valuetext={displacement+"%, "+st.key}/>
+                <div className="slider-ctx"><span>8% · conservative</span><span>26% · pilot</span><span>40% · optimistic</span></div>
               </div>
               <div style={{alignSelf:"center"}}><div className="disp-note" style={{marginTop:0,background:st.bg,color:st.color}}>{st.note}</div></div>
             </div>
@@ -536,9 +536,9 @@ function App(){
             <div className="params-grid">
               <Field label="Agency premium over bank rate (%)" value={premium} min="0" max="150" step={5} onChange={v=>setPremium(num(v,20))} info="Agency cost above your bank rate. HoC Library cites ~20% average but it's contested at shift level, use your trust's actual rate where possible." hint="Default 20% · nursing 35–50% · medics 80–120%"/>
               <div className="field">
-                <label>Displacement stance: {displacement}% <InfoTip text="Share of your baseline agency duties that improved bank utilisation moves to bank. Conservative by default; the programme's 26% (one site) is the observed upper end, partly attributable to other factors."/></label>
-                <input type="range" min="5" max="30" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-valuetext={displacement+"%, "+st.key}/>
-                <div className="slider-ctx"><span>5% · conservative</span><span>30% · optimistic</span></div>
+                <label>Displacement stance: {displacement}% <InfoTip text="Share of your baseline agency duties that improved bank utilisation moves to bank. Conservative by default; the programme's 26% (one site) is the measured pilot effect, partly attributable to other factors."/></label>
+                <input type="range" min="8" max="40" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-valuetext={displacement+"%, "+st.key}/>
+                <div className="slider-ctx"><span>8% · conservative</span><span>26% · pilot</span><span>40% · optimistic</span></div>
               </div>
             </div>
             <div className="disp-note" style={{background:st.bg,color:st.color}}>{st.note}</div>
