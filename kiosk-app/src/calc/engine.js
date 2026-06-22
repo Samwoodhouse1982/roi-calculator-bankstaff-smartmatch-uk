@@ -10,9 +10,9 @@ export const SIMPLE_BLENDED_BANK_PAY = 34000;    // AfC band-mix weighted midpoi
 export const DEFAULTS = { bankPool: 660, agencyFillRate: 15, numManagers: 12, premium: 20, displacement: 13 };
 
 export function stance(d) {
-  if (d <= 18) return { key: "Conservative", note: "≈13% — about half the pilot's measured effect. The recommended default for public / self-serve use: defensible without trust-specific evidence." };
-  if (d <= 30) return { key: "Pilot / Expected", note: "≈26% — the effect measured at one community site (agency fill 8.1%→6.0%). Single-site and partly attributable, so best framed in a guided conversation." };
-  return { key: "Optimistic", note: "≈35% — above the pilot result. Use only with strong, trust-specific evidence." };
+  if (d <= 18) return { key: "Conservative", note: "≈13%, about half the pilot's measured effect. The recommended default for public / self-serve use: defensible without trust-specific evidence." };
+  if (d <= 30) return { key: "Pilot / Expected", note: "≈26%, the effect measured at one community site (agency fill 8.1%→6.0%). Single-site and partly attributable, so best framed in a guided conversation." };
+  return { key: "Optimistic", note: "≈35%, above the pilot result. Use only with strong, trust-specific evidence." };
 }
 
 export function calc(inp) {
@@ -28,7 +28,7 @@ export function calc(inp) {
   const agencySpend = agencyShifts * agencyShiftCost;
   const displaced = agencyShifts * d;                            // temp duties moved agency -> bank
   const agencySaving = displaced * bankShiftCost * p;            // = displaced × (agency-bank); CASH
-  const timeSavedWeek = numManagers * ADMIN_HRS_PER_DAY * 5;     // co-headline (hours/week) — always shown
+  const timeSavedWeek = numManagers * ADMIN_HRS_PER_DAY * 5;     // co-headline (hours/week), always shown
   const adminSaving = includeAdmin ? numManagers * ADMIN_HRS_PER_DAY * ADMIN_WORKING_DAYS * ADMIN_LOADED_HOURLY : 0;
   const grossBenefit = agencySaving + adminSaving;
   const netSaving = grossBenefit - platformCost;
@@ -55,7 +55,7 @@ export function project(grossAnnual, platformCost = PLATFORM_COST, years = 3) {
 }
 
 /* ============================================================================
-   DETAILED / COMMERCIAL MODEL — per staff group, ported from the web calculator.
+   DETAILED / COMMERCIAL MODEL. Per staff group, ported from the web calculator.
    Same value logic as the simple variant (cash = agency premium displaced), but
    anchored to each group's own agency spend and bank pay. Premium is a single
    official mechanic (20%) by default; an optional per-group override is supported.

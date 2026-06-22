@@ -11,7 +11,7 @@ const WIPE_MS = 700;           // radial wipe duration
 // jarring teal-to-navy snap.
 const SETTLE_DELAY_MS = 900;   // starts before wipe finishes (overlaps the bright peak)
 const SETTLE_MS = 500;         // fade-in duration of the dark overlay
-const TOTAL_LAUNCH_MS = SETTLE_DELAY_MS + SETTLE_MS + 50; // 1450ms — 50ms buffer after settle completes
+const TOTAL_LAUNCH_MS = SETTLE_DELAY_MS + SETTLE_MS + 50; // 1450ms, 50ms buffer after settle completes
 
 export function SplashScreen({ onStart, onAdminReveal }) {
   // Single tap on the RLDatix logo at the bottom reveals the hidden admin stats overlay.
@@ -40,8 +40,8 @@ export function SplashScreen({ onStart, onAdminReveal }) {
     if (launchingRef.current) return; // prevent double-trigger
 
     // Capture button position in two coordinate systems:
-    // (1) Canvas-internal coords (1080×1920 space) — for particle target
-    // (2) CSS pixel coords relative to the container — for the radial wipe overlay
+    // (1) Canvas-internal coords (1080×1920 space), for particle target
+    // (2) CSS pixel coords relative to the container, for the radial wipe overlay
     if (buttonRef.current && canvasRef.current && containerRef.current) {
       const bRect = buttonRef.current.getBoundingClientRect();
       const cRect = canvasRef.current.getBoundingClientRect();
@@ -107,7 +107,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
         phase: Math.random() * Math.PI * 2,
         waveAmp: Math.random() * 40 + 10,
         waveSpeed: Math.random() * 0.01 + 0.005,
-        // Launch animation fields — captured at launch start
+        // Launch animation fields, captured at launch start
         startX: 0,
         startY: 0,
         captured: false,
@@ -127,7 +127,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
       if (isLaunching) {
         const elapsed = performance.now() - launchStartRef.current;
         convergeProgress = Math.min(1, elapsed / CONVERGE_MS);
-        // Ease-in cubic: starts slow, accelerates strongly — like a gravitational pull
+        // Ease-in cubic: starts slow, accelerates strongly, like a gravitational pull
         convergeProgress = convergeProgress * convergeProgress * convergeProgress;
       }
 
@@ -246,7 +246,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
           fontSize: 28, fontWeight: 400, color: 'rgba(255,255,255,0.80)',
           lineHeight: 1.6, margin: '0 auto 75px', maxWidth: 760,
         }}>
-          See the cash your trust could release by improving bank-staff utilisation — moving temporary work off expensive agency and onto your own bank.
+          See the cash your trust could release by improving bank-staff utilisation, moving temporary work off expensive agency and onto your own bank.
         </p>
 
         <button ref={buttonRef} onClick={handleStart} style={{
@@ -297,7 +297,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
         opacity: launching ? 0.2 : 1,
       }}>Smart Match · Bank-Staff Utilisation ROI</div>
 
-      {/* Radial wipe overlay — expands from the button position to cover the screen.
+      {/* Radial wipe overlay, expands from the button position to cover the screen.
           Becomes visible after WIPE_DELAY_MS (overlapping the tail of particle convergence),
           so users see particles arriving AND energy releasing in one continuous motion.
           Final size 4400px covers all corners of 1080×1920 even at maximum offset.
@@ -319,7 +319,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
         }} />
       )}
 
-      {/* Settle overlay — a uniform calculator-background-colour layer that fades in
+      {/* Settle overlay, a uniform calculator-background-colour layer that fades in
           on top of the wipe, so the splash→calculator swap is invisible. */}
       {launching && (
         <div style={{

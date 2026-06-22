@@ -76,7 +76,7 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
   if (!r) return null;
   const st = stance(displacement);
   const [rampYears, setRampYears] = useState(3);
-  const fmtMonths = m => m == null ? "—" : `${m.toFixed(1)} mo`;
+  const fmtMonths = m => m == null ? "n/a" : `${m.toFixed(1)} mo`;
   const fmtPct1 = v => `${(Math.round(v * 10) / 10).toLocaleString("en-GB")}%`;
 
   return <div style={{ animation: "rfade .5s ease-out" }}>
@@ -113,7 +113,7 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
 
     {/* Guardrail */}
     {r.exceedsSpend && <div style={{ marginBottom: 14, padding: "14px 20px", background: C.accentSoft, border: `1px solid ${C.accent}`, borderRadius: 14, fontSize: F.small, color: C.text, lineHeight: 1.5 }}>
-      <strong>Check your inputs.</strong> The modelled saving exceeds your estimated agency spend — try a lower displacement or a lower agency fill rate.
+      <strong>Check your inputs.</strong> The modelled saving exceeds your estimated agency spend. Try a lower displacement or a lower agency fill rate.
     </div>}
 
     {/* Secondary row */}
@@ -131,13 +131,13 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
 
     {/* KPI tiles */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 28 }}>
-      <KpiTile iconKey="dollar" label="Agency premium displaced" value={<AnimVal value={r.agencySaving} format={fmtK} />} sub="hard cash — agency vs bank gap" />
+      <KpiTile iconKey="dollar" label="Agency premium displaced" value={<AnimVal value={r.agencySaving} format={fmtK} />} sub="hard cash: agency vs bank gap" />
       <KpiTile iconKey="clock" label="Admin time saving" value={<AnimVal value={r.adminSaving} format={fmtK} />} sub="roster team time, valued" />
       <KpiTile iconKey="calendar" label="Payback" value={fmtMonths(r.paybackMonths)} sub="platform cost ÷ monthly benefit" />
       <KpiTile iconKey="check" label="Net saving" value={<AnimVal value={r.netSaving} format={fmtK} />} sub="after platform cost" />
     </div>
 
-    {/* Per-group breakdown (detailed model only — carries rows) */}
+    {/* Per-group breakdown (detailed model only, carries rows) */}
     {r.rows && <Card style={{ marginBottom: 28 }}>
       <CTitle iconKey="dollar">Cash saving by staff group</CTitle>
       {(() => { const mx = Math.max(...r.rows.map(x => x.saving), 1); return r.rows.map(x => (
@@ -191,7 +191,7 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
       </div>
     </Card>
 
-    {/* Savings over time — phased ramp (45/75/100 over 3yr) */}
+    {/* Savings over time. Phased ramp (45/75/100 over 3yr) */}
     <Card style={{ marginBottom: 28 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
         <CTitle iconKey="calendar">Savings over time</CTitle>
@@ -226,23 +226,23 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
             </div>
           </div>
           <div style={{ marginTop: 16, fontSize: F.small, color: C.textMuted, fontStyle: "italic", lineHeight: 1.6 }}>
-            Benefits ramp as bank utilisation improves — modelled at {proj.pcts.map(p => Math.round(p * 100) + "%").join(" → ")} of the annual run-rate, with the platform cost recurring in full each year. Indicative.
+            Benefits ramp as bank utilisation improves, modelled at {proj.pcts.map(p => Math.round(p * 100) + "%").join(" → ")} of the annual run-rate, with the platform cost recurring in full each year. Indicative.
           </div>
         </div>;
       })()}
     </Card>
 
-    {/* Capacity panel — explicitly NOT a cash saving */}
+    {/* Capacity panel. Explicitly NOT a cash saving */}
     <Card style={{ marginBottom: 28, borderLeft: `3px solid ${C.amber}` }}>
-      <CTitle iconKey="calendar" color={C.amber}>Capacity — not a cash saving</CTitle>
+      <CTitle iconKey="calendar" color={C.amber}>Capacity: not a cash saving</CTitle>
       <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6, marginBottom: 16 }}>
-        Filling more shifts from your own bank is real operational value — but it is coverage, not cash. We keep it well away from the saving above.
+        Filling more shifts from your own bank is real operational value, but it is coverage, not cash. We keep it well away from the saving above.
       </div>
       <Row label="Additional temp duties / yr filled by your own bank (off agency)" value={<AnimVal value={r.displaced} format={fmtNum} />} />
       <Row label="Bank backfill cost (spend, not saving)" value={<AnimVal value={r.capacityValue} format={fmtK} />} />
       <Row label="Agency reliance reduced" value={<>{fmtPct1(r.fillNow)} → <span style={{ color: C.good, fontWeight: 800 }}>{fmtPct1(r.fillAfter)}</span></>} />
       <div style={{ marginTop: 14, fontSize: F.small, color: C.textMuted, fontStyle: "italic", lineHeight: 1.6 }}>
-        This is where "utilisation uplift" belongs — coverage, not cash.
+        This is where "utilisation uplift" belongs: coverage, not cash.
       </div>
     </Card>
 
@@ -257,7 +257,7 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
             agency_saving = displaced_duties × bank_shift_cost × premium
           </div>
           <p>
-            Filling a bank shift is itself <strong style={{ color: C.text }}>expenditure</strong> — only the gap between an agency shift and the equivalent bank shift (the premium) is cash released. The premium here is <strong style={{ color: C.text }}>20%</strong>, a contested figure at shift level; the model is most credible on your own trust's rates.
+            Filling a bank shift is itself <strong style={{ color: C.text }}>expenditure</strong>; only the gap between an agency shift and the equivalent bank shift (the premium) is cash released. The premium here is <strong style={{ color: C.text }}>20%</strong>, a contested figure at shift level; the model is most credible on your own trust's rates.
           </p>
           <p>
             <strong style={{ color: C.text }}>Admin time saving</strong> uses a per-manager model: each roster manager recovers a conservative <strong style={{ color: C.text }}>1 hour/day</strong> across 225 working days, valued at a loaded £18/hour (the client's 2.5 hours/day would be an optimistic upper bound). The same hours feed the "time saved per week" co-headline.
@@ -285,7 +285,7 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
         <strong style={{ color: C.text }}>Strategically</strong>, releasing cash and capacity from temporary staffing supports the <strong style={{ color: C.text }}>NHS 10 Year Plan</strong> and Workforce Paper, and the <strong style={{ color: C.text }}>Staff Health &amp; Wellbeing CQUIN</strong>.
       </div>
       <div style={{ marginTop: 12, fontSize: F.tiny, color: C.textMuted, fontStyle: "italic", lineHeight: 1.6 }}>
-        Staff experience — fewer last-minute gaps, more choice for your own people — is a real benefit, but we keep it as a qualitative note and out of the ROI.
+        Staff experience (fewer last-minute gaps, more choice for your own people) is a real benefit, but we keep it as a qualitative note and out of the ROI.
       </div>
     </Card>
 

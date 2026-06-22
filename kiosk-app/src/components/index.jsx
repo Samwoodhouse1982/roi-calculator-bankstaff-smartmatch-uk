@@ -20,11 +20,11 @@ export function StepIndicator({ steps, current, onJump }) {
 
 const STEP_CONTEXT = [
   // 0 - Your bank
-  { title: "Why this matters", text: "The size of your staff bank sets the scale of the opportunity. Better utilisation of this pool is the mechanism that moves temporary work off agency and onto your own bank — and the agency premium you displace is the cash saving." },
+  { title: "Why this matters", text: "The size of your staff bank sets the scale of the opportunity. Better utilisation of this pool is the mechanism that moves temporary work off agency and onto your own bank, and the agency premium you displace is the cash saving." },
   // 1 - Agency
   { title: "Why this matters", text: "Your current agency fill rate tells us how much temporary work is being paid at a premium today. Each agency shift costs more than the equivalent bank shift; improving utilisation displaces some of that premium back into your budget." },
   // 2 - Your team
-  { title: "Why this matters", text: "The people who book, chase and reconcile temporary shifts spend real hours on admin. Smart Match gives a conservative slice of that time back per person — which we value as cash and also show as hours saved per week." },
+  { title: "Why this matters", text: "The people who book, chase and reconcile temporary shifts spend real hours on admin. Smart Match gives a conservative slice of that time back per person, which we value as cash and also show as hours saved per week." },
 ];
 
 export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate, onStartOver, context = STEP_CONTEXT }) {

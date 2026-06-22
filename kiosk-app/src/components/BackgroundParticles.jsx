@@ -13,7 +13,7 @@ import React, { useEffect, useRef } from 'react';
  *
  * Particle density (particles per million CSS pixels) is held constant when
  * the canvas resizes, so a tall page has proportionally more particles than
- * a short page — keeps the visual texture consistent rather than thinning
+ * a short page; keeps the visual texture consistent rather than thinning
  * out on long content.
  *
  * Usage:
@@ -28,7 +28,7 @@ import React, { useEffect, useRef } from 'react';
  * child needs an explicit z-index.
  */
 
-// Particles per million CSS pixels — tuned to ~68 particles on a 1080×1920
+// Particles per million CSS pixels, tuned to ~68 particles on a 1080×1920
 // viewport, scaling proportionally on longer pages. Capped to avoid runaway
 // density on extreme viewports.
 const PARTICLE_DENSITY = 68 / (1080 * 1920);
@@ -66,7 +66,7 @@ export function BackgroundParticles() {
 
     const setDimensionsAndParticles = () => {
       const rect = canvas.getBoundingClientRect();
-      // Bail if the canvas isn't laid out yet (rect is 0×0) — ResizeObserver
+      // Bail if the canvas isn't laid out yet (rect is 0×0), ResizeObserver
       // will fire again once the parent has measurable dimensions.
       if (rect.width === 0 || rect.height === 0) return;
 

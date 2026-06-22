@@ -6,7 +6,7 @@ import { Icon } from '../components/Icons';
 import { PRESETS, AFC_BANDS, stance } from '../calc/engine';
 
 /* ────────────────────────────────────────────────────────────────────────
-   Detailed / commercial wizard — three touch steps then the shared results.
+   Detailed / commercial wizard: three touch steps then the shared results.
    Big sliders/steppers for quick setting; tap any value to type it exactly
    on the on-screen keypad (BigNumberField).
    ──────────────────────────────────────────────────────────────────────── */
@@ -28,17 +28,17 @@ function StanceButtons({ displacement, setDisplacement }) {
   </div>;
 }
 
-// STEP D0 — Organisation profile
+// STEP D0. Organisation profile
 export function OrgStep({ preset, onPickPreset }) {
   const opts = Object.entries(PRESETS).map(([k, p]) => ({ key: k, label: p.label, desc: p.desc, iconKey: p.iconKey }));
   return <div>
     <SectionTitle number={1}>Your organisation</SectionTitle>
-    <Lead>Pick the profile that best fits your trust. We'll pre-fill typical staff groups, headcounts and agency spend — you refine them on the next screen.</Lead>
+    <Lead>Pick the profile that best fits your trust. We'll pre-fill typical staff groups, headcounts and agency spend. You refine them on the next screen.</Lead>
     <BigChoice options={opts} value={preset} onChange={onPickPreset} />
   </div>;
 }
 
-// STEP D1 — Staff groups & agency exposure
+// STEP D1. Staff groups & agency exposure
 export function GroupsStep({ groups, setGroups, perGroupPremium, premium }) {
   const setG = (i, key, val) => setGroups(gs => gs.map((g, j) => j === i ? { ...g, [key]: val } : g));
   const removeGroup = (i) => setGroups(gs => gs.length > 1 ? gs.filter((_, j) => j !== i) : gs);
@@ -55,20 +55,20 @@ export function GroupsStep({ groups, setGroups, perGroupPremium, premium }) {
         <button onClick={() => removeGroup(i)} disabled={groups.length <= 1} style={{ width: 50, height: 50, borderRadius: 12, border: `1px solid ${C.border}`, background: C.surface2, color: groups.length <= 1 ? C.textMuted : C.textMid, fontSize: 28, cursor: groups.length <= 1 ? "default" : "pointer", fontFamily: "inherit", opacity: groups.length <= 1 ? 0.4 : 1 }}>×</button>
       </div>
       <BigNumberField label="Bank headcount" value={g.headcount} min={0} max={2000} step={10} onChange={v => setG(i, "headcount", v)} format={fmtNum} />
-      <BigNumberField label="Annual agency spend" prefix="£" value={g.agencySpend} min={0} max={12000000} step={50000} onChange={v => setG(i, "agencySpend", v)} format={fmtK} tip="Yearly agency spend for this group — the anchor for the saving." />
+      <BigNumberField label="Annual agency spend" prefix="£" value={g.agencySpend} min={0} max={12000000} step={50000} onChange={v => setG(i, "agencySpend", v)} format={fmtK} tip="Yearly agency spend for this group, the anchor for the saving." />
       <BigNumberField label="Bank pay (£/yr)" prefix="£" value={g.bankPay} min={18000} max={90000} step={500} onChange={v => setG(i, "bankPay", v)} format={fmt} tip="Actual bank rate preferred; or tap an AfC band below (2026/27 midpoints). Different pay per group is what makes each saving differ." />
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 2 }}>
         {AFC_BANDS.map(([lbl, val]) => { const on = g.bankPay === val; return <button key={lbl} onClick={() => { setG(i, "bankPay", val); setG(i, "band", lbl); }} style={{ padding: "10px 14px", borderRadius: 10, border: on ? `2px solid ${C.accent}` : `1px solid ${C.border}`, background: on ? C.accentPale : C.surface2, color: on ? C.accent : C.textMid, fontSize: F.tiny, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>{lbl}</button>; })}
       </div>
       {perGroupPremium && <div style={{ marginTop: 24 }}>
-        <TouchSlider label="Agency premium (%)" value={g.premium != null ? g.premium : premium} min={0} max={120} step={1} onChange={v => setG(i, "premium", v)} format={v => v + "%"} tip="This group's agency-over-bank premium. Nursing ~35–50%, medics ~80–120% (contested — use your own)." />
+        <TouchSlider label="Agency premium (%)" value={g.premium != null ? g.premium : premium} min={0} max={120} step={1} onChange={v => setG(i, "premium", v)} format={v => v + "%"} tip="This group's agency-over-bank premium. Nursing ~35–50%, medics ~80–120% (contested, use your own)." />
       </div>}
     </Card>)}
     <button onClick={addGroup} style={{ width: "100%", padding: 22, borderRadius: 18, border: `2px dashed ${C.accent}`, background: C.accentSoft, color: C.accent, fontSize: F.body, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", marginTop: 2 }}>+ Add a staff group</button>
   </div>;
 }
 
-// STEP D2 — Assumptions & optional levers
+// STEP D2. Assumptions & optional levers
 export function AssumptionsStep({ premium, setPremium, perGroupPremium, setPerGroupPremium, displacement, setDisplacement,
                                   platformCost, setPlatformCost, fillRateNow, setFillRateNow, admin, setAdmin, recruit, setRecruit }) {
   const st = stance(displacement);
@@ -78,8 +78,8 @@ export function AssumptionsStep({ premium, setPremium, perGroupPremium, setPerGr
 
     <Card style={{ marginBottom: 18 }}>
       <CTitle iconKey="dollar">Agency premium</CTitle>
-      <TouchSlider label={perGroupPremium ? "Default agency premium (%)" : "Agency premium over bank (%)"} value={premium} min={0} max={60} step={1} onChange={setPremium} format={v => v + "%"} tip="House of Commons Library ~20% average; contested at shift level — use your own rate. Applies across all groups unless you set it per group." />
-      <ToggleRow on={perGroupPremium} onToggle={setPerGroupPremium} label="Set the agency premium per staff group" tip="Off by default — one official ~20% premium across all groups (the defensible default). Tick to override per group on the staff-groups screen (e.g. higher for medics), where you have trust-specific rates." />
+      <TouchSlider label={perGroupPremium ? "Default agency premium (%)" : "Agency premium over bank (%)"} value={premium} min={0} max={60} step={1} onChange={setPremium} format={v => v + "%"} tip="House of Commons Library ~20% average; contested at shift level, use your own rate. Applies across all groups unless you set it per group." />
+      <ToggleRow on={perGroupPremium} onToggle={setPerGroupPremium} label="Set the agency premium per staff group" tip="Off by default, one official ~20% premium across all groups (the defensible default). Tick to override per group on the staff-groups screen (e.g. higher for medics), where you have trust-specific rates." />
     </Card>
 
     <Card style={{ marginBottom: 18 }}>
@@ -109,7 +109,7 @@ export function AssumptionsStep({ premium, setPremium, perGroupPremium, setPerGr
       <ToggleRow on={admin.enabled} onToggle={v => setAdmin(a => ({ ...a, enabled: v }))} label="Include admin time saving in the cash total" tip="On by default. Time released for roster managers, bank admins and temp/agency managers via self-booking automation. The hours-per-week figure is always shown; with this on, its cash value is also added to the headline. Turn off to show the agency saving alone." />
       {admin.enabled && <div style={{ marginTop: 20 }}>
         <Stepper label="Admin / roster managers" value={admin.managers} min={0} max={80} step={1} onChange={v => setAdmin(a => ({ ...a, managers: v }))} />
-        <TouchSlider label="Hours saved / day each" value={admin.hoursPerDay} min={0} max={4} step={0.25} onChange={v => setAdmin(a => ({ ...a, hoursPerDay: v }))} format={v => v + " h"} tip="Client suggested 2.5 h/day — optimistic. Default 1.0 h is conservative." />
+        <TouchSlider label="Hours saved / day each" value={admin.hoursPerDay} min={0} max={4} step={0.25} onChange={v => setAdmin(a => ({ ...a, hoursPerDay: v }))} format={v => v + " h"} tip="Client suggested 2.5 h/day (optimistic). Default 1.0 h is conservative." />
         <TouchSlider label="Loaded hourly rate" value={admin.loadedHourly} min={0} max={60} step={1} onChange={v => setAdmin(a => ({ ...a, loadedHourly: v }))} format={fmt} />
       </div>}
     </Card>

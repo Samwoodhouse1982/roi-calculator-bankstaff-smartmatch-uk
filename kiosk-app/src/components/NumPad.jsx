@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { C, F } from '../theme';
 import { InfoTip } from './index';
 
-/* On-screen numeric keypad (modal) — lets a user type an exact figure on a
+/* On-screen numeric keypad (modal): lets a user type an exact figure on a
    touchscreen with no hardware keyboard. */
 export function NumPad({ title, initial, prefix = "", onConfirm, onCancel }) {
   const [v, setV] = useState(initial != null && initial !== "" ? String(Math.round(initial)) : "");

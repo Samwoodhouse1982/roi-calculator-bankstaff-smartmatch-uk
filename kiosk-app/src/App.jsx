@@ -276,8 +276,8 @@ function CalibratingScreen({ onDone }) {
 
 const DETAILED_STEPS = ["Organisation", "Staff groups", "Assumptions", "Results"];
 const DETAILED_CONTEXT = [
-  { title: "Why this matters", text: "Your organisation type sets a realistic starting shape — typical staff groups, bank headcounts and agency spend — which you then refine to your own trust on the next screen." },
-  { title: "Why this matters", text: "Agency spend per staff group is the anchor for the saving. The cash released is the agency premium you stop paying when improved bank utilisation covers those duties — not the whole shift." },
+  { title: "Why this matters", text: "Your organisation type sets a realistic starting shape (typical staff groups, bank headcounts and agency spend) which you then refine to your own trust on the next screen." },
+  { title: "Why this matters", text: "Agency spend per staff group is the anchor for the saving. The cash released is the agency premium you stop paying when improved bank utilisation covers those duties, not the whole shift." },
   { title: "Why this matters", text: "A single official ~20% premium and a conservative displacement stance keep the headline defensible. Admin and recruitment levers are optional and off until you can substantiate them." },
 ];
 
@@ -295,7 +295,7 @@ function ModeChooser({ onChoose }) {
           </p>
         </div>
         <BigChoice value={null} onChange={onChoose} options={[
-          { key: "quick", iconKey: "clock", label: "Quick estimate", desc: "Three simple inputs — bank pool, agency reliance, roster team. A fast, conservative headline in under a minute. Ideal for events and a first look.", tag: "Best for operational managers" },
+          { key: "quick", iconKey: "clock", label: "Quick estimate", desc: "Three simple inputs: bank pool, agency reliance, roster team. A fast, conservative headline in under a minute. Ideal for events and a first look.", tag: "Best for operational managers" },
           { key: "detailed", iconKey: "network", label: "Detailed / commercial", desc: "Model agency spend by staff group, with per-group pay and AfC bands, an editable premium and optional admin & recruitment levers. For a guided commercial conversation.", tag: "Best for Finance leads & Workforce Directors" },
         ]} />
       </div>
