@@ -62,25 +62,66 @@ export function project(grossAnnual, platformCost = PLATFORM_COST, years = 3) {
    ========================================================================== */
 const num = (v, d = 0) => { const n = Number(v); return Number.isFinite(n) ? n : d; };
 
-export const PRESETS = {
-  acute:     { label: "Acute trust",            desc: "~660 bank · ~£10m agency",  scale: 1.0, iconKey: "hospital" },
-  community: { label: "Community / specialist", desc: "~260 bank · lower agency",  scale: 0.4, iconKey: "community" },
-  mental:    { label: "Mental health trust",    desc: "~400 bank · nursing & HCA", scale: 0.6, iconKey: "behavioral" },
-  ambulance: { label: "Ambulance trust",        desc: "~350 bank · paramedic",     scale: 0.5, iconKey: "physician" },
-  ics:       { label: "ICS / collaborative",    desc: "~2,300 bank · multi-org",   scale: 3.5, iconKey: "network" },
-};
+/* Per-type organisation templates. Each carries a realistic staff-group profile
+   (role, band, bank pay, headcount, agency spend) that sums to that type's
+   totals. Pay = 2026/27 AfC midpoints. Every value is a starting point and is
+   fully editable; the two size headlines (total headcount + total agency spend)
+   rescale the mix proportionally via scaleGroupsTo(). */
+const G = (id, role, band, bankPay, headcount, agencySpend) => ({ id, role, band, bankPay, headcount, agencySpend });
 
-export const STAFF_GROUPS = [
-  { id: "rn",  role: "Registered nurses",     band: "Band 5",     bankPay: 34592, headcount: 240, agencySpend: 4000000 },
-  { id: "sn",  role: "Senior nurses",         band: "Band 6",     bankPay: 42170, headcount: 120, agencySpend: 1500000 },
-  { id: "ahp", role: "AHPs (physio / OT)",    band: "Band 5/6",   bankPay: 38400, headcount: 100, agencySpend: 800000  },
-  { id: "hca", role: "Healthcare assistants", band: "Band 2/3",   bankPay: 25900, headcount: 160, agencySpend: 700000  },
-  { id: "doc", role: "Medics (locum / SAS)",  band: "SAS / ST3+", bankPay: 60000, headcount: 40,  agencySpend: 3000000 },
-];
+export const ORG_TYPES = {
+  acute: { label: "Acute trust", desc: "~660 bank · ~£10m agency", iconKey: "hospital", groups: [
+    G("rn",  "Registered nurses",      "Band 5",     34592, 240, 4000000),
+    G("sn",  "Senior nurses",          "Band 6",     42170, 120, 1500000),
+    G("ahp", "AHPs (physio / OT)",     "Band 5/6",   38400, 100, 800000),
+    G("hca", "Healthcare assistants",  "Band 2/3",   25900, 160, 700000),
+    G("doc", "Medics (locum / SAS)",   "SAS / ST3+", 60000, 40,  3000000),
+  ]},
+  community: { label: "Community / specialist", desc: "~260 bank · ~£3m agency", iconKey: "community", groups: [
+    G("cn",  "Community / district nurses", "Band 6",     42170, 70, 900000),
+    G("rn",  "Registered nurses",           "Band 5",     34592, 60, 600000),
+    G("ahp", "AHPs (physio / OT / SLT)",    "Band 5/6",   38400, 80, 900000),
+    G("hca", "Healthcare assistants",       "Band 2/3",   25900, 45, 400000),
+    G("doc", "Medics (locum / SAS)",        "SAS / ST3+", 60000, 5,  200000),
+  ]},
+  mental: { label: "Mental health trust", desc: "~400 bank · ~£6m agency", iconKey: "behavioral", groups: [
+    G("rmn", "Mental health nurses (RMN)", "Band 5",     34592, 140, 2200000),
+    G("sn",  "Senior nurses",              "Band 6",     42170, 70,  1000000),
+    G("hca", "Healthcare assistants",      "Band 2/3",   25900, 150, 1500000),
+    G("ahp", "AHPs (OT / psychology)",     "Band 5/6",   38400, 25,  300000),
+    G("doc", "Medics (locum psych)",       "SAS / ST3+", 60000, 15,  1000000),
+  ]},
+  ambulance: { label: "Ambulance trust", desc: "~350 bank · ~£4m agency", iconKey: "physician", groups: [
+    G("para", "Paramedics",               "Band 6",     42170, 150, 2000000),
+    G("emt",  "EMTs / care assistants",   "Band 3",     26618, 90,  600000),
+    G("rn",   "Nurses (111 / UCC)",       "Band 5",     34592, 50,  600000),
+    G("call", "Call handlers / dispatch", "Band 3",     26618, 50,  300000),
+    G("doc",  "Medics (locum)",           "SAS / ST3+", 60000, 10,  500000),
+  ]},
+  ics: { label: "ICS / collaborative", desc: "~2,300 bank · ~£35m agency", iconKey: "network", groups: [
+    G("rn",  "Registered nurses",     "Band 5",     34592, 850, 14000000),
+    G("sn",  "Senior nurses",         "Band 6",     42170, 420, 5500000),
+    G("ahp", "AHPs",                  "Band 5/6",   38400, 350, 3000000),
+    G("hca", "Healthcare assistants", "Band 2/3",   25900, 560, 2500000),
+    G("doc", "Medics (locum / SAS)",  "SAS / ST3+", 60000, 120, 10000000),
+  ]},
+};
 
 export const AFC_BANDS = [["Band 2", 25272], ["Band 3", 26618], ["Band 5", 34592], ["Band 5/6", 38400], ["Band 6", 42170], ["Band 2/3", 25900], ["SAS / ST3+", 60000]];
 
-export const applyPreset = scale => STAFF_GROUPS.map(g => ({ ...g, headcount: Math.round(g.headcount * scale), agencySpend: Math.round(g.agencySpend * scale / 1000) * 1000 }));
+// Fresh editable copy of a type's staff-group profile.
+export const buildOrg = key => (ORG_TYPES[key] || ORG_TYPES.acute).groups.map(g => ({ ...g }));
+
+// Scale every group's `key` (headcount | agencySpend) proportionally so the
+// column sums to `target`, preserving the staff-group mix. No-op for target <= 0.
+export function scaleGroupsTo(groups, key, target) {
+  const cur = groups.reduce((s, g) => s + num(g[key]), 0);
+  if (cur <= 0 || !(target > 0)) return groups;
+  const f = target / cur;
+  return groups.map(g => ({ ...g, [key]: key === "agencySpend"
+    ? Math.max(0, Math.round(num(g[key]) * f / 1000) * 1000)
+    : Math.max(0, Math.round(num(g[key]) * f)) }));
+}
 
 export const DETAILED_DEFAULTS = {
   premium: 20, displacement: 13, perGroupPremium: false, platformCost: PLATFORM_COST, fillRateNow: 8,

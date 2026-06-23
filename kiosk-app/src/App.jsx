@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { C, F, W, H, KIOSK_STEPS, fmtK, fmtNum } from './theme';
 import { SplashScreen } from './components/SplashScreen';
 import { BackgroundParticles } from './components/BackgroundParticles';
-import { calc, calcDetailed, DEFAULTS, DETAILED_DEFAULTS, applyPreset, PRESETS } from './calc/engine';
+import { calc, calcDetailed, DEFAULTS, DETAILED_DEFAULTS, buildOrg } from './calc/engine';
 import { StepIndicator, NavButtons, PageTransition, BigChoice } from './components';
 import { BankStep, AgencyStep, TeamStep } from './steps';
 import { OrgStep, GroupsStep, AssumptionsStep } from './steps/detailed';
@@ -319,7 +319,7 @@ export default function App() {
 
   // Detailed / commercial variant inputs.
   const [dPreset, setDPreset] = useState("acute");
-  const [dGroups, setDGroups] = useState(() => applyPreset(1));
+  const [dGroups, setDGroups] = useState(() => buildOrg("acute"));
   const [dPremium, setDPremium] = useState(DETAILED_DEFAULTS.premium);
   const [dDisp, setDDisp] = useState(DETAILED_DEFAULTS.displacement);
   const [dPerGroup, setDPerGroup] = useState(false);
@@ -337,7 +337,7 @@ export default function App() {
   const steps = isDetailed ? DETAILED_STEPS : KIOSK_STEPS;
   const RESULTS_STEP = steps.length - 1;
 
-  const pickPreset = useCallback((k) => { setDPreset(k); setDGroups(applyPreset(PRESETS[k].scale)); }, []);
+  const pickPreset = useCallback((k) => { setDPreset(k); setDGroups(buildOrg(k)); }, []);
 
   const handleCalculate = useCallback(() => setCalibrating(true), []);
   const handleCalibrationDone = useCallback(() => {
@@ -357,7 +357,7 @@ export default function App() {
     setNumManagers(DEFAULTS.numManagers); setDisplacement(DEFAULTS.displacement); setIncludeAdmin(true);
   }, []);
   const resetDetailed = useCallback(() => {
-    setDPreset("acute"); setDGroups(applyPreset(1)); setDPremium(DETAILED_DEFAULTS.premium);
+    setDPreset("acute"); setDGroups(buildOrg("acute")); setDPremium(DETAILED_DEFAULTS.premium);
     setDDisp(DETAILED_DEFAULTS.displacement); setDPerGroup(false); setDPlatform(DETAILED_DEFAULTS.platformCost);
     setDFill(DETAILED_DEFAULTS.fillRateNow); setDAdmin(DETAILED_DEFAULTS.admin); setDRecruit(DETAILED_DEFAULTS.recruit);
   }, []);
@@ -377,7 +377,7 @@ export default function App() {
   const renderStep = () => {
     if (isDetailed) {
       switch (kioskStep) {
-        case 0: return <OrgStep preset={dPreset} onPickPreset={pickPreset} />;
+        case 0: return <OrgStep preset={dPreset} onPickPreset={pickPreset} groups={dGroups} setGroups={setDGroups} />;
         case 1: return <GroupsStep groups={dGroups} setGroups={setDGroups} perGroupPremium={dPerGroup} premium={dPremium} />;
         case 2: return <AssumptionsStep premium={dPremium} setPremium={setDPremium} perGroupPremium={dPerGroup} setPerGroupPremium={setDPerGroup}
           displacement={dDisp} setDisplacement={setDDisp} platformCost={dPlatform} setPlatformCost={setDPlatform}
