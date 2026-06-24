@@ -116,13 +116,16 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
     {r.exceedsSpend && <div style={{ marginBottom: 14, padding: "14px 20px", background: C.accentSoft, border: `1px solid ${C.accent}`, borderRadius: 14, fontSize: F.small, color: C.text, lineHeight: 1.5 }}>
       <strong>Check your inputs.</strong> The modelled saving exceeds your estimated agency spend. Try a lower displacement or a lower agency fill rate.
     </div>}
+    {r.adminOnly && <div style={{ marginBottom: 14, padding: "14px 20px", background: C.accentSoft, border: `1px solid ${C.accent}`, borderRadius: 14, fontSize: F.small, color: C.text, lineHeight: 1.5 }}>
+      <strong>Admin time only.</strong> No agency premium saving is modelled (agency spend is zero), so this figure is the admin-time value on its own.
+    </div>}
 
     {/* Secondary row */}
     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 28 }}>
       {[
         { label: "Payback", value: fmtMonths(r.paybackMonths) },
         { label: "Gross benefit", value: <AnimVal value={r.grossBenefit} format={fmtK} /> },
-        { label: "ROI (net)", value: <>{r.implausibleRoi ? "⚠ " : ""}<AnimVal value={r.roiPct} format={v => `${fmtNum(v)}%`} /></> },
+        { label: "ROI (net)", value: r.roiPct == null ? "n/a" : <>{r.implausibleRoi ? "⚠ " : ""}<AnimVal value={r.roiPct} format={v => `${fmtNum(v)}%`} /></> },
         { label: "Agency premium displaced", value: <AnimVal value={r.agencySaving} format={fmtK} /> },
       ].map((s, i) => <div key={i} style={{ flex: "1 1 220px", padding: "16px 20px", background: C.surface2, borderRadius: 14, border: `1px solid ${C.borderLight}` }}>
         <div style={{ fontSize: F.tiny, color: C.textMuted, textTransform: "uppercase", letterSpacing: 1, fontWeight: 600, marginBottom: 6 }}>{s.label}</div>

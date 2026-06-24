@@ -32,15 +32,16 @@ export function calc(inp) {
   const adminSaving = includeAdmin ? numManagers * ADMIN_HRS_PER_DAY * ADMIN_WORKING_DAYS * ADMIN_LOADED_HOURLY : 0;
   const grossBenefit = agencySaving + adminSaving;
   const netSaving = grossBenefit - platformCost;
-  const roiPct = platformCost > 0 ? (netSaving / platformCost) * 100 : 0;
+  const roiPct = platformCost > 0 ? (netSaving / platformCost) * 100 : null;   // n/a (not 0%) when no platform cost
   const paybackMonths = grossBenefit > 0 ? platformCost / (grossBenefit / 12) : null;
   const capacityValue = displaced * bankShiftCost;              // gross bank backfill cost (NON-cash)
   const fillAfter = agencyFillRate * (1 - d);
   const exceedsSpend = agencySaving > agencySpend && agencySpend > 0;
-  const implausibleRoi = roiPct > 3000;
+  const adminOnly = agencySaving <= 0 && adminSaving > 0;       // reachable check: saving is admin time only
+  const implausibleRoi = roiPct != null && roiPct > 3000;
   return { agencySpend, agencySaving, adminSaving, timeSavedWeek, grossBenefit, netSaving, roiPct,
            paybackMonths, displaced, capacityValue, fillNow: agencyFillRate, fillAfter,
-           exceedsSpend, implausibleRoi, premium, displacement, platformCost };
+           exceedsSpend, adminOnly, implausibleRoi, premium, displacement, platformCost };
 }
 
 /* Phased ramp + cumulative (3- and 5-year). Benefits build as bank utilisation
@@ -170,13 +171,14 @@ export function calcDetailed(input) {
   const recruitSaving = (recruit && recruit.enabled) ? num(recruit.workers) * num(recruit.costPerWorker) * num(recruit.recoveryRate) : 0;
   const grossBenefit = totSaving + adminSaving + recruitSaving;
   const netSaving = grossBenefit - num(platformCost);
-  const roiPct = platformCost > 0 ? (netSaving / platformCost) * 100 : 0;
+  const roiPct = platformCost > 0 ? (netSaving / platformCost) * 100 : null;   // n/a (not 0%) when no platform cost
   const paybackMonths = grossBenefit > 0 ? platformCost / (grossBenefit / 12) : null;
   const fillNow = num(fillRateNow), fillAfter = fillNow * (1 - d);
   return {
     rows, totSpend, totSaving, totDisplaced, totHead, totCapacityValue,
     adminSaving, recruitSaving, timeSavedWeek, grossBenefit, netSaving, roiPct, paybackMonths,
-    exceedsSpend: totSaving > totSpend && totSpend > 0, implausibleRoi: roiPct > 3000,
+    exceedsSpend: totSaving > totSpend && totSpend > 0, adminOnly: totSaving <= 0 && (adminSaving > 0 || recruitSaving > 0),
+    implausibleRoi: roiPct != null && roiPct > 3000,
     fillNow, fillAfter, premium, displacement, perGroupPremium, platformCost: num(platformCost),
     // aliases so the shared ResultsPage can render either model unchanged:
     agencySaving: totSaving, displaced: totDisplaced, capacityValue: totCapacityValue,

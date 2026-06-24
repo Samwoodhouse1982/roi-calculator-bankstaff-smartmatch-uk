@@ -202,7 +202,7 @@ function AdminOverlay({ onClose }) {
               <div style={{ fontSize: 22, fontWeight: 800, color: C.good, marginTop: 4 }}>{fmtNum(stats.cum.displaced)}</div>
             </div>
             <div style={{ padding: '14px 16px', background: C.bg, borderRadius: 12, border: '1px solid ' + C.borderLight }}>
-              <div style={{ fontSize: 11, color: C.textMuted }}>Avg bank pool size</div>
+              <div style={{ fontSize: 11, color: C.textMuted }}>Avg bank workforce modelled</div>
               <div style={{ fontSize: 22, fontWeight: 800, color: C.text, marginTop: 4 }}>{fmtNum(stats.avgBankPool)}</div>
             </div>
             <div style={{ padding: '14px 16px', background: C.bg, borderRadius: 12, border: '1px solid ' + C.borderLight }}>

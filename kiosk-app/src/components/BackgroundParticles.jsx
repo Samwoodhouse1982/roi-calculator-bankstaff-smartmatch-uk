@@ -59,6 +59,7 @@ export function BackgroundParticles() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     let raf;
+    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     let w = 1080;
     let h = 1920;
@@ -138,7 +139,7 @@ export function BackgroundParticles() {
         ctx.fill();
       }
 
-      raf = requestAnimationFrame(draw);
+      if (!reduceMotion) raf = requestAnimationFrame(draw);   // respect prefers-reduced-motion: paint one static frame
     };
     draw();
 
