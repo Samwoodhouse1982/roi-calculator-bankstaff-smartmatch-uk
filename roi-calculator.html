@@ -248,7 +248,7 @@ const fmt    = n => SYMBOL + Math.round(n||0).toLocaleString(LOCALE);
 const fmtK   = n => { n=n||0; return n>=1e6 ? `${SYMBOL}${(n/1e6).toFixed(2)}m` : n>=1000 ? `${SYMBOL}${Math.round(n/1000).toLocaleString(LOCALE)}k` : fmt(n); };
 const fmtNum = n => Math.round(n||0).toLocaleString(LOCALE);
 const pct    = n => `${Math.round(n)}%`;
-const num    = (v,f=0) => { const n=parseFloat(v); return isNaN(n)?f:n; };
+const num    = (v,f=0) => { const n=parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isNaN(n)?f:n; };  // strips £, commas, spaces from pasted figures
 
 /* ===== MODEL CONSTANTS (conservative; flagged for validation) =====
    Cash saving (corrected v9, brief §3) is the AGENCY PREMIUM DISPLACED,
@@ -425,13 +425,13 @@ function InfoTip({text}){
     {open && <span role="tooltip" style={{position:"absolute",bottom:"130%",left:"50%",transform:"translateX(-50%)",background:C.navy,color:"#fff",fontSize:11,fontWeight:400,lineHeight:1.5,padding:"8px 10px",borderRadius:8,width:230,boxShadow:"0 8px 24px rgba(0,0,0,.25)",zIndex:50}}>{text}</span>}
   </span>);
 }
-function Field({label, value, onChange, min, step=1, prefix, info, hint}){
+function Field({label, value, onChange, min, max, step=1, prefix, info, hint}){
   const id="f_"+label.replace(/\W/g,"");
   return (<div className="field">
     <label htmlFor={id}>{label}{info && <InfoTip text={info}/>}</label>
     <div style={{position:"relative",display:"flex",alignItems:"center"}}>
       {prefix && <span style={{position:"absolute",left:10,color:C.textLight,fontSize:14}}>{prefix}</span>}
-      <input id={id} type="number" value={value} min={min} step={step} style={prefix?{paddingLeft:22}:null} onChange={e=>onChange(e.target.value)} />
+      <input id={id} type="number" value={value} min={min} max={max} step={step} style={prefix?{paddingLeft:22}:null} onChange={e=>onChange(e.target.value)} onBlur={e=>{ let n=num(e.target.value); if(min!=null&&min!=="") n=Math.max(Number(min),n); if(max!=null&&max!=="") n=Math.min(Number(max),n); onChange(String(n)); }} />
     </div>
     {hint && <span className="hint">{hint}</span>}
   </div>);
@@ -598,7 +598,7 @@ function App(){
               <div className="field">
                 <label>Modelling stance: {displacement}% · {st.key} <InfoTip text="Share of current agency usage that improved bank utilisation moves to bank. Driven by the Smart Match pilot: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable, so three stances are offered; public/self-serve defaults to Conservative."/></label>
                 <div className="stance-btns">{[["Conservative",13],["Pilot",26],["Optimistic",35]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
-                <input type="range" min="8" max="40" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-valuetext={displacement+"%, "+st.key}/>
+                <input type="range" min="8" max="40" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Displacement stance, percent" aria-valuetext={displacement+"%, "+st.key}/>
                 <div className="slider-ctx"><span>8% conservative</span><span>26% pilot</span><span>40% optimistic</span></div>
               </div>
               <div style={{alignSelf:"center"}}><div className="disp-note" style={{marginTop:0,background:st.bg,color:st.color}}>{st.note}</div></div>
@@ -649,7 +649,7 @@ function App(){
                   <Field label="Bank headcount" value={g.headcount} min="0" onChange={v=>setG(i,"headcount",v)}/>
                   <Field label="Annual agency spend" prefix="£" value={g.agencySpend} min="0" step={50000} onChange={v=>setG(i,"agencySpend",v)} info="Yearly agency spend for this group, the anchor for the saving." hint="The anchor for the saving"/>
                   <Field label="Bank pay (£/yr)" value={g.bankPay} min="0" step={500} onChange={v=>setG(i,"bankPay",v)} info="Actual bank rate preferred; or pick an AfC band below (2026/27 midpoints). Different pay per group is what makes each column's saving differ."/>
-                  <div className="field"><label>AfC band: auto-fills pay</label><select className="grp-band" value={AFC_BANDS.some(x=>x[1]===g.bankPay)?g.bankPay:""} onChange={e=>{const val=e.target.value; if(val){const bd=AFC_BANDS.find(x=>String(x[1])===val); setG(i,"bankPay",num(val)); if(bd) setG(i,"band",bd[0]);}}}><option value="">Custom / typed</option>{AFC_BANDS.map(([lbl,val])=>(<option key={lbl} value={val}>{lbl} · £{val.toLocaleString("en-GB")}</option>))}</select></div>
+                  <div className="field"><label>AfC band: auto-fills pay</label><select className="grp-band" aria-label="AfC band (auto-fills pay)" value={AFC_BANDS.some(x=>x[1]===g.bankPay)?g.bankPay:""} onChange={e=>{const val=e.target.value; if(val){const bd=AFC_BANDS.find(x=>String(x[1])===val); setG(i,"bankPay",num(val)); if(bd) setG(i,"band",bd[0]);}}}><option value="">Custom / typed</option>{AFC_BANDS.map(([lbl,val])=>(<option key={lbl} value={val}>{lbl} · £{val.toLocaleString("en-GB")}</option>))}</select></div>
                   {perGroupPremium && <Field label="Agency premium (%)" value={g.premium!=null?g.premium:premium} min="0" max="60" step={1} onChange={v=>setG(i,"premium",v)} info="This group's agency-over-bank premium. Defaults to the global premium; raise it for hard-to-fill groups (e.g. medics) where you have trust-specific evidence."/>}
                 </div>
               </div>
@@ -667,7 +667,7 @@ function App(){
               <div className="field">
                 <label>Displacement stance: {displacement}% · {st.key} <InfoTip text="Share of your baseline agency usage that improved bank utilisation moves to bank. Driven by the Smart Match pilot: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; the commercial variant can show the Pilot case with a rep to frame the caveats."/></label>
                 <div className="stance-btns">{[["Conservative",13],["Pilot",26],["Optimistic",35]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
-                <input type="range" min="8" max="40" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-valuetext={displacement+"%, "+st.key}/>
+                <input type="range" min="8" max="40" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Displacement stance, percent" aria-valuetext={displacement+"%, "+st.key}/>
                 <div className="slider-ctx"><span>8% conservative</span><span>26% pilot</span><span>40% optimistic</span></div>
               </div>
             </div>
@@ -744,6 +744,10 @@ function App(){
               <div className="s-card"><div className="s-lbl">Admin saving {r.adminSaving>0?"":"(off)"}</div><div className="s-val"><AnimMoney v={r.adminSaving}/></div><div className="s-sub">{r.adminSaving>0?"modelled, conservative":"toggle to include"}</div></div>
               <div className="s-card"><div className="s-lbl">Time saved / week</div><div className="s-val">{Math.round(r.timeSavedWeek).toLocaleString(LOCALE)}<span style={{fontSize:13}}> hrs</span></div><div className="s-sub">across the roster/admin team</div></div>
             </div>
+
+            <p style={{padding:"0 1.5rem",margin:"1rem 0 0",fontSize:12,color:C.textLight,lineHeight:1.6}}>
+              Net saving is the agency premium displaced{r.adminSaving>0?<> plus <b style={{color:C.textMid}}>{fmtK(r.adminSaving)}</b> admin time</>:""}, less the platform cost. ROI and payback are measured against the <b style={{color:C.textMid}}>{fmt(platformCost)}/yr</b> platform cost only; the bank shifts used to deliver it are shown under Capacity, not netted here.{mode==="quick"?<> Modelled agency spend: <b style={{color:C.textMid}}>{fmtK(r.totSpend)}</b>.</>:""}
+            </p>
 
             {r.exceedsSpend && <div className="callout navy"><p className="title">⚠ Check your inputs</p><p>The modelled saving exceeds total agency spend, which isn't possible. Lower the premium or displacement, or check the agency-spend figures.</p></div>}
 
