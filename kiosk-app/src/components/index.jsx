@@ -41,7 +41,9 @@ export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate, onSt
     <div style={{ padding: "16px 56px 40px", display: "flex", gap: 20, alignItems: "center" }}>
       {step > 0 && <button onClick={onBack} style={{ padding: "24px 44px", borderRadius: 18, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: F.body, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>← Back</button>}
       <div style={{ flex: 1 }} />
-      {/* Subtle Start over button - sits centred between Back and Next/Calculate.
+      {/* Subtle "Change calculator" button - sits centred between Back and Next/Calculate.
+          Returns to the chooser to switch Quick/Detailed (distinct from the results
+          page "Start over", which resets to the attract splash for the next visitor).
           Deliberately understated (no background, muted text colour, smaller
           font) so it doesn't compete with the primary navigation. */}
       {onStartOver && <button onClick={onStartOver} style={{
@@ -51,7 +53,7 @@ export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate, onSt
         letterSpacing: 0.3, opacity: 0.75, transition: "opacity .15s, color .15s"
       }} onMouseEnter={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.color = C.textMid; }}
          onMouseLeave={e => { e.currentTarget.style.opacity = "0.75"; e.currentTarget.style.color = C.textMuted; }}>
-        ↻  Start over
+        ↻  Change calculator
       </button>}
       <div style={{ flex: 1 }} />
       {step < totalSteps - 2 ? (
