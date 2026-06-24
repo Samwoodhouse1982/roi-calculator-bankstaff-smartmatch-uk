@@ -239,7 +239,7 @@
 const { useState, useMemo, useEffect, useRef } = React;
 
 /* ===== THEME: RLDatix Galen suite (deep teal + seafoam) ===== */
-const C = { navy:"#0F4146", navyMid:"#1A5459", navyLight:"#E8FAF6", teal:"#0F4146", tealMid:"#1A8A7A", tealLight:"#D6F7EE", seafoam:"#34DEC2", border:"#D4E0DD", text:"#0F4146", textMid:"#3D5A5E", textLight:"#6E8A8E" };
+const C = { navy:"#0F4146", navyMid:"#1A5459", navyLight:"#E8FAF6", teal:"#0F4146", tealMid:"#1A8A7A", tealLight:"#D6F7EE", seafoam:"#34DEC2", border:"#D4E0DD", text:"#0F4146", textMid:"#3D5A5E", textLight:"#6E8A8E", rose:"#B25B76" };
 const RAMP = ["#0F4146","#1A8A7A","#34DEC2","#73D2E1","#8FB3AE"];
 
 /* ===== FORMATTERS: en-GB / £ (AU-ready: swap LOCALE + SYMBOL) ===== */
@@ -368,14 +368,15 @@ function calc(input){
 
   const grossBenefit = totSaving + adminSaving + recruitSaving;
   const netSaving = grossBenefit - num(platformCost);
-  const roiPct = platformCost>0 ? (netSaving/platformCost)*100 : 0;
+  const roiPct = platformCost>0 ? (netSaving/platformCost)*100 : null;   // n/a (not 0%) when no platform cost
   const paybackMonths = grossBenefit>0 ? platformCost/(grossBenefit/12) : null;
   const exceedsSpend = totSaving>totSpend && totSpend>0;
-  const implausibleRoi = roiPct>3000;
+  const adminOnly = totSaving<=0 && (adminSaving>0 || recruitSaving>0);   // reachable sanity check: saving is admin time only
+  const implausibleRoi = roiPct!=null && roiPct>3000;
   const fillNow=num(fillRateNow), fillAfter=fillNow*(1-d);
   return { rows, totSpend, totSaving, totDisplaced, totBaseline, totHead, totCapacityValue,
     adminSaving, recruitSaving, timeSavedWeek, grossBenefit, netSaving, roiPct, paybackMonths,
-    exceedsSpend, implausibleRoi, fillNow, fillAfter };
+    exceedsSpend, adminOnly, implausibleRoi, fillNow, fillAfter };
 }
 
 /* ===== TIME PROJECTION: phased ramp + cumulative (Galen migration pattern) ===== */
@@ -504,7 +505,7 @@ function App(){
   useEffect(()=>{ if(window.self===window.top)return;
     const post=()=>window.parent.postMessage({type:"smartmatch-roi-resize",height:document.documentElement.scrollHeight},"*");
     const ro=new ResizeObserver(post); ro.observe(document.documentElement); post(); const iv=setInterval(post,800);
-    return ()=>{ro.disconnect();clearInterval(iv);}; });
+    return ()=>{ro.disconnect();clearInterval(iv);}; },[]);   // run once: avoid rebuilding the observer + interval every render
 
   async function submitLead(e){ e.preventDefault();
     if(!lead.consent) return;                                   // GDPR: require explicit consent before sending
@@ -531,7 +532,7 @@ function App(){
       doc.text("RLDatix · indicative · "+new Date().toLocaleDateString(LOCALE)+" · "+(mode==="quick"?"Quick estimate":"Detailed"),14,23); y=40;
       doc.setTextColor(27,43,75); doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.text("Headline",14,y); y+=6; doc.setFont("helvetica","normal"); doc.setFontSize(10);
       [["Net annual cash saving",fmt(r.netSaving)],["Admin time saved / week",Math.round(r.timeSavedWeek).toLocaleString(LOCALE)+" hours"],
-       ["Gross annual benefit",fmt(r.grossBenefit)],["Payback",r.paybackMonths?r.paybackMonths.toFixed(1)+" months":"n/a"],["ROI (net)",Math.round(r.roiPct)+"%"],
+       ["Gross annual benefit",fmt(r.grossBenefit)],["Payback",r.paybackMonths?r.paybackMonths.toFixed(1)+" months":"n/a"],["ROI (net)",r.roiPct==null?"n/a":Math.round(r.roiPct)+"%"],
        ["Agency premium displaced",fmt(r.totSaving)],["Admin saving",fmt(r.adminSaving)],["Recruitment waste recovered",fmt(r.recruitSaving)],
        ["Total agency spend (anchor)",fmt(r.totSpend)],["Premium / displacement",premium+"% / "+displacement+"% ("+st.key+")"],["Platform cost",fmt(platformCost)+"/yr"]
       ].forEach(([k,v])=>{ doc.text(k,14,y); doc.text(String(v),196,y,{align:"right"}); y+=6; });
@@ -731,7 +732,7 @@ function App(){
               <div className="roi-sub">
                 <span>Payback <b>{r.paybackMonths?r.paybackMonths.toFixed(1)+" mo":"n/a"}</b></span>
                 <span>Gross benefit <b>{fmtK(r.grossBenefit)}</b></span>
-                <span>ROI (net) <b>{r.implausibleRoi?"⚠ ":""}{Math.round(r.roiPct).toLocaleString(LOCALE)}%</b></span>
+                <span>ROI (net) <b>{r.implausibleRoi?"⚠ ":""}{r.roiPct==null?"n/a":Math.round(r.roiPct).toLocaleString(LOCALE)+"%"}</b></span>
                 <span>Agency premium displaced <b>{fmtK(r.totSaving)}</b></span>
               </div>
             </div>
@@ -748,6 +749,7 @@ function App(){
             </p>
 
             {r.exceedsSpend && <div className="callout navy"><p className="title">⚠ Check your inputs</p><p>The modelled saving exceeds total agency spend, which isn't possible. Lower the premium or displacement, or check the agency-spend figures.</p></div>}
+            {r.adminOnly && <div className="callout navy"><p className="title">Admin time only</p><p>No agency premium saving is modelled (agency spend is zero). This figure is the admin-time value on its own. {isQuick?"Set an agency fill rate above 0":"Add your agency spend"} to model the agency-displacement saving.</p></div>}
 
             {/* SAVINGS OVER TIME (#5: phased ramp + cumulative) */}
             <div className="panel">
