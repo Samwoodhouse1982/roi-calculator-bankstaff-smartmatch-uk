@@ -107,7 +107,7 @@ Use `embed-snippet.html` as the host-page reference. The iframe auto-resizes via
    publication.
 3. **Pilot data** — confirm permission to cite the specific pilot figures/trusts.
 4. **AfC figures** — refresh from the NHS Employers pay-scale PDF annually
-   (currently 2025/26 England midpoints).
+   (currently 2026/27 England midpoints, +3.3% from 1 Apr 2026).
 5. **HubSpot** — confirm the SmartMatch portal ID, form GUID and GDPR consent
    copy (the integration is scaffolded with placeholders; v1 is open-access and
    does not gate results or the PDF).
