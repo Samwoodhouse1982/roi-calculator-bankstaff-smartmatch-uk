@@ -40,7 +40,10 @@ function AnimVal({ value, format }) {
 function Collapsible({ title, children, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
   return <div>
-    <div onClick={() => setOpen(!open)} style={{ fontSize: F.body, color: C.accent, cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+    <div role="button" tabIndex={0} aria-expanded={open}
+      onClick={() => setOpen(!open)}
+      onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(!open); } }}
+      style={{ fontSize: F.body, color: C.accent, cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 8, outlineOffset: 4 }}>
       <span style={{ transition: "transform .2s", transform: open ? "rotate(90deg)" : "none" }}>▶</span> {title}
     </div>
     {open && <div style={{ marginTop: 14 }}>{children}</div>}
@@ -109,7 +112,7 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
 
     {/* Basis caption: what the headline includes + what ROI is measured against (audit P1 #5/#6/#7) */}
     <div style={{ textAlign: "center", fontSize: F.small, color: C.textMuted, lineHeight: 1.6, margin: "0 auto 22px", maxWidth: 880 }}>
-      Net saving is the agency premium displaced{r.adminSaving > 0 ? <> plus <strong style={{ color: C.textMid }}>{fmtK(r.adminSaving)}</strong> admin time</> : ""}, less the platform cost. ROI and payback are measured against the <strong style={{ color: C.textMid }}>{fmt(r.platformCost)}/yr</strong> platform cost only; the bank shifts used to deliver it are shown under Capacity, not netted here.{r.agencySpend != null ? <> Modelled agency spend: <strong style={{ color: C.textMid }}>{fmtK(r.agencySpend)}</strong>.</> : ""}
+      Net saving is the agency premium displaced{r.adminSaving > 0 ? <> plus <strong style={{ color: C.textMid }}>{fmtK(r.adminSaving)}</strong> admin time</> : ""}, less the platform cost. ROI and payback are measured against the <strong style={{ color: C.textMid }}>{fmt(r.platformCost)}/yr</strong> platform cost only; the bank shifts used to deliver it are shown under Capacity, not netted here.{r.agencySpend != null ? <> Modelled agency spend, <strong style={{ color: C.textMid }}>derived from your bank pool and agency fill rate</strong>: <strong style={{ color: C.textMid }}>{fmtK(r.agencySpend)}</strong> — for your actual figure, use the Detailed calculator.</> : ""}
     </div>
 
     {/* Guardrail */}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { C, F, W, H, KIOSK_STEPS, fmtK, fmtNum } from './theme';
 import { SplashScreen } from './components/SplashScreen';
 import { BackgroundParticles } from './components/BackgroundParticles';
@@ -11,10 +11,11 @@ import { ResultsPage } from './results/ResultsPage';
 /* ────────────────────────────────────────────────────────────────────────
    COMPLETION TRACKING + ADMIN STATS (localStorage-backed)
    Reveal: single tap on RLDatix logo on splash
-   Reset: PIN-protected (default 2580 - vertical line on phone keypad)
+   Reset: PIN-protected. Set VITE_ADMIN_PIN at build time (e.g. in the deploy
+   environment); falls back to 2580 (vertical line on a phone keypad) if unset.
    ──────────────────────────────────────────────────────────────────────── */
 const STATS_KEY = 'smartmatch-kiosk-stats';
-const ADMIN_PIN = '2580'; // 4-digit numeric. Change to your preferred PIN.
+const ADMIN_PIN = import.meta.env.VITE_ADMIN_PIN || '2580'; // build-time env, not source-committed
 
 function recordCompletion(session) {
   try {
@@ -303,12 +304,30 @@ function ModeChooser({ onChoose }) {
   );
 }
 
+// Idle warning shown ~60s before the kiosk resets to the attract splash, so an
+// in-progress session is not wiped without notice. Any tap/keypress dismisses it
+// (the document-level activity listeners re-arm the timer); the button is an
+// explicit affordance for the same.
+function IdleWarning({ seconds, onStay }) {
+  return <div role="alertdialog" aria-label="Session about to reset" aria-live="assertive" style={{ position: 'fixed', inset: 0, background: 'rgba(11,20,36,0.93)', zIndex: 99990, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 }}>
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 24, padding: '48px 56px', maxWidth: 640, textAlign: 'center', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}>
+      <div style={{ fontSize: 34, fontWeight: 800, color: C.text, marginBottom: 14 }}>Are you still there?</div>
+      <div style={{ fontSize: 19, color: C.textMid, lineHeight: 1.5, marginBottom: 6 }}>To keep your figures private for the next visitor, this screen returns to the start in</div>
+      <div style={{ fontSize: 64, fontWeight: 800, color: C.accent, margin: '6px 0 26px', fontVariantNumeric: 'tabular-nums' }}>{Math.max(0, seconds)}s</div>
+      <button onClick={onStay} style={{ padding: '20px 52px', borderRadius: 16, border: 'none', background: C.accent, color: '#04201A', fontSize: 20, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>I'm still here</button>
+    </div>
+  </div>;
+}
+
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [flow, setFlow] = useState(null);          // null = chooser · "quick" · "detailed"
   const [kioskStep, setKioskStep] = useState(0);
   const [calibrating, setCalibrating] = useState(false);
   const [adminVisible, setAdminVisible] = useState(false);
+  const [idleWarn, setIdleWarn] = useState(false);
+  const [idleSecs, setIdleSecs] = useState(60);
+  const armIdleRef = useRef(() => {});
 
   // Quick variant inputs (+ the modelling-stance displacement flexed live on Results).
   const [bankPool, setBankPool] = useState(DEFAULTS.bankPool);
@@ -395,22 +414,36 @@ export default function App() {
     }
   };
 
-  // Idle timeout - reset to splash after 15 minutes of no user activity.
+  // Idle handling: after 14 min of no activity show a 60s countdown warning,
+  // then reset to the attract splash at 15 min. Any tap/keypress (or the
+  // "I'm still here" button) re-arms the timer and dismisses the warning, so a
+  // session is never wiped silently (audit #23).
   useEffect(() => {
-    if (showSplash) return;
-    let timeoutId = null;
-    const IDLE_MS = 15 * 60 * 1000;
-    const goToSplash = () => { setShowSplash(true); setFlow(null); setKioskStep(0); setCalibrating(false); resetAll(); };
-    const reset = () => { if (timeoutId) clearTimeout(timeoutId); timeoutId = setTimeout(goToSplash, IDLE_MS); };
-    reset();
-    document.addEventListener('touchstart', reset, { passive: true });
-    document.addEventListener('mousedown', reset);
-    document.addEventListener('keydown', reset);
+    if (showSplash) { setIdleWarn(false); return; }
+    const IDLE_MS = 15 * 60 * 1000, WARN_MS = 60 * 1000;
+    let warnId, resetId, tickId;
+    const clearTimers = () => { clearTimeout(warnId); clearTimeout(resetId); clearInterval(tickId); };
+    const goToSplash = () => { clearTimers(); setIdleWarn(false); setShowSplash(true); setFlow(null); setKioskStep(0); setCalibrating(false); resetAll(); };
+    const arm = () => {
+      clearTimers();
+      setIdleWarn(false);
+      warnId = setTimeout(() => {
+        setIdleWarn(true);
+        let s = Math.round(WARN_MS / 1000); setIdleSecs(s);
+        tickId = setInterval(() => { s -= 1; setIdleSecs(s); }, 1000);
+      }, IDLE_MS - WARN_MS);
+      resetId = setTimeout(goToSplash, IDLE_MS);
+    };
+    armIdleRef.current = arm;
+    arm();
+    document.addEventListener('touchstart', arm, { passive: true });
+    document.addEventListener('mousedown', arm);
+    document.addEventListener('keydown', arm);
     return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      document.removeEventListener('touchstart', reset);
-      document.removeEventListener('mousedown', reset);
-      document.removeEventListener('keydown', reset);
+      clearTimers();
+      document.removeEventListener('touchstart', arm);
+      document.removeEventListener('mousedown', arm);
+      document.removeEventListener('keydown', arm);
     };
   }, [showSplash, resetAll]);
 
@@ -422,6 +455,7 @@ export default function App() {
   if (flow === null) return <>
     <ModeChooser onChoose={chooseFlow} />
     {adminVisible && <AdminOverlay onClose={() => setAdminVisible(false)} />}
+    {idleWarn && <IdleWarning seconds={idleSecs} onStay={() => armIdleRef.current()} />}
   </>;
 
   if (calibrating) {
@@ -429,6 +463,7 @@ export default function App() {
       <BackgroundParticles />
       <CalibratingScreen onDone={handleCalibrationDone} />
       {adminVisible && <AdminOverlay onClose={() => setAdminVisible(false)} />}
+      {idleWarn && <IdleWarning seconds={idleSecs} onStay={() => armIdleRef.current()} />}
     </div>;
   }
 
@@ -446,6 +481,7 @@ export default function App() {
         onBack={() => setKioskStep(p => p - 1)} onNext={() => setKioskStep(p => p + 1)}
         onCalculate={handleCalculate} onStartOver={handleResetInputs} />
       {adminVisible && <AdminOverlay onClose={() => setAdminVisible(false)} />}
+      {idleWarn && <IdleWarning seconds={idleSecs} onStay={() => armIdleRef.current()} />}
     </div>
   );
 }

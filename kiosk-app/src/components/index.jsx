@@ -10,7 +10,10 @@ export function StepIndicator({ steps, current, onJump }) {
   return <div style={{ display: "flex", gap: 10, marginBottom: 36 }}>
     {steps.map((label, i) => {
       const active = current === i, done = current > i;
-      return <div key={i} style={{ flex: 1, cursor: done ? "pointer" : "default" }} onClick={() => done && onJump(i)}>
+      return <div key={i} role={done ? "button" : undefined} tabIndex={done ? 0 : undefined}
+        aria-label={done ? `Go back to: ${label}` : undefined}
+        onKeyDown={done ? (e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onJump(i); } }) : undefined}
+        style={{ flex: 1, cursor: done ? "pointer" : "default" }} onClick={() => done && onJump(i)}>
         <div style={{ height: 8, borderRadius: 4, background: active ? C.accent : done ? C.accent + "60" : C.border, transition: "background .4s" }} />
         <div style={{ fontSize: F.tiny, fontWeight: active ? 700 : 500, marginTop: 10, color: active ? C.accent : done ? C.textMid : C.textMuted, textAlign: "center" }}>{label}</div>
       </div>;
@@ -162,7 +165,7 @@ export function BigChoice({ options, value, onChange }) {
   return <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
     {options.map((opt, i) => {
       const isLastOdd = options.length % 2 === 1 && i === options.length - 1;
-      return <button key={opt.key} onClick={() => onChange(opt.key)} style={{
+      return <button key={opt.key} onClick={() => onChange(opt.key)} aria-pressed={value === opt.key} style={{
         gridColumn: isLastOdd ? "1 / -1" : "auto",
         padding: "32px 30px", textAlign: "left", cursor: "pointer",
         border: value === opt.key ? `3px solid ${C.accent}` : `1px solid ${C.border}`,
@@ -188,7 +191,10 @@ export function SectionTitle({ number, children }) {
 }
 
 export function ToggleRow({ on, onToggle, label, tip }) {
-  return <div onClick={() => onToggle(!on)} style={{ display: "flex", alignItems: "center", gap: 14, cursor: "pointer", marginTop: 6 }}>
+  return <div role="switch" aria-checked={on} aria-label={label} tabIndex={0}
+    onClick={() => onToggle(!on)}
+    onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(!on); } }}
+    style={{ display: "flex", alignItems: "center", gap: 14, cursor: "pointer", marginTop: 6, outlineOffset: 4 }}>
     <div style={{ width: 58, height: 34, borderRadius: 17, background: on ? C.accent : C.border, position: "relative", transition: "background .2s", flexShrink: 0 }}>
       <div style={{ position: "absolute", top: 3, left: on ? 27 : 3, width: 28, height: 28, borderRadius: "50%", background: "#fff", transition: "left .2s" }} />
     </div>
