@@ -27,8 +27,11 @@ Open - decisions or larger pieces of work (not guessed):
 - #13 Quick model uses bank pool as an org-size proxy (bigger pool -> bigger derived spend) - model design.
 - #20 kiosk admin reset PIN hardcoded in the bundle - move to build-time env or accept as low-risk.
 - #23 kiosk 15-min idle reset wipes an in-progress session with no warning - UX call.
-- #24 load-bearing citations (HoC CBP-10539, REC FOI, AfC +3.3%, 60 shifts/worker, £17k platform) need fact-checking against sources.
 - Live check still owed: the web Detailed PDF staff-group table only renders when the autotable CDN plugin loads, which cannot be exercised in the offline sandbox.
+
+Verified by web research (2026-06-24):
+- #24 citations fact-checked and confirmed accurate. AfC 2026/27 +3.3% confirmed (NHSPRB recommendation accepted 12 Feb 2026; effective 1 Apr 2026 for England/Wales/NI). Per-band pay constants match the official 2026/27 spine points: Band 5 £34,592 = exact Step 2 (of £32,073 / £34,592 / £39,043); Band 3 £26,618 = exact midpoint (£25,760-£27,476); Band 2 £25,272 = exact entry; Band 6 £42,170 within range (£37,338-£44,962). AFC_DIVISOR 1,957.5 = standard AfC full-time annual hours. The ~20% agency-over-bank premium is confirmed as a House of Commons Library figure, briefing CBP-10539 ("NHS workforce: Size, characteristics and staffing levels"), and the REC FOI shift-level contestation (bank often dearer per shift) is real and already hedged in the tooltips. No code change required - the figures are correct.
+- Residual: the CBP-10539 PDF, NHS Employers and the pay-calculator sites all 403 to automated fetch in this sandbox, so the exact CBP-10539 page reference is asserted by search snippets but not PDF-confirmed. The £17k platform cost (vendor pricing) and 60 shifts/worker/yr (internal, deliberately conservative assumption) are not publicly checkable and were left unchanged.
 
 Not actioned (low value / cosmetic): #15 stance-note wording, #28 fmt vs fmtK mix, #29 useId / band-pill / calibrating-overlay polish, #30 unused kiosk icons + InfoTip scroll-follow, #31 dead-code removal.
 
