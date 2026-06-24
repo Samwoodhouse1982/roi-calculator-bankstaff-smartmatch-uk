@@ -47,6 +47,6 @@ export function BigNumberField({ label, value, min, max, step, onChange, format,
       </button>
     </div>
     <input type="range" min={min} max={max} step={step} value={Math.max(min, Math.min(max, value))} onChange={e => onChange(Number(e.target.value))} style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
-    {pad && <NumPad title={label} initial={value} prefix={prefix} onCancel={() => setPad(false)} onConfirm={v => { onChange(v); setPad(false); }} />}
+    {pad && <NumPad title={label} initial={value} prefix={prefix} onCancel={() => setPad(false)} onConfirm={v => { onChange(Math.max(min, Math.min(max, v))); setPad(false); }} />}
   </div>;
 }

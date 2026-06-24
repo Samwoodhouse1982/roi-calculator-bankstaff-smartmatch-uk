@@ -111,6 +111,11 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
       </div>
     </div>
 
+    {/* Basis caption: what the headline includes + what ROI is measured against (audit P1 #5/#6/#7) */}
+    <div style={{ textAlign: "center", fontSize: F.small, color: C.textMuted, lineHeight: 1.6, margin: "0 auto 22px", maxWidth: 880 }}>
+      Net saving is the agency premium displaced{r.adminSaving > 0 ? <> plus <strong style={{ color: C.textMid }}>{fmtK(r.adminSaving)}</strong> admin time</> : ""}, less the platform cost. ROI and payback are measured against the <strong style={{ color: C.textMid }}>{fmt(r.platformCost)}/yr</strong> platform cost only; the bank shifts used to deliver it are shown under Capacity, not netted here.{r.agencySpend != null ? <> Modelled agency spend: <strong style={{ color: C.textMid }}>{fmtK(r.agencySpend)}</strong>.</> : ""}
+    </div>
+
     {/* Guardrail */}
     {r.exceedsSpend && <div style={{ marginBottom: 14, padding: "14px 20px", background: C.accentSoft, border: `1px solid ${C.accent}`, borderRadius: 14, fontSize: F.small, color: C.text, lineHeight: 1.5 }}>
       <strong>Check your inputs.</strong> The modelled saving exceeds your estimated agency spend. Try a lower displacement or a lower agency fill rate.
