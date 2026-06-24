@@ -223,15 +223,27 @@
 <body>
 <div id="root"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js" crossorigin></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.4/babel.min.js" crossorigin></script>
+<!-- Library loading (audit #10): every library tries cdnjs -> jsDelivr -> unpkg,
+     so one blocked or down CDN (common on locked-down NHS networks) no longer
+     breaks the page - previously React/ReactDOM/Babel were single-CDN with no
+     fallback, so a blocked cdnjs meant a blank calculator. For a fully air-gapped
+     deployment, prepend a same-origin "./vendor/<lib>.js" to each list below. -->
 <script>
 (function(){
-  var jspdf=["https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js","https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js","https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js"];
-  var autotable=["https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js","https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js","https://unpkg.com/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"];
-  function chain(list,done){ var i=0; (function go(){ if(i>=list.length)return; var e=document.createElement("script"); e.src=list[i++]; e.onload=function(){ if(done) done(); }; e.onerror=go; document.head.appendChild(e); })(); }
-  chain(jspdf, function(){ chain(autotable); });   // load jsPDF, then the autotable plugin so the detailed-PDF staff-group table renders
+  var V={
+    react:["https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js","https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js","https://unpkg.com/react@18.3.1/umd/react.production.min.js"],
+    reactDom:["https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js","https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js","https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"],
+    babel:["https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.4/babel.min.js","https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.4/babel.min.js","https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"],
+    jspdf:["https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js","https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js","https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js"],
+    autotable:["https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js","https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js","https://unpkg.com/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"]
+  };
+  function chain(list,done){ var i=0; (function go(){ if(i>=list.length)return; var e=document.createElement("script"); e.crossOrigin="anonymous"; e.src=list[i++]; e.onload=function(){ if(done) done(); }; e.onerror=go; document.head.appendChild(e); })(); }
+  // React -> ReactDOM -> Babel, then transform the inline app. A dynamically loaded
+  // Babel misses its auto-run (that fires on the initial parse), so trigger it here.
+  chain(V.react, function(){ chain(V.reactDom, function(){ chain(V.babel, function(){
+    if(window.Babel && Babel.transformScriptTags) Babel.transformScriptTags();
+  }); }); });
+  chain(V.jspdf, function(){ chain(V.autotable); });   // jsPDF then its autotable plugin (detailed-PDF staff-group table)
 })();
 </script>
 
@@ -745,7 +757,7 @@ function App(){
             </div>
 
             <p style={{padding:"0 1.5rem",margin:"1rem 0 0",fontSize:12,color:C.textLight,lineHeight:1.6}}>
-              Net saving is the agency premium displaced{r.adminSaving>0?<> plus <b style={{color:C.textMid}}>{fmtK(r.adminSaving)}</b> admin time</>:""}, less the platform cost. ROI and payback are measured against the <b style={{color:C.textMid}}>{fmt(platformCost)}/yr</b> platform cost only; the bank shifts used to deliver it are shown under Capacity, not netted here.{mode==="quick"?<> Modelled agency spend: <b style={{color:C.textMid}}>{fmtK(r.totSpend)}</b>.</>:""}
+              Net saving is the agency premium displaced{r.adminSaving>0?<> plus <b style={{color:C.textMid}}>{fmtK(r.adminSaving)}</b> admin time</>:""}, less the platform cost. ROI and payback are measured against the <b style={{color:C.textMid}}>{fmt(platformCost)}/yr</b> platform cost only; the bank shifts used to deliver it are shown under Capacity, not netted here.{mode==="quick"?<> Modelled agency spend, <b style={{color:C.textMid}}>derived from your bank pool and agency fill rate</b>: <b style={{color:C.textMid}}>{fmtK(r.totSpend)}</b> — for your actual figure, use the Detailed calculator.</>:""}
             </p>
 
             {r.exceedsSpend && <div className="callout navy"><p className="title">⚠ Check your inputs</p><p>The modelled saving exceeds total agency spend, which isn't possible. Lower the premium or displacement, or check the agency-spend figures.</p></div>}
