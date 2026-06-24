@@ -284,12 +284,12 @@ const G = (id,role,band,bankPay,headcount,agencySpend) => ({ id, role, band, ban
    size headlines (total headcount + total agency spend) rescale the mix via
    scaleGroupsTo(). */
 const ORG_TYPES = {
-  acute: { label:"Acute trust", desc:"~660 bank · ~£10m agency", groups:[
-    G("rn","Registered nurses","Band 5",34592,240,4000000),
-    G("sn","Senior nurses","Band 6",42170,120,1500000),
-    G("ahp","AHPs (physio / OT)","Band 5/6",38400,100,800000),
-    G("hca","Healthcare assistants","Band 2/3",25900,160,700000),
-    G("doc","Medics (locum / SAS)","SAS / ST3+",60000,40,3000000),
+  acute: { label:"Acute trust", desc:"~660 bank · ~£1.4m agency", groups:[
+    G("rn","Registered nurses","Band 5",34592,240,560000),
+    G("sn","Senior nurses","Band 6",42170,120,210000),
+    G("ahp","AHPs (physio / OT)","Band 5/6",38400,100,112000),
+    G("hca","Healthcare assistants","Band 2/3",25900,160,98000),
+    G("doc","Medics (locum / SAS)","SAS / ST3+",60000,40,420000),
   ]},
   community: { label:"Community / specialist", desc:"~260 bank · ~£3m agency", groups:[
     G("cn","Community / district nurses","Band 6",42170,70,900000),
