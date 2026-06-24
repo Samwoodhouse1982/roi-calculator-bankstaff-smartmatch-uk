@@ -10,6 +10,28 @@ The core cash model is correct and unusually honest. The agency-premium formula 
 
 Tags: [W] web only, [K] kiosk only, [B] both.
 
+## Implementation status (updated 2026-06-24)
+
+Worked through in priority order. Each fix was verified (offline browser render and/or engine reference tests) and deployed to both production branches (`main` = web, `smartmatch-touchscreen` = kiosk).
+
+Done:
+- P0: #1 PDF staff-group table (autotable + CDN-chain loader), #2 lead form (consent-gated, confirms only on real success), #3 scaleGroupsTo (largest-remainder, reversible, exact sums), #4 savings chart uses the edited platform cost.
+- P1: #5 hero leads with net cash + payback (ROI% demoted to the secondary row), #6 honest result-basis caption, #7 engines aligned (provably identical per pound of agency spend; acute preset converged to the Quick 15%-fill view), #8 input clamping (incl. kiosk keypad #19), #11 web a11y labels (sliders, band select).
+- P2: #12/#14 unreachable exceedsSpend supplemented by a reachable admin-only flag + note, #16 ROI shows n/a (not 0%) at zero platform cost, #17 iframe-resize effect dependency array, #18 manager count + admin toggle preserved across mode switch, #21 kiosk stat relabelled, #22 kiosk respects prefers-reduced-motion.
+- P3: #25 small-print contrast raised to ~4.7:1 / WCAG AA (web), #26 C.rose defined, #27 displacement default aligned, #29 num() strips £/commas, #31 kiosk "Start over" disambiguated ("Change calculator" vs results "Start over") + PDF uses the current brand colours.
+
+Open - decisions or larger pieces of work (not guessed):
+- #9 single shared engine module + reference tests (web inline vs kiosk JS have drifted before) - architecture.
+- #10 NHS-network resilience: precompile / self-host React+Babel+jsPDF or add SRI - build change.
+- #11 full kiosk accessibility (div onClick -> buttons, aria, keyboard nav) - larger effort.
+- #13 Quick model uses bank pool as an org-size proxy (bigger pool -> bigger derived spend) - model design.
+- #20 kiosk admin reset PIN hardcoded in the bundle - move to build-time env or accept as low-risk.
+- #23 kiosk 15-min idle reset wipes an in-progress session with no warning - UX call.
+- #24 load-bearing citations (HoC CBP-10539, REC FOI, AfC +3.3%, 60 shifts/worker, £17k platform) need fact-checking against sources.
+- Live check still owed: the web Detailed PDF staff-group table only renders when the autotable CDN plugin loads, which cannot be exercised in the offline sandbox.
+
+Not actioned (low value / cosmetic): #15 stance-note wording, #28 fmt vs fmtK mix, #29 useId / band-pill / calibrating-overlay polish, #30 unused kiosk icons + InfoTip scroll-follow, #31 dead-code removal.
+
 ## P0 — Critical (fix before it is truly "live")
 
 1. [W] Detailed PDF silently drops the staff-group table. `doc.autoTable()` is called but the autotable plugin is never loaded, so the finance-facing PDF is missing its core breakdown with no error. Fix: load jspdf-autotable (with CDN fallback).
