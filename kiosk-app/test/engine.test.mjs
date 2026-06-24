@@ -14,30 +14,30 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { calc, calcDetailed, buildOrg, DEFAULTS, DETAILED_DEFAULTS, platformCostFor } from '../src/calc/engine.js';
+import { calc, calcDetailed, buildOrg, DEFAULTS, DETAILED_DEFAULTS, platformCostFor, agencyRegime } from '../src/calc/engine.js';
 
 // Core invariant: cash saved per £1 of agency spend, at the default
 // premium (20%) + displacement (13%): d * p/(1+p) = 0.13 * 0.20/1.20.
-const SAVING_PER_POUND = 0.13 * 0.20 / 1.20; // = 0.0216666...
+const SAVING_PER_POUND = 0.13 * 0.8 * 0.20 / 1.20; // displaceable share applied (benchmark §4)
 
 test('Quick default matches the golden headline', () => {
   const q = calc({ ...DEFAULTS, includeAdmin: true });
-  assert.equal(Math.round(q.netSaving), 61896);
-  assert.equal(Math.round(q.agencySaving), 30296);
+  assert.equal(Math.round(q.netSaving), 55837);
+  assert.equal(Math.round(q.agencySaving), 24237);
   assert.equal(Math.round(q.adminSaving), 48600);
-  assert.equal(Math.round(q.grossBenefit), 78896);
-  assert.equal(Math.round(q.roiPct), 364);
+  assert.equal(Math.round(q.grossBenefit), 72837);
+  assert.equal(Math.round(q.roiPct), 328);
   assert.equal(q.timeSavedWeek, 60);
   assert.equal(Math.round(q.agencySpend), 1398290);
-  assert.ok(Math.abs(q.paybackMonths - 2.59) < 0.01);
+  assert.ok(Math.abs(q.paybackMonths - 2.80) < 0.01);
 });
 
 const DETAILED_GOLDEN = {
-  acute:     { net: 61933,  premium: 30333,  totSpend: 1400000,  totHead: 660,  roi: 364 },
-  community: { net: 96600,  premium: 65000,  totSpend: 3000000,  totHead: 260,  roi: 568 },
-  mental:    { net: 161600, premium: 130000, totSpend: 6000000,  totHead: 400,  roi: 951 },
-  ambulance: { net: 118267, premium: 86667,  totSpend: 4000000,  totHead: 350,  roi: 696 },
-  ics:       { net: 789933, premium: 758333, totSpend: 35000000, totHead: 2300, roi: 4647 },
+  acute:     { net: 291600, premium: 260000, totSpend: 15000000, totHead: 2200, roi: 1715 },
+  community: { net: 152933, premium: 121333, totSpend: 7000000,  totHead: 700,  roi: 900 },
+  mental:    { net: 204933, premium: 173333, totSpend: 10000000, totHead: 1000, roi: 1205 },
+  ambulance: { net: 100933, premium: 69333,  totSpend: 4000000,  totHead: 400,  roi: 594 },
+  ics:       { net: 551600, premium: 520000, totSpend: 30000000, totHead: 5000, roi: 3245 },
 };
 
 for (const [type, g] of Object.entries(DETAILED_GOLDEN)) {
@@ -62,12 +62,11 @@ test('IDENTITY: both engines save the same fraction per £ of agency spend (audi
   }
 });
 
-test('Acute preset converges on the Quick default (audit #7)', () => {
-  const q = calc({ ...DEFAULTS, includeAdmin: true });
-  const d = calcDetailed({ ...DETAILED_DEFAULTS, admin: { ...DETAILED_DEFAULTS.admin, enabled: true }, groups: buildOrg('acute') });
-  // Same model, near-identical inputs (£1.40m preset vs £1.398m derived): within 0.5%.
-  assert.ok(Math.abs(d.netSaving - q.netSaving) / q.netSaving < 0.005,
-    `acute net ${d.netSaving} vs quick net ${q.netSaving}`);
+test('Displaceable share scales the agency saving (benchmark §4)', () => {
+  const full = calcDetailed({ ...DETAILED_DEFAULTS, displaceableShare: 1, groups: buildOrg('acute') });
+  const def = calcDetailed({ ...DETAILED_DEFAULTS, groups: buildOrg('acute') });
+  assert.equal(Math.round(full.totSaving), 325000);   // 80% of this = 260000 (the default)
+  assert.ok(Math.abs(def.totSaving - full.totSaving * 0.8) < 1);
 });
 
 test('ROI is n/a (null), not 0%, when platform cost is zero (audit #16)', () => {
@@ -88,4 +87,11 @@ test('platformCostFor scales with bank headcount (Rev D)', () => {
   assert.equal(platformCostFor(660), 14000);
   assert.equal(platformCostFor(2000), 17000);
   assert.equal(platformCostFor(5000), 20000);
+});
+
+test('agencyRegime classifies by % of turnover (benchmark §5)', () => {
+  assert.equal(agencyRegime(10000000, 235000000).key, 'high');    // 4.26%
+  assert.equal(agencyRegime(15000000, 430000000).key, 'typical'); // 3.49%
+  assert.equal(agencyRegime(5000000, 1000000000).key, 'low');     // 0.5%
+  assert.equal(agencyRegime(10000000, 0).key, null);              // no turnover -> no regime
 });

@@ -205,6 +205,13 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
       </div>
     </Card>
 
+    {r.regime && <Card style={{ marginBottom: 28 }}>
+      <CTitle iconKey="search">Agency intensity: {r.agencyPctOfTurnover.toFixed(1)}% of turnover</CTitle>
+      <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.7 }}>
+        {r.regime === "low" ? <>This is a <strong style={{ color: C.text }}>mature, low-agency</strong> model (under 1% of turnover): rate-arbitrage savings are small, so the stronger story is <strong style={{ color: C.text }}>admin time released, fill-rate improvement and bank-rate control</strong> rather than the cash premium.</> : r.regime === "high" ? <>This trust is <strong style={{ color: C.text }}>highly agency-reliant</strong> (over 4% of turnover): <strong style={{ color: C.text }}>the cash saving from displacing the agency premium dominates</strong> — the strongest rate-arbitrage case.</> : <>This is <strong style={{ color: C.text }}>typical</strong> agency reliance (1–4% of turnover): <strong style={{ color: C.text }}>the cash saving from the agency premium</strong> is the headline, with admin time a secondary benefit.</>} Displacement is applied to the <strong style={{ color: C.text }}>{Math.round((r.displaceableShare != null ? r.displaceableShare : 0.8) * 100)}% displaceable share</strong> only.
+      </div>
+    </Card>}
+
     {/* Capacity panel. Explicitly NOT a cash saving */}
     <Card style={{ marginBottom: 28, borderLeft: `3px solid ${C.amber}` }}>
       <CTitle iconKey="calendar" color={C.amber}>Capacity: not a cash saving</CTitle>

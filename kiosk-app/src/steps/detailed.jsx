@@ -3,7 +3,7 @@ import { C, F, fmt, fmtK, fmtNum } from '../theme';
 import { Card, SectionTitle, BigChoice, TouchSlider, Stepper, ToggleRow } from '../components';
 import { BigNumberField } from '../components/NumPad';
 import { Icon } from '../components/Icons';
-import { ORG_TYPES, AFC_BANDS, stance, scaleGroupsTo } from '../calc/engine';
+import { ORG_TYPES, AFC_BANDS, stance, scaleGroupsTo, agencySpendFromTurnover } from '../calc/engine';
 
 /* ────────────────────────────────────────────────────────────────────────
    Detailed / commercial wizard: three touch steps then the shared results.
@@ -29,7 +29,7 @@ function StanceButtons({ displacement, setDisplacement }) {
 }
 
 // STEP D0. Organisation profile
-export function OrgStep({ preset, onPickPreset, groups, setGroups }) {
+export function OrgStep({ preset, onPickPreset, groups, setGroups, turnover, setTurnover }) {
   const opts = Object.entries(ORG_TYPES).map(([k, p]) => ({ key: k, label: p.label, desc: p.desc, iconKey: p.iconKey }));
   const totalHead = groups.reduce((s, g) => s + Number(g.headcount || 0), 0);
   const totalSpend = groups.reduce((s, g) => s + Number(g.agencySpend || 0), 0);
@@ -41,6 +41,13 @@ export function OrgStep({ preset, onPickPreset, groups, setGroups }) {
       <CTitle iconKey="network">Size of your organisation</CTitle>
       <BigNumberField label="Total bank headcount" value={totalHead} min={50} max={6000} step={10} onChange={v => setGroups(scaleGroupsTo(groups, "headcount", v))} format={fmtNum} tip="Approximate number of workers on your staff bank across all groups. Drag, or tap to type an exact figure. We rescale the staff-group mix to match; fine-tune per group next." />
       <BigNumberField label="Total annual agency spend" prefix="£" value={totalSpend} min={0} max={80000000} step={100000} onChange={v => setGroups(scaleGroupsTo(groups, "agencySpend", v))} format={fmtK} tip="Your trust's total yearly temporary-staffing agency spend. This is the anchor for the saving, so it matters most. We rescale each group's spend proportionally; fine-tune per group next." />
+      <BigNumberField label="Annual turnover (£, optional)" prefix="£" value={turnover} min={0} max={5000000000} step={10000000} onChange={v => setTurnover(v)} format={fmtK} tip="Your trust's annual operating turnover (optional). Sets agency intensity — agency as a % of turnover — which tailors the headline. You can also estimate a typical agency spend from it." />
+      {turnover > 0 && (() => { const pct = (totalSpend / turnover) * 100; const key = pct < 1 ? "low" : (pct <= 4 ? "typical" : "high"); const lbl = { low: "low-agency / mature bank", typical: "typical reliance", high: "high reliance" }[key]; return (
+        <div style={{ marginTop: 14, padding: "14px 18px", background: C.accentSoft, borderRadius: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.6 }}>
+          Agency is <strong style={{ color: C.text }}>{pct.toFixed(1)}% of turnover</strong> — {lbl}.{" "}
+          <button onClick={() => setGroups(scaleGroupsTo(groups, "agencySpend", Math.round(agencySpendFromTurnover(turnover, preset))))} style={{ border: "none", background: "none", color: C.accent, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", padding: 0, textDecoration: "underline" }}>Estimate agency spend from turnover →</button>
+        </div>
+      ); })()}
     </Card>
   </div>;
 }
@@ -82,7 +89,8 @@ export function GroupsStep({ groups, setGroups, perGroupPremium, premium }) {
 
 // STEP D2. Assumptions & optional levers
 export function AssumptionsStep({ premium, setPremium, perGroupPremium, setPerGroupPremium, displacement, setDisplacement,
-                                  platformCost, setPlatformCost, fillRateNow, setFillRateNow, admin, setAdmin, recruit, setRecruit }) {
+                                  platformCost, setPlatformCost, fillRateNow, setFillRateNow, admin, setAdmin, recruit, setRecruit,
+                                  displaceableShare, setDisplaceableShare }) {
   const st = stance(displacement);
   return <div>
     <SectionTitle number={3}>Assumptions</SectionTitle>
@@ -115,6 +123,7 @@ export function AssumptionsStep({ premium, setPremium, perGroupPremium, setPerGr
       <CTitle iconKey="calendar">Platform &amp; capacity</CTitle>
       <BigNumberField label="Smart Match platform cost (£/yr)" prefix="£" value={platformCost} min={0} max={100000} step={1000} onChange={setPlatformCost} format={fmt} tip="Scales with your organisation size (~£10k–£20k by bank headcount); fully editable. ROI denominator — confirm it includes implementation, not licence alone." />
       <TouchSlider label="Current agency fill rate (%)" value={fillRateNow} min={0} max={30} step={0.5} onChange={setFillRateNow} format={v => v + "%"} tip="Used for the capacity narrative (agency reliance reduced)." />
+      <TouchSlider label="Displaceable share of agency (%)" value={Math.round((displaceableShare != null ? displaceableShare : 0.8) * 100)} min={0} max={100} step={5} onChange={v => setDisplaceableShare(Math.min(1, Math.max(0, v / 100)))} format={v => v + "%"} tip="Only part of agency spend can realistically move to bank — excludes break-glass / safety-critical cover and hard-to-fill specialist roles. Displacement applies to this share only (benchmark default 80%)." />
     </Card>
 
     <Card style={{ marginBottom: 18 }}>

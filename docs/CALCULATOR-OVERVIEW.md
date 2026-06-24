@@ -118,11 +118,17 @@ whole model, ROI, payback and charts recompute instantly.
 
 **Detailed / commercial:**
 - **Organisation presets** (acute, community, mental health, ambulance, ICS) that
-  pre-fill a realistic starting shape, then refine.
+  pre-fill a **benchmark-backed** starting shape (acute DGH ~£15m / ~2,200 bank, MH
+  ~£10m / ~1,000, community ~£7m / ~700, ambulance ~£4m / ~400, ICS ~£30m / ~5,000;
+  *typical — edit to your trust*), then refine. An optional **annual turnover** input
+  sets agency intensity (agency % of turnover) and tailors the headline framing
+  (<1% mature/low-agency · 1–4% typical · >4% high reliance).
 - **Per staff group:** add or remove groups and set each group's bank headcount,
   annual agency spend and bank pay. AfC band chips fill pay with one tap.
 - **Assumptions:** agency premium (one official rate, or set it per staff group),
-  displacement stance, platform cost, current agency fill rate.
+  displacement stance, platform cost, current agency fill rate, and the
+  **displaceable share** of agency (default 80% — only the part that can realistically
+  move to bank, excluding break-glass / hard-to-fill specialist cover).
 - **Optional levers, off until substantiated:** admin time saving (managers,
   hours per day, working days, loaded rate) and recruitment / onboarding waste
   recovered (workers, cost each, recovery share).

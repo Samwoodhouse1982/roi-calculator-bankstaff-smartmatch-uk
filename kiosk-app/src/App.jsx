@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { C, F, W, H, KIOSK_STEPS, fmtK, fmtNum } from './theme';
 import { SplashScreen } from './components/SplashScreen';
 import { BackgroundParticles } from './components/BackgroundParticles';
-import { calc, calcDetailed, DEFAULTS, DETAILED_DEFAULTS, buildOrg, platformCostFor } from './calc/engine';
+import { calc, calcDetailed, DEFAULTS, DETAILED_DEFAULTS, buildOrg, platformCostFor, ORG_TYPES } from './calc/engine';
 import { StepIndicator, NavButtons, PageTransition, BigChoice } from './components';
 import { BankStep, AgencyStep, TeamStep } from './steps';
 import { OrgStep, GroupsStep, AssumptionsStep } from './steps/detailed';
@@ -347,18 +347,20 @@ export default function App() {
   const [dFill, setDFill] = useState(DETAILED_DEFAULTS.fillRateNow);
   const [dAdmin, setDAdmin] = useState(DETAILED_DEFAULTS.admin);
   const [dRecruit, setDRecruit] = useState(DETAILED_DEFAULTS.recruit);
+  const [dDisplaceable, setDDisplaceable] = useState(DETAILED_DEFAULTS.displaceableShare);   // benchmark §4
+  const [dTurnover, setDTurnover] = useState(ORG_TYPES.acute.turnover);                       // benchmark §1/§5
 
   const rQuick = useMemo(() => calc({ bankPool, agencyFillRate, numManagers, displacement, includeAdmin, platformCost: platformCostFor(bankPool) }),
     [bankPool, agencyFillRate, numManagers, displacement, includeAdmin]);
-  const rDet = useMemo(() => calcDetailed({ groups: dGroups, premium: dPremium, displacement: dDisp, perGroupPremium: dPerGroup, platformCost: dPlatform, admin: dAdmin, recruit: dRecruit, fillRateNow: dFill }),
-    [dGroups, dPremium, dDisp, dPerGroup, dPlatform, dAdmin, dRecruit, dFill]);
+  const rDet = useMemo(() => calcDetailed({ groups: dGroups, premium: dPremium, displacement: dDisp, perGroupPremium: dPerGroup, platformCost: dPlatform, admin: dAdmin, recruit: dRecruit, fillRateNow: dFill, displaceableShare: dDisplaceable, turnover: dTurnover }),
+    [dGroups, dPremium, dDisp, dPerGroup, dPlatform, dAdmin, dRecruit, dFill, dDisplaceable, dTurnover]);
   useEffect(() => { if (!dPcAuto) return; const h = dGroups.reduce((s, g) => s + Number(g.headcount || 0), 0); setDPlatform(platformCostFor(h)); }, [dGroups, dPcAuto]);
   const isDetailed = flow === "detailed";
   const r = isDetailed ? rDet : rQuick;
   const steps = isDetailed ? DETAILED_STEPS : KIOSK_STEPS;
   const RESULTS_STEP = steps.length - 1;
 
-  const pickPreset = useCallback((k) => { setDPreset(k); setDGroups(buildOrg(k)); setDPcAuto(true); }, []);
+  const pickPreset = useCallback((k) => { setDPreset(k); setDGroups(buildOrg(k)); setDPcAuto(true); setDTurnover(ORG_TYPES[k].turnover); }, []);
 
   const handleCalculate = useCallback(() => setCalibrating(true), []);
   const handleCalibrationDone = useCallback(() => {
@@ -381,6 +383,7 @@ export default function App() {
     setDPreset("acute"); setDGroups(buildOrg("acute")); setDPremium(DETAILED_DEFAULTS.premium);
     setDDisp(DETAILED_DEFAULTS.displacement); setDPerGroup(false); setDPlatform(platformCostFor(660)); setDPcAuto(true);
     setDFill(DETAILED_DEFAULTS.fillRateNow); setDAdmin(DETAILED_DEFAULTS.admin); setDRecruit(DETAILED_DEFAULTS.recruit);
+    setDDisplaceable(DETAILED_DEFAULTS.displaceableShare); setDTurnover(ORG_TYPES.acute.turnover);
   }, []);
   const resetAll = useCallback(() => { resetQuick(); resetDetailed(); }, [resetQuick, resetDetailed]);
 
@@ -398,11 +401,12 @@ export default function App() {
   const renderStep = () => {
     if (isDetailed) {
       switch (kioskStep) {
-        case 0: return <OrgStep preset={dPreset} onPickPreset={pickPreset} groups={dGroups} setGroups={setDGroups} />;
+        case 0: return <OrgStep preset={dPreset} onPickPreset={pickPreset} groups={dGroups} setGroups={setDGroups} turnover={dTurnover} setTurnover={setDTurnover} />;
         case 1: return <GroupsStep groups={dGroups} setGroups={setDGroups} perGroupPremium={dPerGroup} premium={dPremium} />;
         case 2: return <AssumptionsStep premium={dPremium} setPremium={setDPremium} perGroupPremium={dPerGroup} setPerGroupPremium={setDPerGroup}
           displacement={dDisp} setDisplacement={setDDisp} platformCost={dPlatform} setPlatformCost={(v) => { setDPlatform(v); setDPcAuto(false); }}
-          fillRateNow={dFill} setFillRateNow={setDFill} admin={dAdmin} setAdmin={setDAdmin} recruit={dRecruit} setRecruit={setDRecruit} />;
+          fillRateNow={dFill} setFillRateNow={setDFill} admin={dAdmin} setAdmin={setDAdmin} recruit={dRecruit} setRecruit={setDRecruit}
+          displaceableShare={dDisplaceable} setDisplaceableShare={setDDisplaceable} />;
         case 3: return <ResultsPage r={rDet} displacement={dDisp} setDisplacement={setDDisp} onAdjust={handleAdjust} onStartOver={handleStartOver} />;
         default: return null;
       }
