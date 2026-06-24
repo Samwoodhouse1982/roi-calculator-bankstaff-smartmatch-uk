@@ -17,7 +17,7 @@ export function stance(d) {
 
 export function calc(inp) {
   const { bankPool = 0, agencyFillRate = 0, numManagers = 0,
-          premium = 20, displacement = 10, shiftHours = SHIFT_HOURS,
+          premium = 20, displacement = 13, shiftHours = SHIFT_HOURS,
           oncost = BANK_ONCOST * 100, platformCost = PLATFORM_COST, includeAdmin = true } = inp;
   const p = premium / 100, d = displacement / 100, oc = oncost / 100, a = Math.min(0.99, agencyFillRate / 100);
   const bankShifts = bankPool * SIMPLE_SHIFTS_PER_WORKER_YR;
