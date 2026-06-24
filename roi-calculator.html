@@ -725,10 +725,8 @@ function App(){
                 <div><div className="roi-hero"><AnimMoney v={r.netSaving}/></div><div className="roi-cap">net cash saving / year</div></div>
                 <div><div className="roi-hero">{Math.round(tswAnim).toLocaleString(LOCALE)}<small> hrs</small></div><div className="roi-cap">admin time saved / week</div></div>
               </div>
-              <div style={{display:"inline-flex",alignItems:"center",gap:10,marginTop:"1rem",padding:"7px 16px",borderRadius:999,background:r.roiPct<0?"rgba(248,113,113,.15)":"rgba(52,222,194,.16)",border:"1px solid "+(r.roiPct<0?"rgba(248,113,113,.55)":"rgba(52,222,194,.5)")}}>
-                <span style={{fontSize:18,fontWeight:800,letterSpacing:".02em",color:r.roiPct<0?"#FCA5A5":"#34DEC2"}}>{r.implausibleRoi?"⚠ ":""}{Math.round(r.roiPct).toLocaleString(LOCALE)}% ROI</span>
-                <span style={{width:4,height:4,borderRadius:"50%",background:"rgba(255,255,255,.4)"}}></span>
-                <span style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,.85)"}}>{r.paybackMonths?r.paybackMonths.toFixed(1)+" mo":"n/a"} payback</span>
+              <div style={{display:"inline-flex",alignItems:"center",gap:10,marginTop:"1rem",padding:"7px 16px",borderRadius:999,background:r.netSaving<0?"rgba(248,113,113,.15)":"rgba(52,222,194,.16)",border:"1px solid "+(r.netSaving<0?"rgba(248,113,113,.55)":"rgba(52,222,194,.5)")}}>
+                <span style={{fontSize:18,fontWeight:800,letterSpacing:".02em",color:r.netSaving<0?"#FCA5A5":"#34DEC2"}}>{r.paybackMonths?r.paybackMonths.toFixed(1)+" mo":"n/a"} payback</span>
               </div>
               <div className="roi-sub">
                 <span>Payback <b>{r.paybackMonths?r.paybackMonths.toFixed(1)+" mo":"n/a"}</b></span>
