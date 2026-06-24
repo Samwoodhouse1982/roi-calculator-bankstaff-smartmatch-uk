@@ -81,7 +81,7 @@ export function TeamStep({ numManagers, setNumManagers, includeAdmin, setInclude
           on={includeAdmin}
           onToggle={setIncludeAdmin}
           label="Include admin time saving in the cash total"
-          tip="On by default. The hours released are always shown as a per-week figure; with this on, their cash value (a conservative 1.0 h/day at a loaded £18/h) is also added to the headline saving. Turn off to show the agency premium saving on its own."
+          tip="Off by default, a secondary recommendation. The hours released are always shown as a per-week figure; turn this on to also add their cash value (a conservative 1.0 h/day at a loaded £18/h) to the headline saving."
         />
       </div>
     </Card>

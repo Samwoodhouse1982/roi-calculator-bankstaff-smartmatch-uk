@@ -113,12 +113,12 @@ export function AssumptionsStep({ premium, setPremium, perGroupPremium, setPerGr
 
     <Card style={{ marginBottom: 18 }}>
       <CTitle iconKey="calendar">Platform &amp; capacity</CTitle>
-      <BigNumberField label="Smart Match platform cost (£/yr)" prefix="£" value={platformCost} min={0} max={100000} step={1000} onChange={setPlatformCost} format={fmt} tip="ROI denominator. Confirm it includes implementation, not licence alone." />
+      <BigNumberField label="Smart Match platform cost (£/yr)" prefix="£" value={platformCost} min={0} max={100000} step={1000} onChange={setPlatformCost} format={fmt} tip="Scales with your organisation size (~£10k–£20k by bank headcount); fully editable. ROI denominator — confirm it includes implementation, not licence alone." />
       <TouchSlider label="Current agency fill rate (%)" value={fillRateNow} min={0} max={30} step={0.5} onChange={setFillRateNow} format={v => v + "%"} tip="Used for the capacity narrative (agency reliance reduced)." />
     </Card>
 
     <Card style={{ marginBottom: 18 }}>
-      <ToggleRow on={admin.enabled} onToggle={v => setAdmin(a => ({ ...a, enabled: v }))} label="Include admin time saving in the cash total" tip="On by default. Time released for roster managers, bank admins and temp/agency managers via self-booking automation. The hours-per-week figure is always shown; with this on, its cash value is also added to the headline. Turn off to show the agency saving alone." />
+      <ToggleRow on={admin.enabled} onToggle={v => setAdmin(a => ({ ...a, enabled: v }))} label="Include admin time saving in the cash total" tip="Off by default, a secondary recommendation. Time released for roster managers, bank admins and temp/agency managers via self-booking automation. The hours-per-week figure is always shown; turn this on to also add its cash value to the headline." />
       {admin.enabled && <div style={{ marginTop: 20 }}>
         <Stepper label="Admin / roster managers" value={admin.managers} min={0} max={80} step={1} onChange={v => setAdmin(a => ({ ...a, managers: v }))} />
         <TouchSlider label="Hours saved / day each" value={admin.hoursPerDay} min={0} max={4} step={0.25} onChange={v => setAdmin(a => ({ ...a, hoursPerDay: v }))} format={v => v + " h"} tip="Client suggested 2.5 h/day (optimistic). Default 1.0 h is conservative." />

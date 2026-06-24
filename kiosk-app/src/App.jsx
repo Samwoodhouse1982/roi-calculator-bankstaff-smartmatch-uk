@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { C, F, W, H, KIOSK_STEPS, fmtK, fmtNum } from './theme';
 import { SplashScreen } from './components/SplashScreen';
 import { BackgroundParticles } from './components/BackgroundParticles';
-import { calc, calcDetailed, DEFAULTS, DETAILED_DEFAULTS, buildOrg } from './calc/engine';
+import { calc, calcDetailed, DEFAULTS, DETAILED_DEFAULTS, buildOrg, platformCostFor } from './calc/engine';
 import { StepIndicator, NavButtons, PageTransition, BigChoice } from './components';
 import { BankStep, AgencyStep, TeamStep } from './steps';
 import { OrgStep, GroupsStep, AssumptionsStep } from './steps/detailed';
@@ -334,7 +334,7 @@ export default function App() {
   const [agencyFillRate, setAgencyFillRate] = useState(DEFAULTS.agencyFillRate);
   const [numManagers, setNumManagers] = useState(DEFAULTS.numManagers);
   const [displacement, setDisplacement] = useState(DEFAULTS.displacement);
-  const [includeAdmin, setIncludeAdmin] = useState(true);   // roster-manager time in the cash total (on by default)
+  const [includeAdmin, setIncludeAdmin] = useState(false);  // roster-manager time in the cash total (off by default; secondary)
 
   // Detailed / commercial variant inputs.
   const [dPreset, setDPreset] = useState("acute");
@@ -342,21 +342,23 @@ export default function App() {
   const [dPremium, setDPremium] = useState(DETAILED_DEFAULTS.premium);
   const [dDisp, setDDisp] = useState(DETAILED_DEFAULTS.displacement);
   const [dPerGroup, setDPerGroup] = useState(false);
-  const [dPlatform, setDPlatform] = useState(DETAILED_DEFAULTS.platformCost);
+  const [dPlatform, setDPlatform] = useState(platformCostFor(660));
+  const [dPcAuto, setDPcAuto] = useState(true);   // platform cost auto-scales with size until edited
   const [dFill, setDFill] = useState(DETAILED_DEFAULTS.fillRateNow);
   const [dAdmin, setDAdmin] = useState(DETAILED_DEFAULTS.admin);
   const [dRecruit, setDRecruit] = useState(DETAILED_DEFAULTS.recruit);
 
-  const rQuick = useMemo(() => calc({ bankPool, agencyFillRate, numManagers, displacement, includeAdmin }),
+  const rQuick = useMemo(() => calc({ bankPool, agencyFillRate, numManagers, displacement, includeAdmin, platformCost: platformCostFor(bankPool) }),
     [bankPool, agencyFillRate, numManagers, displacement, includeAdmin]);
   const rDet = useMemo(() => calcDetailed({ groups: dGroups, premium: dPremium, displacement: dDisp, perGroupPremium: dPerGroup, platformCost: dPlatform, admin: dAdmin, recruit: dRecruit, fillRateNow: dFill }),
     [dGroups, dPremium, dDisp, dPerGroup, dPlatform, dAdmin, dRecruit, dFill]);
+  useEffect(() => { if (!dPcAuto) return; const h = dGroups.reduce((s, g) => s + Number(g.headcount || 0), 0); setDPlatform(platformCostFor(h)); }, [dGroups, dPcAuto]);
   const isDetailed = flow === "detailed";
   const r = isDetailed ? rDet : rQuick;
   const steps = isDetailed ? DETAILED_STEPS : KIOSK_STEPS;
   const RESULTS_STEP = steps.length - 1;
 
-  const pickPreset = useCallback((k) => { setDPreset(k); setDGroups(buildOrg(k)); }, []);
+  const pickPreset = useCallback((k) => { setDPreset(k); setDGroups(buildOrg(k)); setDPcAuto(true); }, []);
 
   const handleCalculate = useCallback(() => setCalibrating(true), []);
   const handleCalibrationDone = useCallback(() => {
@@ -377,7 +379,7 @@ export default function App() {
   }, []);
   const resetDetailed = useCallback(() => {
     setDPreset("acute"); setDGroups(buildOrg("acute")); setDPremium(DETAILED_DEFAULTS.premium);
-    setDDisp(DETAILED_DEFAULTS.displacement); setDPerGroup(false); setDPlatform(DETAILED_DEFAULTS.platformCost);
+    setDDisp(DETAILED_DEFAULTS.displacement); setDPerGroup(false); setDPlatform(platformCostFor(660)); setDPcAuto(true);
     setDFill(DETAILED_DEFAULTS.fillRateNow); setDAdmin(DETAILED_DEFAULTS.admin); setDRecruit(DETAILED_DEFAULTS.recruit);
   }, []);
   const resetAll = useCallback(() => { resetQuick(); resetDetailed(); }, [resetQuick, resetDetailed]);
@@ -399,7 +401,7 @@ export default function App() {
         case 0: return <OrgStep preset={dPreset} onPickPreset={pickPreset} groups={dGroups} setGroups={setDGroups} />;
         case 1: return <GroupsStep groups={dGroups} setGroups={setDGroups} perGroupPremium={dPerGroup} premium={dPremium} />;
         case 2: return <AssumptionsStep premium={dPremium} setPremium={setDPremium} perGroupPremium={dPerGroup} setPerGroupPremium={setDPerGroup}
-          displacement={dDisp} setDisplacement={setDDisp} platformCost={dPlatform} setPlatformCost={setDPlatform}
+          displacement={dDisp} setDisplacement={setDDisp} platformCost={dPlatform} setPlatformCost={(v) => { setDPlatform(v); setDPcAuto(false); }}
           fillRateNow={dFill} setFillRateNow={setDFill} admin={dAdmin} setAdmin={setDAdmin} recruit={dRecruit} setRecruit={setDRecruit} />;
         case 3: return <ResultsPage r={rDet} displacement={dDisp} setDisplacement={setDDisp} onAdjust={handleAdjust} onStartOver={handleStartOver} />;
         default: return null;

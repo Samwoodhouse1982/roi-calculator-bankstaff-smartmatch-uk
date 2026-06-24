@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { C, F, fmt, fmtK, fmtNum } from '../theme';
 import { Icon } from '../components/Icons';
 import { Card } from '../components';
-import { stance, project, PLATFORM_COST } from '../calc/engine';
+import { stance } from '../calc/engine';
 
 /**
  * Animates a numeric value to a target over `duration` ms with ease-out cubic.
@@ -78,7 +78,6 @@ function KpiTile({ label, value, sub, iconKey }) {
 export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStartOver }) {
   if (!r) return null;
   const st = stance(displacement);
-  const [rampYears, setRampYears] = useState(3);
   const fmtMonths = m => m == null ? "n/a" : `${m.toFixed(1)} mo`;
   const fmtPct1 = v => `${(Math.round(v * 10) / 10).toLocaleString("en-GB")}%`;
 
@@ -198,45 +197,12 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
       </div>
     </Card>
 
-    {/* Savings over time. Phased ramp (45/75/100 over 3yr) */}
+    {/* Single annual steady-state (Rev D: ramp removed) */}
     <Card style={{ marginBottom: 28 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-        <CTitle iconKey="calendar">Savings over time</CTitle>
-        <div style={{ display: "inline-flex", gap: 6, background: C.surface2, borderRadius: 999, padding: 4 }}>
-          {[3, 5].map(y => <button key={y} onClick={() => setRampYears(y)} style={{
-            border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: F.small, fontWeight: 700,
-            padding: "8px 18px", borderRadius: 999, background: rampYears === y ? C.accent : "transparent",
-            color: rampYears === y ? "#fff" : C.textMid, transition: "all .15s"
-          }}>{y}-year</button>)}
-        </div>
+      <CTitle iconKey="calendar">Annual, ongoing saving</CTitle>
+      <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.7 }}>
+        This is a <strong style={{ color: C.text }}>single annual, steady-state figure</strong>, not a multi-year projection. Smart Match savings start once it is live and recur every year it is in use; the platform cost is an annual cost, so the net saving above repeats each year.
       </div>
-      {(() => {
-        const proj = project(r.grossBenefit, r.platformCost != null ? r.platformCost : PLATFORM_COST, rampYears);
-        const mx = Math.max(...proj.yrNet.map(v => Math.abs(v)), 1);
-        return <div>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 12, height: 200 }}>
-            {proj.yrNet.map((v, i) => <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end" }}>
-              <div style={{ fontSize: F.small, fontWeight: 800, color: v < 0 ? C.amber : C.accent, marginBottom: 8 }}>{fmtK(v)}</div>
-              <div style={{ width: "100%", maxWidth: 90, height: Math.max(6, Math.round((Math.max(0, v) / mx) * 150)), background: v < 0 ? C.amber : `linear-gradient(180deg, ${C.accentMid}, ${C.accent})`, borderRadius: "8px 8px 0 0", transition: "height .5s ease" }} />
-              <div style={{ fontSize: F.small, color: C.textMid, marginTop: 10, fontWeight: 600 }}>Year {i + 1}</div>
-              <div style={{ fontSize: F.tiny, color: C.textMuted }}>{Math.round(proj.pcts[i] * 100)}% ramp</div>
-            </div>)}
-          </div>
-          <div style={{ display: "flex", gap: 14, marginTop: 22 }}>
-            <div style={{ flex: 1, padding: "18px 20px", background: C.surface2, borderRadius: 14, border: `1px solid ${C.borderLight}` }}>
-              <div style={{ fontSize: F.tiny, color: C.textMuted }}>{rampYears}-year cumulative net</div>
-              <div style={{ fontSize: F.h2, fontWeight: 800, color: C.accent, marginTop: 4 }}>{fmt(proj.cumNet)}</div>
-            </div>
-            <div style={{ flex: 1, padding: "18px 20px", background: C.surface2, borderRadius: 14, border: `1px solid ${C.borderLight}` }}>
-              <div style={{ fontSize: F.tiny, color: C.textMuted }}>{rampYears}-year gross benefit</div>
-              <div style={{ fontSize: F.h2, fontWeight: 800, color: C.text, marginTop: 4 }}>{fmt(proj.cumGross)}</div>
-            </div>
-          </div>
-          <div style={{ marginTop: 16, fontSize: F.small, color: C.textMuted, fontStyle: "italic", lineHeight: 1.6 }}>
-            Benefits ramp as bank utilisation improves, modelled at {proj.pcts.map(p => Math.round(p * 100) + "%").join(" → ")} of the annual run-rate, with the platform cost recurring in full each year. Indicative.
-          </div>
-        </div>;
-      })()}
     </Card>
 
     {/* Capacity panel. Explicitly NOT a cash saving */}
@@ -250,6 +216,23 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
       <Row label="Agency reliance reduced" value={<>{fmtPct1(r.fillNow)} → <span style={{ color: C.good, fontWeight: 800 }}>{fmtPct1(r.fillAfter)}</span></>} />
       <div style={{ marginTop: 14, fontSize: F.small, color: C.textMuted, fontStyle: "italic", lineHeight: 1.6 }}>
         This is where "utilisation uplift" belongs: coverage, not cash.
+      </div>
+    </Card>
+
+    {/* Honest framing (mandatory) */}
+    <Card style={{ marginBottom: 28, borderLeft: `3px solid ${C.amber}` }}>
+      <CTitle iconKey="lightbulb" color={C.amber}>How to read these numbers</CTitle>
+      <ul style={{ margin: 0, paddingLeft: 22, fontSize: F.small, color: C.textMid, lineHeight: 1.75 }}>
+        <li>These figures are <strong style={{ color: C.text }}>indicative</strong>, not a guarantee or a quote.</li>
+        <li>The pilot evidence is a small <strong style={{ color: C.text }}>two-site vendor sample within a four-trust programme</strong>, anonymised here as "a community trust" and "an acute trust". Results are not solely attributable to Smart Match.</li>
+        <li>The <strong style={{ color: C.text }}>agency premium is contested</strong> at shift level; the model is most credible when run on your own trust's rates.</li>
+        <li>Better bank <strong style={{ color: C.text }}>utilisation is the mechanism</strong>; the cash is the agency premium displaced. Capacity gained is coverage, not cash, and is reported separately above.</li>
+      </ul>
+      <div style={{ marginTop: 16, padding: "14px 18px", background: C.surface2, borderRadius: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.65, border: `1px solid ${C.borderLight}` }}>
+        <strong style={{ color: C.text }}>Strategically</strong>, releasing cash and capacity from temporary staffing supports the <strong style={{ color: C.text }}>NHS 10 Year Plan</strong> and Workforce Paper, and the <strong style={{ color: C.text }}>Staff Health &amp; Wellbeing CQUIN</strong>.
+      </div>
+      <div style={{ marginTop: 12, fontSize: F.tiny, color: C.textMuted, fontStyle: "italic", lineHeight: 1.6 }}>
+        As a patient-safety company, much of Smart Match's value also shows up in safety and quality — safer staffing, better continuity of care and less reliance on unfamiliar agency staff — and in staff experience. These wider benefits are real but kept as a qualitative note, out of the ROI.
       </div>
     </Card>
 
@@ -277,23 +260,6 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
           </p>
         </div>
       </Collapsible>
-    </Card>
-
-    {/* Honest framing (mandatory) */}
-    <Card style={{ marginBottom: 28, borderLeft: `3px solid ${C.amber}` }}>
-      <CTitle iconKey="lightbulb" color={C.amber}>How to read these numbers</CTitle>
-      <ul style={{ margin: 0, paddingLeft: 22, fontSize: F.small, color: C.textMid, lineHeight: 1.75 }}>
-        <li>These figures are <strong style={{ color: C.text }}>indicative</strong>, not a guarantee or a quote.</li>
-        <li>The pilot evidence is a small <strong style={{ color: C.text }}>two-site vendor sample within a four-trust programme</strong>, anonymised here as "a community trust" and "an acute trust". Results are not solely attributable to Smart Match.</li>
-        <li>The <strong style={{ color: C.text }}>agency premium is contested</strong> at shift level; the model is most credible when run on your own trust's rates.</li>
-        <li>Better bank <strong style={{ color: C.text }}>utilisation is the mechanism</strong>; the cash is the agency premium displaced. Capacity gained is coverage, not cash, and is reported separately above.</li>
-      </ul>
-      <div style={{ marginTop: 16, padding: "14px 18px", background: C.surface2, borderRadius: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.65, border: `1px solid ${C.borderLight}` }}>
-        <strong style={{ color: C.text }}>Strategically</strong>, releasing cash and capacity from temporary staffing supports the <strong style={{ color: C.text }}>NHS 10 Year Plan</strong> and Workforce Paper, and the <strong style={{ color: C.text }}>Staff Health &amp; Wellbeing CQUIN</strong>.
-      </div>
-      <div style={{ marginTop: 12, fontSize: F.tiny, color: C.textMuted, fontStyle: "italic", lineHeight: 1.6 }}>
-        Staff experience (fewer last-minute gaps, more choice for your own people) is a real benefit, but we keep it as a qualitative note and out of the ROI.
-      </div>
     </Card>
 
     {/* Actions */}

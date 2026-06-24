@@ -14,14 +14,14 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { calc, calcDetailed, buildOrg, DEFAULTS, DETAILED_DEFAULTS } from '../src/calc/engine.js';
+import { calc, calcDetailed, buildOrg, DEFAULTS, DETAILED_DEFAULTS, platformCostFor } from '../src/calc/engine.js';
 
 // Core invariant: cash saved per £1 of agency spend, at the default
 // premium (20%) + displacement (13%): d * p/(1+p) = 0.13 * 0.20/1.20.
 const SAVING_PER_POUND = 0.13 * 0.20 / 1.20; // = 0.0216666...
 
 test('Quick default matches the golden headline', () => {
-  const q = calc({ ...DEFAULTS });
+  const q = calc({ ...DEFAULTS, includeAdmin: true });
   assert.equal(Math.round(q.netSaving), 61896);
   assert.equal(Math.round(q.agencySaving), 30296);
   assert.equal(Math.round(q.adminSaving), 48600);
@@ -42,7 +42,7 @@ const DETAILED_GOLDEN = {
 
 for (const [type, g] of Object.entries(DETAILED_GOLDEN)) {
   test(`Detailed ${type} matches the golden headline`, () => {
-    const d = calcDetailed({ ...DETAILED_DEFAULTS, groups: buildOrg(type) });
+    const d = calcDetailed({ ...DETAILED_DEFAULTS, admin: { ...DETAILED_DEFAULTS.admin, enabled: true }, groups: buildOrg(type) });
     assert.equal(Math.round(d.netSaving), g.net);
     assert.equal(Math.round(d.totSaving), g.premium);
     assert.equal(Math.round(d.totSpend), g.totSpend);
@@ -63,8 +63,8 @@ test('IDENTITY: both engines save the same fraction per £ of agency spend (audi
 });
 
 test('Acute preset converges on the Quick default (audit #7)', () => {
-  const q = calc({ ...DEFAULTS });
-  const d = calcDetailed({ ...DETAILED_DEFAULTS, groups: buildOrg('acute') });
+  const q = calc({ ...DEFAULTS, includeAdmin: true });
+  const d = calcDetailed({ ...DETAILED_DEFAULTS, admin: { ...DETAILED_DEFAULTS.admin, enabled: true }, groups: buildOrg('acute') });
   // Same model, near-identical inputs (£1.40m preset vs £1.398m derived): within 0.5%.
   assert.ok(Math.abs(d.netSaving - q.netSaving) / q.netSaving < 0.005,
     `acute net ${d.netSaving} vs quick net ${q.netSaving}`);
@@ -76,8 +76,16 @@ test('ROI is n/a (null), not 0%, when platform cost is zero (audit #16)', () => 
 });
 
 test('adminOnly flags an agency-free saving, and is off by default (audit #14)', () => {
-  assert.equal(calc({ ...DEFAULTS }).adminOnly, false);
-  const noAgency = calc({ ...DEFAULTS, agencyFillRate: 0 });
+  assert.equal(calc({ ...DEFAULTS, includeAdmin: true }).adminOnly, false);
+  assert.equal(Math.round(calc({ ...DEFAULTS }).adminSaving), 0); // admin OFF by default (Rev D)
+  const noAgency = calc({ ...DEFAULTS, agencyFillRate: 0, includeAdmin: true });
   assert.equal(noAgency.adminOnly, true);
   assert.equal(Math.round(noAgency.agencySaving), 0);
+});
+
+test('platformCostFor scales with bank headcount (Rev D)', () => {
+  assert.equal(platformCostFor(300), 10000);
+  assert.equal(platformCostFor(660), 14000);
+  assert.equal(platformCostFor(2000), 17000);
+  assert.equal(platformCostFor(5000), 20000);
 });

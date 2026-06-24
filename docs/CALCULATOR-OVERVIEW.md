@@ -62,7 +62,7 @@ we report it under Capacity, never in the cash total.
 - **Displacement stance** (how much agency work shifts to bank): Conservative
   ~13% (default, about half the pilot), Pilot / Expected ~26% (the level measured
   at one community site, agency fill 8.1% to 6.0%), Optimistic ~35%.
-- **Platform cost:** GBP 17,000 per year default, used as the ROI denominator
+- **Platform cost:** scales with organisation size (GBP 10,000-20,000 by bank headcount), used as the ROI denominator
   (should include implementation, not licence alone).
 - **Pilot evidence:** a 2-site dataset within a 4-trust Smart Match programme,
   vendor-collected, anonymised pending client sign-off. Treated as indicative and
@@ -126,7 +126,7 @@ whole model, ROI, payback and charts recompute instantly.
 - **Optional levers, off until substantiated:** admin time saving (managers,
   hours per day, working days, loaded rate) and recruitment / onboarding waste
   recovered (workers, cost each, recovery share).
-- **Time horizon:** 3-year or 5-year cumulative view (kiosk).
+- **Time horizon:** single annual, steady-state saving — no multi-year ramp (Smart Match savings are immediate and ongoing once live).
 
 **Input methods:** the kiosk pairs big sliders for quick setting with an on-screen
 numeric keypad for exact figures; the web uses standard number fields. The web

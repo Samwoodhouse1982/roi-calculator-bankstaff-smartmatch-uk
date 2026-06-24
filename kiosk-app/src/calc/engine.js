@@ -2,6 +2,14 @@ export const AFC_DIVISOR = 1957.5;          // NHS AfC hours/year
 export const SHIFT_HOURS = 8;
 export const BANK_ONCOST = 0.20;            // affects duty counts only, not cash headline
 export const PLATFORM_COST = 17000;         // ROI denominator (confirm incl. implementation)
+/* [Rev D] Platform cost scales with org size (bank headcount), ~£10k–£20k; fully editable. */
+export function platformCostFor(totalBankHeadcount) {
+  const h = Number(totalBankHeadcount) || 0;
+  if (h >= 3000) return 20000;
+  if (h >= 1500) return 17000;
+  if (h >= 500)  return 14000;
+  return 10000;
+}
 export const ADMIN_HRS_PER_DAY = 1.0;       // conservative (client suggested 2.5 = optimistic)
 export const ADMIN_WORKING_DAYS = 225;
 export const ADMIN_LOADED_HOURLY = 18;
@@ -18,7 +26,7 @@ export function stance(d) {
 export function calc(inp) {
   const { bankPool = 0, agencyFillRate = 0, numManagers = 0,
           premium = 20, displacement = 13, shiftHours = SHIFT_HOURS,
-          oncost = BANK_ONCOST * 100, platformCost = PLATFORM_COST, includeAdmin = true } = inp;
+          oncost = BANK_ONCOST * 100, platformCost = PLATFORM_COST, includeAdmin = false } = inp;
   const p = premium / 100, d = displacement / 100, oc = oncost / 100, a = Math.min(0.99, agencyFillRate / 100);
   const bankShifts = bankPool * SIMPLE_SHIFTS_PER_WORKER_YR;
   const totalTemp = a < 1 ? bankShifts / (1 - a) : bankShifts;   // bank fills the non-agency share
@@ -42,17 +50,6 @@ export function calc(inp) {
   return { agencySpend, agencySaving, adminSaving, timeSavedWeek, grossBenefit, netSaving, roiPct,
            paybackMonths, displaced, capacityValue, fillNow: agencyFillRate, fillAfter,
            exceedsSpend, adminOnly, implausibleRoi, premium, displacement, platformCost };
-}
-
-/* Phased ramp + cumulative (3- and 5-year). Benefits build as bank utilisation
-   improves; the platform cost recurs in full each year. (Matches the web version.) */
-export const RAMP_PCTS = { 3: [0.45, 0.75, 1.00], 5: [0.30, 0.55, 0.75, 0.90, 1.00] };
-export function project(grossAnnual, platformCost = PLATFORM_COST, years = 3) {
-  const pcts = RAMP_PCTS[years] || RAMP_PCTS[3];
-  const yrGross = pcts.map(p => grossAnnual * p);
-  const yrNet = yrGross.map(g => g - platformCost);
-  return { years, pcts, yrGross, yrNet,
-           cumGross: yrGross.reduce((a, b) => a + b, 0), cumNet: yrNet.reduce((a, b) => a + b, 0) };
 }
 
 /* ============================================================================
@@ -144,7 +141,7 @@ export function scaleGroupsTo(groups, key, target) {
 
 export const DETAILED_DEFAULTS = {
   premium: 20, displacement: 13, perGroupPremium: false, platformCost: PLATFORM_COST, fillRateNow: 8,
-  admin:   { enabled: true, managers: 12, hoursPerDay: ADMIN_HRS_PER_DAY, workingDays: ADMIN_WORKING_DAYS, loadedHourly: ADMIN_LOADED_HOURLY },
+  admin:   { enabled: false, managers: 12, hoursPerDay: ADMIN_HRS_PER_DAY, workingDays: ADMIN_WORKING_DAYS, loadedHourly: ADMIN_LOADED_HOURLY },
   recruit: { enabled: false, workers: 50, costPerWorker: 1000, recoveryRate: 0.10 },
 };
 
