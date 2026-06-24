@@ -204,7 +204,7 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
         </div>
       </div>
       {(() => {
-        const proj = project(r.grossBenefit, PLATFORM_COST, rampYears);
+        const proj = project(r.grossBenefit, r.platformCost != null ? r.platformCost : PLATFORM_COST, rampYears);
         const mx = Math.max(...proj.yrNet.map(v => Math.abs(v)), 1);
         return <div>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 12, height: 200 }}>

@@ -40,7 +40,7 @@ export function calc(inp) {
   const implausibleRoi = roiPct > 3000;
   return { agencySpend, agencySaving, adminSaving, timeSavedWeek, grossBenefit, netSaving, roiPct,
            paybackMonths, displaced, capacityValue, fillNow: agencyFillRate, fillAfter,
-           exceedsSpend, implausibleRoi, premium, displacement };
+           exceedsSpend, implausibleRoi, premium, displacement, platformCost };
 }
 
 /* Phased ramp + cumulative (3- and 5-year). Benefits build as bank utilisation
@@ -112,15 +112,33 @@ export const AFC_BANDS = [["Band 2", 25272], ["Band 3", 26618], ["Band 5", 34592
 // Fresh editable copy of a type's staff-group profile.
 export const buildOrg = key => (ORG_TYPES[key] || ORG_TYPES.acute).groups.map(g => ({ ...g }));
 
-// Scale every group's `key` (headcount | agencySpend) proportionally so the
-// column sums to `target`, preserving the staff-group mix. No-op for target <= 0.
+// Scale every group's `key` (headcount | agencySpend) so the column sums exactly
+// to `target`, preserving the mix. Largest-remainder rounding + a per-positive-group
+// floor mean a group never collapses to 0 (so the size control stays reversible)
+// and the parts always sum to the headline. No-op for target <= 0.
 export function scaleGroupsTo(groups, key, target) {
-  const cur = groups.reduce((s, g) => s + num(g[key]), 0);
+  const vals = groups.map(g => num(g[key]));
+  const cur = vals.reduce((a, b) => a + b, 0);
   if (cur <= 0 || !(target > 0)) return groups;
-  const f = target / cur;
-  return groups.map(g => ({ ...g, [key]: key === "agencySpend"
-    ? Math.max(0, Math.round(num(g[key]) * f / 1000) * 1000)
-    : Math.max(0, Math.round(num(g[key]) * f)) }));
+  const unit = key === "agencySpend" ? 1000 : 1;        // round headcount to 1, spend to £1,000
+  const tU = Math.round(target / unit);
+  if (tU <= 0) return groups;
+  const pos = vals.map(v => v > 0);
+  const nPos = pos.filter(Boolean).length;
+  if (tU < nPos) {                                       // absurdly small target: keep the largest groups at 1 unit, never all-zero
+    const order = vals.map((v, i) => ({ i, v })).sort((a, b) => b.v - a.v);
+    const out = vals.map(() => 0);
+    for (let j = 0; j < tU; j++) out[order[j].i] = 1;
+    return groups.map((g, i) => ({ ...g, [key]: out[i] * unit }));
+  }
+  const raw = vals.map(v => (v / cur) * tU);
+  const fl = raw.map((x, i) => pos[i] ? Math.max(1, Math.floor(x)) : 0);
+  let rem = tU - fl.reduce((a, b) => a + b, 0);
+  const order = raw.map((x, i) => ({ i, f: x - Math.floor(x), pos: pos[i] })).filter(o => o.pos).sort((a, b) => b.f - a.f);
+  let k = 0;
+  while (rem > 0 && order.length) { fl[order[k % order.length].i]++; rem--; k++; }
+  while (rem < 0) { let bi = -1, bv = 1; for (let i = 0; i < fl.length; i++) if (fl[i] > bv) { bv = fl[i]; bi = i; } if (bi < 0) break; fl[bi]--; rem++; }
+  return groups.map((g, i) => ({ ...g, [key]: fl[i] * unit }));
 }
 
 export const DETAILED_DEFAULTS = {
@@ -159,7 +177,7 @@ export function calcDetailed(input) {
     rows, totSpend, totSaving, totDisplaced, totHead, totCapacityValue,
     adminSaving, recruitSaving, timeSavedWeek, grossBenefit, netSaving, roiPct, paybackMonths,
     exceedsSpend: totSaving > totSpend && totSpend > 0, implausibleRoi: roiPct > 3000,
-    fillNow, fillAfter, premium, displacement, perGroupPremium,
+    fillNow, fillAfter, premium, displacement, perGroupPremium, platformCost: num(platformCost),
     // aliases so the shared ResultsPage can render either model unchanged:
     agencySaving: totSaving, displaced: totDisplaced, capacityValue: totCapacityValue,
   };
