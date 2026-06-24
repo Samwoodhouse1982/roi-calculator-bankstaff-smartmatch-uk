@@ -227,8 +227,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.4/babel.min.js" crossorigin></script>
 <script>
-(function(){ var s=["https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js","https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js","https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js"],i=0;
-  function load(){ if(i>=s.length)return; var e=document.createElement("script"); e.src=s[i++]; e.onerror=load; document.head.appendChild(e);} load(); })();
+(function(){
+  var jspdf=["https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js","https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js","https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js"];
+  var autotable=["https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js","https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js","https://unpkg.com/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"];
+  function chain(list,done){ var i=0; (function go(){ if(i>=list.length)return; var e=document.createElement("script"); e.src=list[i++]; e.onload=function(){ if(done) done(); }; e.onerror=go; document.head.appendChild(e); })(); }
+  chain(jspdf, function(){ chain(autotable); });   // load jsPDF, then the autotable plugin so the detailed-PDF staff-group table renders
+})();
 </script>
 
 <script type="text/babel" data-presets="react">
@@ -318,7 +322,19 @@ const ORG_TYPES = {
 };
 const AFC_BANDS = [["Band 2",25272],["Band 3",26618],["Band 5",34592],["Band 5/6",38400],["Band 6",42170],["Band 2/3",25900],["SAS / ST3+",60000]];
 const buildOrg = key => (ORG_TYPES[key]||ORG_TYPES.acute).groups.map(g=>({ ...g }));
-function scaleGroupsTo(groups,key,target){ const cur=groups.reduce((s,g)=>s+num(g[key]),0); if(cur<=0||!(target>0))return groups; const f=target/cur; return groups.map(g=>({ ...g, [key]: key==="agencySpend"?Math.max(0,Math.round(num(g[key])*f/1000)*1000):Math.max(0,Math.round(num(g[key])*f)) })); }
+function scaleGroupsTo(groups,key,target){
+  const vals=groups.map(g=>num(g[key])); const cur=vals.reduce((a,b)=>a+b,0);
+  if(cur<=0||!(target>0))return groups;
+  const unit=key==="agencySpend"?1000:1, tU=Math.round(target/unit); if(tU<=0)return groups;
+  const pos=vals.map(v=>v>0), nPos=pos.filter(Boolean).length;
+  if(tU<nPos){ const ord=vals.map((v,i)=>({i,v})).sort((a,b)=>b.v-a.v); const out=vals.map(()=>0); for(let j=0;j<tU;j++)out[ord[j].i]=1; return groups.map((g,i)=>({...g,[key]:out[i]*unit})); }
+  const raw=vals.map(v=>(v/cur)*tU); const fl=raw.map((x,i)=>pos[i]?Math.max(1,Math.floor(x)):0);
+  let rem=tU-fl.reduce((a,b)=>a+b,0);
+  const ord=raw.map((x,i)=>({i,f:x-Math.floor(x),pos:pos[i]})).filter(o=>o.pos).sort((a,b)=>b.f-a.f); let k=0;
+  while(rem>0&&ord.length){ fl[ord[k%ord.length].i]++; rem--; k++; }
+  while(rem<0){ let bi=-1,bv=1; for(let i=0;i<fl.length;i++)if(fl[i]>bv){bv=fl[i];bi=i;} if(bi<0)break; fl[bi]--; rem++; }
+  return groups.map((g,i)=>({...g,[key]:fl[i]*unit}));
+}
 
 function stance(d){
   if (d<=18) return { key:"Conservative", color:C.navy, bg:C.navyLight, note:"Conservative (≈13%): about half the pilot's measured effect. Recommended default for public/self-serve use: defensible without trust-specific evidence." };
@@ -460,7 +476,7 @@ function App(){
   const [shiftHours,setSH]=useState(SHIFT_HOURS_DEFAULT), [oncost,setOncost]=useState(BANK_ONCOST_DEFAULT*100);
   const [showAdv,setAdv]=useState(false), [calibrating,setCal]=useState(false);
   const [calculated,setCalculated]=useState(false), [rampYears,setRampYears]=useState(3);
-  const [lead,setLead]=useState({name:"",email:"",org:"",sent:false}), [pdfBusy,setPdfBusy]=useState(false);
+  const [lead,setLead]=useState({name:"",email:"",org:"",consent:false,sent:false,busy:false,err:null}), [pdfBusy,setPdfBusy]=useState(false);
   // simple state
   const [simple,setSimple]=useState({ bankPool:660, agencyFillRate:15, numManagers:12, includeAdmin:true });
   // detailed state
@@ -490,12 +506,21 @@ function App(){
     const ro=new ResizeObserver(post); ro.observe(document.documentElement); post(); const iv=setInterval(post,800);
     return ()=>{ro.disconnect();clearInterval(iv);}; });
 
-  function submitLead(e){ e.preventDefault();
-    /* HubSpot scaffold (open access v1, not gating). TODO: confirm SmartMatch portal + form GUID + GDPR consent. */
+  async function submitLead(e){ e.preventDefault();
+    if(!lead.consent) return;                                   // GDPR: require explicit consent before sending
+    /* HubSpot integration. TODO: set the real SmartMatch portal ID + form GUID below. */
     const PORTAL="REPLACE_PORTAL_ID", FORM="REPLACE_FORM_GUID", REGION="eu1";
-    try{ fetch(`https://forms-${REGION}.hsforms.com/submissions/v3/integration/submit/${PORTAL}/${FORM}`,{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({fields:[{name:"firstname",value:lead.name},{name:"email",value:lead.email},{name:"company",value:lead.org}],context:{pageName:"Smart Match ROI Calculator"}})}).catch(()=>{}); }catch(_){}
-    setLead(l=>({...l,sent:true})); }
+    if(PORTAL.startsWith("REPLACE")||FORM.startsWith("REPLACE")){ setLead(l=>({...l,err:"unconfigured"})); return; }  // don't fake success until wired up
+    setLead(l=>({...l,busy:true,err:null}));
+    try{
+      const res=await fetch(`https://forms-${REGION}.hsforms.com/submissions/v3/integration/submit/${PORTAL}/${FORM}`,{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ fields:[{name:"firstname",value:lead.name},{name:"email",value:lead.email},{name:"company",value:lead.org}],
+          context:{pageName:"Smart Match ROI Calculator"},
+          legalConsentOptions:{ consent:{ consentToProcess:true, text:"I agree RLDatix may contact me about Smart Match." } } }) });
+      if(res.ok) setLead(l=>({...l,sent:true,busy:false}));     // only confirm on a real success
+      else setLead(l=>({...l,err:"failed",busy:false}));
+    }catch(_){ setLead(l=>({...l,err:"failed",busy:false})); }
+  }
 
   async function downloadPDF(){
     if(!(window.jspdf&&window.jspdf.jsPDF)){ alert("PDF library still loading. Please try again in a moment."); return; }
@@ -819,8 +844,12 @@ function App(){
                 <input placeholder="Name" value={lead.name} onChange={e=>setLead(l=>({...l,name:e.target.value}))}/>
                 <input type="email" required placeholder="Work email" value={lead.email} onChange={e=>setLead(l=>({...l,email:e.target.value}))}/>
                 <input placeholder="Trust / organisation" value={lead.org} onChange={e=>setLead(l=>({...l,org:e.target.value}))}/>
-                <button className="btn primary" type="submit">Send to a specialist</button>
-              </div><p className="consent">By submitting you agree RLDatix may contact you about Smart Match. See the RLDatix privacy notice. (GDPR consent copy to be confirmed.)</p></form>}
+                <button className="btn primary" type="submit" disabled={!lead.consent||lead.busy}>{lead.busy?"Sending…":"Send to a specialist"}</button>
+              </div>
+              <label className="consent" style={{display:"flex",alignItems:"flex-start",gap:8,cursor:"pointer",marginTop:".6rem"}}><input type="checkbox" required checked={!!lead.consent} onChange={e=>setLead(l=>({...l,consent:e.target.checked}))} style={{marginTop:3}}/><span>I agree RLDatix may contact me about Smart Match and process these details in line with the RLDatix privacy notice.</span></label>
+              {lead.err==="failed" && <p className="consent" style={{color:"#b25b76"}}>Sorry, that didn't send. Please try again, or contact your RLDatix representative.</p>}
+              {lead.err==="unconfigured" && <p className="consent" style={{color:"#b25b76"}}>Lead capture isn't switched on yet. Your RLDatix contact can enable it (HubSpot portal + form ID).</p>}
+              </form>}
             </div>
 
             <div className="actions">
