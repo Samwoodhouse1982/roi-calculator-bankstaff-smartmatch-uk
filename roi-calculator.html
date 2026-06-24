@@ -239,7 +239,7 @@
 const { useState, useMemo, useEffect, useRef } = React;
 
 /* ===== THEME: RLDatix Galen suite (deep teal + seafoam) ===== */
-const C = { navy:"#0F4146", navyMid:"#1A5459", navyLight:"#E8FAF6", teal:"#0F4146", tealMid:"#1A8A7A", tealLight:"#D6F7EE", seafoam:"#34DEC2", border:"#D4E0DD", text:"#0F4146", textMid:"#3D5A5E", textLight:"#6E8A8E", rose:"#B25B76" };
+const C = { navy:"#0F4146", navyMid:"#1A5459", navyLight:"#E8FAF6", teal:"#0F4146", tealMid:"#1A8A7A", tealLight:"#D6F7EE", seafoam:"#34DEC2", border:"#D4E0DD", text:"#0F4146", textMid:"#3D5A5E", textLight:"#5F787C", rose:"#B25B76" };  // textLight darkened to ~4.7:1 on white (WCAG AA)
 const RAMP = ["#0F4146","#1A8A7A","#34DEC2","#73D2E1","#8FB3AE"];
 
 /* ===== FORMATTERS: en-GB / £ (AU-ready: swap LOCALE + SYMBOL) ===== */
@@ -527,10 +527,10 @@ function App(){
     if(!(window.jspdf&&window.jspdf.jsPDF)){ alert("PDF library still loading. Please try again in a moment."); return; }
     setPdfBusy(true);
     try{ const { jsPDF }=window.jspdf, doc=new jsPDF({unit:"mm",format:"a4"}); let y=18;
-      doc.setFillColor(27,43,75); doc.rect(0,0,210,30,"F"); doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(16);
-      doc.text("Smart Match: Workforce ROI Estimate",14,16); doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(20,184,166);
+      doc.setFillColor(15,65,70); doc.rect(0,0,210,30,"F"); doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(16);
+      doc.text("Smart Match: Workforce ROI Estimate",14,16); doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(52,222,194);
       doc.text("RLDatix · indicative · "+new Date().toLocaleDateString(LOCALE)+" · "+(mode==="quick"?"Quick estimate":"Detailed"),14,23); y=40;
-      doc.setTextColor(27,43,75); doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.text("Headline",14,y); y+=6; doc.setFont("helvetica","normal"); doc.setFontSize(10);
+      doc.setTextColor(15,65,70); doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.text("Headline",14,y); y+=6; doc.setFont("helvetica","normal"); doc.setFontSize(10);
       [["Net annual cash saving",fmt(r.netSaving)],["Admin time saved / week",Math.round(r.timeSavedWeek).toLocaleString(LOCALE)+" hours"],
        ["Gross annual benefit",fmt(r.grossBenefit)],["Payback",r.paybackMonths?r.paybackMonths.toFixed(1)+" months":"n/a"],["ROI (net)",r.roiPct==null?"n/a":Math.round(r.roiPct)+"%"],
        ["Agency premium displaced",fmt(r.totSaving)],["Admin saving",fmt(r.adminSaving)],["Recruitment waste recovered",fmt(r.recruitSaving)],
@@ -538,7 +538,7 @@ function App(){
       ].forEach(([k,v])=>{ doc.text(k,14,y); doc.text(String(v),196,y,{align:"right"}); y+=6; });
       if(mode==="detailed" && doc.autoTable){ y+=2; doc.setFont("helvetica","bold"); doc.text("Saving by staff group",14,y);
         doc.autoTable({ startY:y+2, head:[["Staff group","Agency spend","Duties displaced","Cash saving"]], body:r.rows.map(x=>[x.role,fmt(x.spend),fmtNum(x.displaced),fmt(x.saving)]),
-          styles:{fontSize:9}, headStyles:{fillColor:[27,43,75]}, margin:{left:14,right:14} }); y=doc.lastAutoTable.finalY+8; }
+          styles:{fontSize:9}, headStyles:{fillColor:[15,65,70]}, margin:{left:14,right:14} }); y=doc.lastAutoTable.finalY+8; }
       doc.setFontSize(8); doc.setTextColor(120,130,150);
       doc.text(doc.splitTextToSize("Indicative only. Cash saving = agency premium displaced when improved bank utilisation moves duties off agency; it excludes the cost of the bank shifts themselves (capacity, shown separately). 2026/27 NHS AfC midpoints; conservative, editable assumptions. Pilot figures are from 2 sites in a 4-trust programme, anonymised pending client sign-off, and are not solely attributable to the platform.",182),14,y);
       doc.save("smart-match-roi-estimate.pdf");
@@ -576,8 +576,8 @@ function App(){
 
       <main className="wrap">
         <div className="mode-toggle" role="tablist" aria-label="Calculator mode">
-          <button role="tab" aria-selected={isQuick} className={isQuick?"active":""} onClick={()=>setMode("quick")}>Quick estimate<small>For operational managers</small></button>
-          <button role="tab" aria-selected={!isQuick} className={!isQuick?"active":""} onClick={()=>setMode("detailed")}>Detailed (commercial)<small>For Finance leads &amp; Workforce Directors</small></button>
+          <button role="tab" aria-selected={isQuick} className={isQuick?"active":""} onClick={()=>{ setSimple(s=>({...s,numManagers:num(admin.managers),includeAdmin:admin.enabled})); setMode("quick"); }}>Quick estimate<small>For operational managers</small></button>
+          <button role="tab" aria-selected={!isQuick} className={!isQuick?"active":""} onClick={()=>{ setAdmin(a=>({...a,managers:num(simple.numManagers),enabled:simple.includeAdmin!==false})); setMode("detailed"); }}>Detailed (commercial)<small>For Finance leads &amp; Workforce Directors</small></button>
         </div>
 
         {isQuick ? (
