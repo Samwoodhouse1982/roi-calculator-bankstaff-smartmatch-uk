@@ -287,6 +287,16 @@ const SIMPLE_SHIFTS_PER_WORKER_YR = 60;   // bank work is ad-hoc/top-up, not ful
 const SIMPLE_BLENDED_BANK_PAY = 34000;    // AfC 2026/27 band-mix weighted midpoint
 const RECRUIT_COST_PER_WORKER = 1000;     // recruit + onboard a bank worker
 const RECRUIT_RECOVERY_RATE = 0.10;       // share recovered by activating idle capacity
+/* [Benchmark brief §4] Displaceable share: only part of agency spend can realistically move to bank
+   (excludes break-glass / safety-critical cover and hard-to-fill specialist roles bank can't cover).
+   Displacement is applied to this share only, so the tool never implies 100% of agency is bankable. */
+const DISPLACEABLE_SHARE_DEFAULT = 0.80;
+/* [Benchmark brief §1] Agency spend as a share of turnover, by type — used to estimate a typical
+   agency spend when only turnover is known (acute large/teaching banks ~1%, medium DGH ~3-4%, etc.). */
+const AGENCY_PCT_OF_TURNOVER = { acute:0.035, "acute-large":0.01, mental:0.042, community:0.03, ambulance:0.018, ics:0.03 };
+function agencySpendFromTurnover(turnover, type){ return num(turnover) * (AGENCY_PCT_OF_TURNOVER[type]!=null ? AGENCY_PCT_OF_TURNOVER[type] : 0.03); }
+/* [Benchmark brief §5] Agency-intensity regime from agency % of turnover: <1% mature/low, 1-4% typical, >4% high. */
+function agencyRegime(totSpend, turnover){ const t=num(turnover); if(!(t>0)) return { pct:null, key:null }; const pct=(totSpend/t)*100; return { pct, key: pct<1?"low":(pct<=4?"typical":"high") }; }
 
 /* AfC 2026/27 England midpoints (NHS Employers, +3.3% confirmed from 1 Apr 2026).
    Per-group bank pay drives like-for-like costs; the agency PREMIUM is a single, official
@@ -300,40 +310,40 @@ const G = (id,role,band,bankPay,headcount,agencySpend) => ({ id, role, band, ban
    size headlines (total headcount + total agency spend) rescale the mix via
    scaleGroupsTo(). */
 const ORG_TYPES = {
-  acute: { label:"Acute trust", desc:"~660 bank · ~£1.4m agency", groups:[
-    G("rn","Registered nurses","Band 5",34592,240,560000),
-    G("sn","Senior nurses","Band 6",42170,120,210000),
-    G("ahp","AHPs (physio / OT)","Band 5/6",38400,100,112000),
-    G("hca","Healthcare assistants","Band 2/3",25900,160,98000),
-    G("doc","Medics (locum / SAS)","SAS / ST3+",60000,40,420000),
+  acute: { label:"Acute trust (district general)", desc:"~2,200 bank · ~£15m agency", turnover:430000000, groups:[
+    G("rn","Registered nurses","Band 5",34592,900,6500000),
+    G("sn","Senior nurses","Band 6",42170,350,2500000),
+    G("ahp","AHPs (physio / OT)","Band 5/6",38400,300,1500000),
+    G("hca","Healthcare assistants","Band 2/3",25900,550,500000),
+    G("doc","Medics (locum / SAS)","SAS / ST3+",60000,100,4000000),
   ]},
-  community: { label:"Community / specialist", desc:"~260 bank · ~£3m agency", groups:[
-    G("cn","Community / district nurses","Band 6",42170,70,900000),
-    G("rn","Registered nurses","Band 5",34592,60,600000),
-    G("ahp","AHPs (physio / OT / SLT)","Band 5/6",38400,80,900000),
-    G("hca","Healthcare assistants","Band 2/3",25900,45,400000),
-    G("doc","Medics (locum / SAS)","SAS / ST3+",60000,5,200000),
+  community: { label:"Community / specialist", desc:"~700 bank · ~£7m agency", turnover:235000000, groups:[
+    G("cn","Community / district nurses","Band 6",42170,200,2500000),
+    G("rn","Registered nurses","Band 5",34592,180,1800000),
+    G("ahp","AHPs (physio / OT / SLT)","Band 5/6",38400,200,2000000),
+    G("hca","Healthcare assistants","Band 2/3",25900,100,400000),
+    G("doc","Medics (locum / SAS)","SAS / ST3+",60000,20,300000),
   ]},
-  mental: { label:"Mental health trust", desc:"~400 bank · ~£6m agency", groups:[
-    G("rmn","Mental health nurses (RMN)","Band 5",34592,140,2200000),
-    G("sn","Senior nurses","Band 6",42170,70,1000000),
-    G("hca","Healthcare assistants","Band 2/3",25900,150,1500000),
-    G("ahp","AHPs (OT / psychology)","Band 5/6",38400,25,300000),
-    G("doc","Medics (locum psych)","SAS / ST3+",60000,15,1000000),
+  mental: { label:"Mental health trust", desc:"~1,000 bank · ~£10m agency", turnover:235000000, groups:[
+    G("rmn","Mental health nurses (RMN)","Band 5",34592,450,4500000),
+    G("sn","Senior nurses","Band 6",42170,150,2000000),
+    G("hca","Healthcare assistants","Band 2/3",25900,300,1500000),
+    G("ahp","AHPs (OT / psychology)","Band 5/6",38400,50,500000),
+    G("doc","Medics (locum psych)","SAS / ST3+",60000,50,1500000),
   ]},
-  ambulance: { label:"Ambulance trust", desc:"~350 bank · ~£4m agency", groups:[
-    G("para","Paramedics","Band 6",42170,150,2000000),
-    G("emt","EMTs / care assistants","Band 3",26618,90,600000),
-    G("rn","Nurses (111 / UCC)","Band 5",34592,50,600000),
+  ambulance: { label:"Ambulance trust", desc:"~400 bank · ~£4m agency", turnover:220000000, groups:[
+    G("para","Paramedics","Band 6",42170,180,2200000),
+    G("emt","EMTs / care assistants","Band 3",26618,100,700000),
+    G("rn","Nurses (111 / UCC)","Band 5",34592,60,600000),
     G("call","Call handlers / dispatch","Band 3",26618,50,300000),
-    G("doc","Medics (locum)","SAS / ST3+",60000,10,500000),
+    G("doc","Medics (locum)","SAS / ST3+",60000,10,200000),
   ]},
-  ics: { label:"ICS / provider collaborative", desc:"~2,300 bank · ~£35m agency", groups:[
-    G("rn","Registered nurses","Band 5",34592,850,14000000),
-    G("sn","Senior nurses","Band 6",42170,420,5500000),
-    G("ahp","AHPs","Band 5/6",38400,350,3000000),
-    G("hca","Healthcare assistants","Band 2/3",25900,560,2500000),
-    G("doc","Medics (locum / SAS)","SAS / ST3+",60000,120,10000000),
+  ics: { label:"ICS / provider collaborative", desc:"~5,000 bank · ~£30m agency", turnover:1000000000, groups:[
+    G("rn","Registered nurses","Band 5",34592,1900,12000000),
+    G("sn","Senior nurses","Band 6",42170,900,5000000),
+    G("ahp","AHPs","Band 5/6",38400,800,4000000),
+    G("hca","Healthcare assistants","Band 2/3",25900,1200,2000000),
+    G("doc","Medics (locum / SAS)","SAS / ST3+",60000,200,7000000),
   ]},
 };
 const AFC_BANDS = [["Band 2",25272],["Band 3",26618],["Band 5",34592],["Band 5/6",38400],["Band 6",42170],["Band 2/3",25900],["SAS / ST3+",60000]];
@@ -362,6 +372,7 @@ function stance(d){
 function calc(input){
   const { groups, premium, displacement, shiftHours, oncost, platformCost, admin, recruit, fillRateNow, perGroupPremium } = input;
   const p=premium/100, d=displacement/100, oc=oncost/100;
+  const ds = input.displaceableShare!=null ? num(input.displaceableShare) : DISPLACEABLE_SHARE_DEFAULT;
   let totSpend=0, totSaving=0, totDisplaced=0, totBaseline=0, totHead=0, totCapacityValue=0;
   const rows = groups.map(g=>{
     const head=num(g.headcount), spend=num(g.agencySpend), pay=num(g.bankPay);
@@ -369,7 +380,7 @@ function calc(input){
     const bankShiftCost = (pay/AFC_DIVISOR) * shiftHours * (1+oc);
     const agencyShiftCost = bankShiftCost * (1+gp);
     const baseline = agencyShiftCost>0 ? spend/agencyShiftCost : 0;
-    const displaced = baseline*gd;
+    const displaced = baseline*ds*gd;   // displaceable share only
     const saving = displaced * (agencyShiftCost - bankShiftCost);  // = displaced × bankShiftCost × group premium
     const capacityValue = displaced * bankShiftCost;               // gross bank backfill cost (NON-cash)
     totSpend+=spend; totSaving+=saving; totDisplaced+=displaced; totBaseline+=baseline; totHead+=head; totCapacityValue+=capacityValue;
@@ -390,9 +401,11 @@ function calc(input){
   const adminOnly = totSaving<=0 && (adminSaving>0 || recruitSaving>0);   // reachable sanity check: saving is admin time only
   const implausibleRoi = roiPct!=null && roiPct>3000;
   const fillNow=num(fillRateNow), fillAfter=fillNow*(1-d);
+  const reg = agencyRegime(totSpend, input.turnover);
   return { rows, totSpend, totSaving, totDisplaced, totBaseline, totHead, totCapacityValue,
     adminSaving, recruitSaving, timeSavedWeek, grossBenefit, netSaving, roiPct, paybackMonths,
-    exceedsSpend, adminOnly, implausibleRoi, fillNow, fillAfter };
+    exceedsSpend, adminOnly, implausibleRoi, fillNow, fillAfter,
+    displaceableShare:ds, turnover:num(input.turnover), agencyPctOfTurnover:reg.pct, regime:reg.key };
 }
 
 /* Build the engine input for the SIMPLE 3-input variant */
@@ -408,6 +421,7 @@ function simpleToInput(s, shared){
     groups:[{ id:"all", role:"Whole bank pool", bankPay:SIMPLE_BLENDED_BANK_PAY, headcount:num(s.bankPool), agencySpend }],
     premium:shared.premium, displacement:shared.displacement, shiftHours:shared.shiftHours, oncost:shared.oncost,
     platformCost:shared.platformCost, fillRateNow:s.agencyFillRate,
+    displaceableShare: shared.displaceableShare!=null?shared.displaceableShare:DISPLACEABLE_SHARE_DEFAULT, turnover: shared.turnover,
     admin:{ enabled:s.includeAdmin!==false, managers:num(s.numManagers), hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY },
     recruit:{ enabled:false },
   };
@@ -480,6 +494,8 @@ function App(){
   // shared parameters
   const [premium,setPremium]=useState(20), [displacement,setDisp]=useState(13), [platformCost,setPC]=useState(platformCostFor(660)), [pcAuto,setPcAuto]=useState(true);
   const [perGroupPremium,setPGP]=useState(false);
+  const [displaceableShare,setDS]=useState(DISPLACEABLE_SHARE_DEFAULT);   // benchmark §4: editable
+  const [turnover,setTurnover]=useState(ORG_TYPES.acute.turnover);        // benchmark §1/§5: agency intensity
   const [shiftHours,setSH]=useState(SHIFT_HOURS_DEFAULT), [oncost,setOncost]=useState(BANK_ONCOST_DEFAULT*100);
   const [showAdv,setAdv]=useState(false), [calibrating,setCal]=useState(false);
   const [calculated,setCalculated]=useState(false);
@@ -493,15 +509,15 @@ function App(){
 
   function runCalc(){ setCal(true); setTimeout(()=>{ setCal(false); setCalculated(true); requestAnimationFrame(()=>{ const el=document.getElementById("results"); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); }); }, 1600); }
 
-  const shared={ premium, displacement, platformCost, shiftHours, oncost };
+  const shared={ premium, displacement, platformCost, shiftHours, oncost, displaceableShare };
   const r = useMemo(()=>{
     if(mode==="quick") return calc(simpleToInput(simple, shared));
-    return calc({ groups, premium, displacement, shiftHours, oncost, platformCost, admin, recruit, fillRateNow, perGroupPremium });
-  },[mode,simple,groups,premium,displacement,platformCost,shiftHours,oncost,admin,recruit,fillRateNow,perGroupPremium]);
+    return calc({ groups, premium, displacement, shiftHours, oncost, platformCost, admin, recruit, fillRateNow, perGroupPremium, displaceableShare, turnover });
+  },[mode,simple,groups,premium,displacement,platformCost,shiftHours,oncost,admin,recruit,fillRateNow,perGroupPremium,displaceableShare,turnover]);
 
   useEffect(()=>{ if(!pcAuto) return; const h = mode==="quick" ? num(simple.bankPool) : groups.reduce((a,g)=>a+num(g.headcount),0); setPC(platformCostFor(h)); },[mode,simple.bankPool,groups,pcAuto]);
   const setG=(i,k,v)=>setGroups(gs=>gs.map((g,j)=>j===i?{...g,[k]:num(v)}:g));
-  const choosePreset=key=>{ setPreset(key); setGroups(buildOrg(key)); setPcAuto(true); };
+  const choosePreset=key=>{ setPreset(key); setGroups(buildOrg(key)); setPcAuto(true); setTurnover(ORG_TYPES[key].turnover); };
   const addGroup=()=>setGroups(gs=>[...gs,{ id:"g"+Date.now(), role:"New staff group", band:"Band 5", bankPay:34592, headcount:50, agencySpend:500000 }]);
   const removeGroup=i=>setGroups(gs=>gs.length>1?gs.filter((_,j)=>j!==i):gs);
   const st=stance(displacement);
@@ -630,8 +646,12 @@ function App(){
               </div>
               <div className="inputs-grid">
                 <SizeField label="Total bank headcount" value={totalHead} hint="Across all staff groups; rescales the mix" onCommit={v=>setGroups(scaleGroupsTo(groups,"headcount",v))}/>
-                <SizeField label="Total annual agency spend" prefix="£" value={totalSpend} info="Your trust's total yearly agency spend. This is the anchor for the saving; we rescale each group's spend proportionally, then fine-tune per group below." hint="The anchor for the saving" onCommit={v=>setGroups(scaleGroupsTo(groups,"agencySpend",v))}/>
+                <SizeField label="Total annual agency spend" prefix="£" value={totalSpend} info="Your trust's total yearly agency spend. This is the anchor for the saving; we rescale each group's spend proportionally, then fine-tune per group below. Prefer your own figure; national agency spend is falling, so use latest-year." hint="The anchor for the saving" onCommit={v=>setGroups(scaleGroupsTo(groups,"agencySpend",v))}/>
+                <SizeField label="Annual turnover (£, optional)" prefix="£" value={turnover} info="Your trust's annual operating turnover (optional). Used to gauge agency intensity — agency as a % of turnover — which tailors the headline framing. You can also estimate a typical agency spend from it." hint="Sets agency intensity & framing" onCommit={v=>setTurnover(num(v))}/>
               </div>
+              {turnover>0 && (()=>{ const pct=(totalSpend/turnover)*100; const key=pct<1?"low":(pct<=4?"typical":"high"); const lbl={low:"low-agency / mature bank",typical:"typical reliance",high:"high reliance"}[key]; return (
+                <div className="disp-note" style={{marginTop:12,background:C.navyLight,color:C.navy}}>Agency is <b>{pct.toFixed(1)}% of turnover</b> — {lbl}. <button type="button" className="linkish" style={{border:"none",background:"none",color:C.teal,fontWeight:700,cursor:"pointer",fontFamily:"inherit",padding:0,textDecoration:"underline"}} onClick={()=>setGroups(scaleGroupsTo(groups,"agencySpend",Math.round(agencySpendFromTurnover(turnover,preset))))}>Estimate agency spend from turnover →</button></div>
+              ); })()}
             </div>
             <div className="groups-grid">
             {groups.map((g,i)=>(
@@ -671,6 +691,7 @@ function App(){
             <div className="params-grid" style={{marginTop:12}}>
               <Field label="Smart Match platform cost (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v,14000)); setPcAuto(false); }} info="Scales with your organisation size (~£10k–£20k by bank headcount); fully editable. ROI denominator — confirm it includes implementation, not licence alone." hint={pcAuto?"Auto-scaled to your size · editable":"Used for ROI & payback"}/>
               <Field label="Current agency fill rate (%)" value={fillRateNow} min="0" max="100" step={0.5} onChange={v=>setFill(num(v,8))} info="Used for the capacity narrative (agency reliance reduced)."/>
+              <Field label="Displaceable share of agency (%)" value={Math.round(displaceableShare*100)} min="0" max="100" step={5} onChange={v=>setDS(Math.min(1,Math.max(0,num(v,80)/100)))} info="Only part of agency spend can realistically move to bank — excludes break-glass / safety-critical cover and hard-to-fill specialist roles bank can't cover. Displacement is applied to this share only (benchmark default 80%), so the tool never implies 100% of agency is bankable." hint="Benchmark default 80% · editable"/>
               {showAdv && <Field label="Shift length (hours)" value={shiftHours} min="1" step={0.5} onChange={v=>setSH(num(v,8))}/>}
               {showAdv && <Field label="Bank on-cost (%)" value={oncost} min="0" step={1} onChange={v=>setOncost(num(v))} info="Employer NI + pension where applicable. Affects duty counts only, not the cash headline."/>}
             </div>
@@ -751,6 +772,11 @@ function App(){
               <div className="panel-title">Annual, ongoing saving</div>
               <p style={{fontSize:12.5,color:C.textMid,lineHeight:1.6,margin:0}}>This is a <b>single annual, steady-state figure</b>, not a multi-year projection. Smart Match savings start once it is live and recur every year it is in use; the platform cost shown is an annual cost, so the net saving repeats each year.</p>
             </div>
+
+            {!isQuick && r.regime && <div className="panel">
+              <div className="panel-title">Agency intensity: {r.agencyPctOfTurnover.toFixed(1)}% of turnover</div>
+              <p style={{fontSize:12.5,color:C.textMid,lineHeight:1.6,margin:0}}>{r.regime==="low" ? <>This is a <b>mature, low-agency</b> model (under 1% of turnover): rate-arbitrage savings are small, so the stronger story is <b>admin time released, fill-rate improvement and bank-rate control</b> rather than the cash premium.</> : r.regime==="high" ? <>This trust is <b>highly agency-reliant</b> (over 4% of turnover): <b>the cash saving from displacing the agency premium dominates</b> — the strongest rate-arbitrage case.</> : <>This is <b>typical</b> agency reliance (1–4% of turnover): <b>the cash saving from the agency premium</b> is the headline, with admin time a secondary benefit.</>} Displacement is applied to the <b>{Math.round(displaceableShare*100)}% displaceable share</b> only.</p>
+            </div>}
 
             {!isQuick && <div className="table-wrap"><table>
               <thead><tr><th>Staff group</th><th className="num">Bank pool</th><th className="num">Agency spend</th>{perGroupPremium && <th className="num">Premium</th>}<th className="num">Duties displaced</th><th className="num">Cash saving</th></tr></thead>

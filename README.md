@@ -40,15 +40,27 @@ Core formulas (all assumptions conservative and editable):
 bank_hourly       = annual_pay / 1957.5                  # NHS AfC divisor
 bank_shift_cost   = bank_hourly × shift_hours × (1 + bank_oncost)
 agency_shift_cost = bank_shift_cost × (1 + agency_premium)
-displaced_shifts  = (annual_agency_spend / agency_shift_cost) × displacement
+displaceable_spend = annual_agency_spend × displaceable_share   # benchmark §4: default 80%
+displaced_shifts  = (displaceable_spend / agency_shift_cost) × displacement
 CASH SAVING       = displaced_shifts × bank_shift_cost × agency_premium
-                  ≡ annual_agency_spend × displacement × premium/(1+premium)
+                  ≡ annual_agency_spend × displaceable_share × displacement × premium/(1+premium)
 ```
 
 The cash saving is anchored to the trust's **agency spend**, premium and
 displacement — **not** bank payroll. (v8's error was counting `bank payroll ×
 17%` as a saving and double-counting the same shifts, which inflated the headline
 ~5× and produced a 24,768% ROI.)
+
+**Agency-spend benchmark (latest research).** Org-type templates use benchmark-backed
+agency spend and bank size (acute DGH ~£15m / ~2,200 bank, mental health ~£10m / ~1,000,
+community ~£7m / ~700, ambulance ~£4m / ~400, ICS ~£30m / ~5,000) — labelled *typical,
+edit to your trust*; HCA agency is kept low (largely restricted at Band 2–3). Displacement
+applies only to the **displaceable share** (default **80%**, editable) — break-glass and
+hard-to-fill specialist agency can't realistically move to bank. An optional **annual
+turnover** input sets *agency intensity* (agency % of turnover) and tailors the headline:
+**< 1%** mature / low-agency (lead with admin time, fill-rate and bank-rate control),
+**1–4%** typical (lead with the cash premium), **> 4%** high reliance (rate arbitrage
+dominates). Treat agency spend as a current, **declining** figure and prefer the trust's own.
 
 **Guardrails:** the cash saving can never exceed total agency spend; the tool
 leads with **net annual saving + payback months** (not a giant ROI %) and flags

@@ -25,30 +25,30 @@ const engineJS = body.slice(0, marker).replace(/const\s*\{\s*useState[^;]*\}\s*=
 // eslint-disable-next-line no-new-func
 const E = new Function(engineJS + '\nreturn { calc, simpleToInput, buildOrg };')();
 
-const SHARED = { premium: 20, displacement: 13, platformCost: 17000, shiftHours: 8, oncost: 20 };
+const SHARED = { premium: 20, displacement: 13, platformCost: 17000, shiftHours: 8, oncost: 20, displaceableShare: 0.80 };
 const ADMIN = { enabled: true, managers: 12, hoursPerDay: 1.0, workingDays: 225, loadedHourly: 18 };
-const SAVING_PER_POUND = 0.13 * 0.20 / 1.20;
+const SAVING_PER_POUND = 0.13 * 0.80 * 0.20 / 1.20;   // displaceable share applied (benchmark §4)
 
 const quick = () => E.calc(E.simpleToInput({ bankPool: 660, agencyFillRate: 15, numManagers: 12, includeAdmin: true }, SHARED));
 const detailed = (type, over = {}) => E.calc({ groups: E.buildOrg(type), ...SHARED, admin: ADMIN, recruit: { enabled: false }, fillRateNow: 8, perGroupPremium: false, ...over });
 
 test('Quick default matches the golden headline (parity with kiosk)', () => {
   const q = quick();
-  assert.equal(Math.round(q.netSaving), 61896);
+  assert.equal(Math.round(q.netSaving), 55837);
   assert.equal(Math.round(q.adminSaving), 48600);
-  assert.equal(Math.round(q.grossBenefit), 78896);
-  assert.equal(Math.round(q.roiPct), 364);
+  assert.equal(Math.round(q.grossBenefit), 72837);
+  assert.equal(Math.round(q.roiPct), 328);
   assert.equal(q.timeSavedWeek, 60);
   assert.equal(Math.round(q.totSpend), 1398290);   // derived agency spend
-  assert.ok(Math.abs(q.paybackMonths - 2.59) < 0.01);
+  assert.ok(Math.abs(q.paybackMonths - 2.80) < 0.01);
 });
 
 const DETAILED_GOLDEN = {
-  acute:     { net: 61933,  premium: 30333,  totSpend: 1400000,  totHead: 660,  roi: 364 },
-  community: { net: 96600,  premium: 65000,  totSpend: 3000000,  totHead: 260,  roi: 568 },
-  mental:    { net: 161600, premium: 130000, totSpend: 6000000,  totHead: 400,  roi: 951 },
-  ambulance: { net: 118267, premium: 86667,  totSpend: 4000000,  totHead: 350,  roi: 696 },
-  ics:       { net: 789933, premium: 758333, totSpend: 35000000, totHead: 2300, roi: 4647 },
+  acute:     { net: 291600, premium: 260000, totSpend: 15000000, totHead: 2200, roi: 1715 },
+  community: { net: 152933, premium: 121333, totSpend: 7000000,  totHead: 700,  roi: 900 },
+  mental:    { net: 204933, premium: 173333, totSpend: 10000000, totHead: 1000, roi: 1205 },
+  ambulance: { net: 100933, premium: 69333,  totSpend: 4000000,  totHead: 400,  roi: 594 },
+  ics:       { net: 551600, premium: 520000, totSpend: 30000000, totHead: 5000, roi: 3245 },
 };
 
 for (const [type, g] of Object.entries(DETAILED_GOLDEN)) {
@@ -62,7 +62,7 @@ for (const [type, g] of Object.entries(DETAILED_GOLDEN)) {
   });
 }
 
-test('IDENTITY: saving per £ of agency spend = 0.13 x 0.20/1.20 (audit #7/#9)', () => {
+test('IDENTITY: saving per £ = displaceable 0.8 x 0.13 x 0.20/1.20 (audit #7/#9)', () => {
   const q = quick();
   assert.ok(Math.abs(q.totSaving / q.totSpend - SAVING_PER_POUND) < 1e-9);
   for (const type of Object.keys(DETAILED_GOLDEN)) {
@@ -71,8 +71,10 @@ test('IDENTITY: saving per £ of agency spend = 0.13 x 0.20/1.20 (audit #7/#9)',
   }
 });
 
-test('Acute preset converges on the Quick default (audit #7)', () => {
-  assert.ok(Math.abs(detailed('acute').netSaving - quick().netSaving) / quick().netSaving < 0.005);
+test('Displaceable share scales the agency saving (benchmark §4)', () => {
+  const full = detailed('acute', { displaceableShare: 1 });
+  assert.equal(Math.round(full.totSaving), 325000);          // 80% of this = 260000 (the default)
+  assert.ok(Math.abs(detailed('acute').totSaving - full.totSaving * 0.8) < 1);
 });
 
 test('ROI is n/a (null), not 0%, when platform cost is zero (audit #16)', () => {
