@@ -270,6 +270,14 @@ const AFC_DIVISOR = 1957.5;
 const SHIFT_HOURS_DEFAULT = 8;
 const BANK_ONCOST_DEFAULT = 0.20;     // affects shift counts only, not the cash headline
 const PLATFORM_COST_DEFAULT = 17000;
+/* [Rev D] Platform cost scales with org size (bank headcount), ~£10k–£20k; fully editable. */
+function platformCostFor(totalBankHeadcount){
+  const h = num(totalBankHeadcount);
+  if (h >= 3000) return 20000;
+  if (h >= 1500) return 17000;
+  if (h >= 500)  return 14000;
+  return 10000;
+}
 /* Admin (Rev B): per admin/roster manager. Client said 2.5 h/day @ £18; 2.5 is optimistic, default lower. */
 const ADMIN_HRS_PER_DAY_DEFAULT = 1.0;
 const ADMIN_WORKING_DAYS = 225;
@@ -387,16 +395,6 @@ function calc(input){
     exceedsSpend, adminOnly, implausibleRoi, fillNow, fillAfter };
 }
 
-/* ===== TIME PROJECTION: phased ramp + cumulative (Galen migration pattern) ===== */
-const RAMP_PCTS = { 3:[0.45,0.75,1.00], 5:[0.30,0.55,0.75,0.90,1.00] };
-function project(grossAnnual, platformCost, years){
-  const pcts = RAMP_PCTS[years] || RAMP_PCTS[3];
-  const yrGross = pcts.map(p=>grossAnnual*p);
-  const yrNet   = yrGross.map(g=>g - platformCost);
-  return { years, pcts, yrGross, yrNet,
-    cumGross: yrGross.reduce((a,b)=>a+b,0), cumNet: yrNet.reduce((a,b)=>a+b,0) };
-}
-
 /* Build the engine input for the SIMPLE 3-input variant */
 function simpleToInput(s, shared){
   const a = num(s.agencyFillRate)/100;
@@ -480,17 +478,17 @@ function Calibrating(){
 function App(){
   const [mode,setMode] = useState("quick");           // "quick" | "detailed"
   // shared parameters
-  const [premium,setPremium]=useState(20), [displacement,setDisp]=useState(13), [platformCost,setPC]=useState(PLATFORM_COST_DEFAULT);
+  const [premium,setPremium]=useState(20), [displacement,setDisp]=useState(13), [platformCost,setPC]=useState(platformCostFor(660)), [pcAuto,setPcAuto]=useState(true);
   const [perGroupPremium,setPGP]=useState(false);
   const [shiftHours,setSH]=useState(SHIFT_HOURS_DEFAULT), [oncost,setOncost]=useState(BANK_ONCOST_DEFAULT*100);
   const [showAdv,setAdv]=useState(false), [calibrating,setCal]=useState(false);
-  const [calculated,setCalculated]=useState(false), [rampYears,setRampYears]=useState(3);
+  const [calculated,setCalculated]=useState(false);
   const [lead,setLead]=useState({name:"",email:"",org:"",consent:false,sent:false,busy:false,err:null}), [pdfBusy,setPdfBusy]=useState(false);
   // simple state
-  const [simple,setSimple]=useState({ bankPool:660, agencyFillRate:15, numManagers:12, includeAdmin:true });
+  const [simple,setSimple]=useState({ bankPool:660, agencyFillRate:15, numManagers:12, includeAdmin:false });
   // detailed state
   const [groups,setGroups]=useState(()=>buildOrg("acute")); const [preset,setPreset]=useState("acute"); const [fillRateNow,setFill]=useState(8);
-  const [admin,setAdmin]=useState({ enabled:true, managers:12, hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY });
+  const [admin,setAdmin]=useState({ enabled:false, managers:12, hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY });
   const [recruit,setRecruit]=useState({ enabled:false, workers:50, costPerWorker:RECRUIT_COST_PER_WORKER, recoveryRate:RECRUIT_RECOVERY_RATE });
 
   function runCalc(){ setCal(true); setTimeout(()=>{ setCal(false); setCalculated(true); requestAnimationFrame(()=>{ const el=document.getElementById("results"); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); }); }, 1600); }
@@ -501,8 +499,9 @@ function App(){
     return calc({ groups, premium, displacement, shiftHours, oncost, platformCost, admin, recruit, fillRateNow, perGroupPremium });
   },[mode,simple,groups,premium,displacement,platformCost,shiftHours,oncost,admin,recruit,fillRateNow,perGroupPremium]);
 
+  useEffect(()=>{ if(!pcAuto) return; const h = mode==="quick" ? num(simple.bankPool) : groups.reduce((a,g)=>a+num(g.headcount),0); setPC(platformCostFor(h)); },[mode,simple.bankPool,groups,pcAuto]);
   const setG=(i,k,v)=>setGroups(gs=>gs.map((g,j)=>j===i?{...g,[k]:num(v)}:g));
-  const choosePreset=key=>{ setPreset(key); setGroups(buildOrg(key)); };
+  const choosePreset=key=>{ setPreset(key); setGroups(buildOrg(key)); setPcAuto(true); };
   const addGroup=()=>setGroups(gs=>[...gs,{ id:"g"+Date.now(), role:"New staff group", band:"Band 5", bankPay:34592, headcount:50, agencySpend:500000 }]);
   const removeGroup=i=>setGroups(gs=>gs.length>1?gs.filter((_,j)=>j!==i):gs);
   const st=stance(displacement);
@@ -565,13 +564,6 @@ function App(){
         <p>See the cash your NHS organisation could release by improving bank-staff utilisation, moving duties off expensive agency and onto your own bank. The saving is the <em>agency premium displaced</em>, not the cost of the shifts you fill.</p>
       </div></header>
 
-      <div className="evidence-strip"><div className="wrap evidence-inner">
-        <div className="ev-stat"><div className="ev-num">+17%</div><div className="ev-label">bank utilisation (one community site)</div><div className="ev-source">Smart Match programme 2025, indicative</div></div>
-        <div className="ev-stat"><div className="ev-num">+17% / +16%</div><div className="ev-label">temp duties filled (two sites)</div><div className="ev-source">351→411 and equivalent, indicative</div></div>
-        <div className="ev-stat"><div className="ev-num">8.1%→6.0%</div><div className="ev-label">agency fill (one community site)</div><div className="ev-source">26% relative, partly attributable</div></div>
-        <div className="ev-stat"><div className="ev-num">4-trust</div><div className="ev-label">programme · data from 2 sites</div><div className="ev-source">Anonymised pending client sign-off</div></div>
-      </div></div>
-
       <div className="strategy"><div className="wrap">
         <strong>Strategic context:</strong> reducing agency reliance and releasing workforce-management time supports the <strong>NHS 10 Year Plan</strong> and its Workforce Paper, and the staff time released aligns with the <strong>Staff Health &amp; Wellbeing CQUIN</strong>. Staff-experience benefits are a separate qualitative story, kept out of the financial figures below.
       </div></div>
@@ -594,8 +586,8 @@ function App(){
                 <Field label="Admin / roster managers" value={simple.numManagers} min="0" onChange={v=>setSimple(s=>({...s,numManagers:num(v)}))} hint="Roster mgrs, bank admins, temp/agency mgrs" info="People who spend time arranging temporary cover. Drives the time-saved-per-week and admin saving."/>
               </div>
               <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600,color:C.navy,cursor:"pointer",marginTop:14}}>
-                <input type="checkbox" checked={simple.includeAdmin!==false} onChange={e=>setSimple(s=>({...s,includeAdmin:e.target.checked}))}/> Include admin time saving in the cash total (on by default)
-                <InfoTip text="On by default. The hours released are always shown as a per-week figure; with this on, their cash value (a conservative 1.0 h/day at a loaded £18/h) is also added to the headline. Untick to show the agency premium saving on its own."/>
+                <input type="checkbox" checked={simple.includeAdmin!==false} onChange={e=>setSimple(s=>({...s,includeAdmin:e.target.checked}))}/> Include admin time saving in the cash total (off by default)
+                <InfoTip text="Off by default, treated as a secondary recommendation. The hours released are always shown as a per-week figure; tick this to also add their cash value (a conservative 1.0 h/day at a loaded £18/h) to the headline."/>
               </label>
             </div>
             <div className="params-grid" style={{marginTop:12}}>
@@ -610,7 +602,7 @@ function App(){
             <button className="adv-toggle" onClick={()=>setAdv(a=>!a)}>{showAdv?"Hide":"Show"} advanced defaults (premium, platform cost, shift length)</button>
             {showAdv && <div className="params-grid" style={{marginTop:10}}>
               <Field label="Agency premium over bank (%)" value={premium} min="0" max="150" step={5} onChange={v=>setPremium(num(v,20))} info="Default 20% (HoC Library average); contested at shift level, use your own rate." />
-              <Field label="Smart Match platform cost (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>setPC(num(v,17000))} info="ROI denominator; should include implementation, not licence alone."/>
+              <Field label="Smart Match platform cost (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v,14000)); setPcAuto(false); }} info="Scales with your organisation size (~£10k–£20k by bank headcount); fully editable. ROI denominator — confirm it includes implementation, not licence alone."/>
               <Field label="Shift length (hours)" value={shiftHours} min="1" step={0.5} onChange={v=>setSH(num(v,8))}/>
               <Field label="Bank on-cost (%)" value={oncost} min="0" step={1} onChange={v=>setOncost(num(v))}/>
             </div>}
@@ -677,7 +669,7 @@ function App(){
             </div>
             <div className="disp-note" style={{background:st.bg,color:st.color}}>{st.note}</div>
             <div className="params-grid" style={{marginTop:12}}>
-              <Field label="Smart Match platform cost (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>setPC(num(v,17000))} info="ROI denominator. Confirm it includes implementation, not licence alone. Indicative £10,200–£36,000 by trust size." hint="Used for ROI &amp; payback"/>
+              <Field label="Smart Match platform cost (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v,14000)); setPcAuto(false); }} info="Scales with your organisation size (~£10k–£20k by bank headcount); fully editable. ROI denominator — confirm it includes implementation, not licence alone." hint={pcAuto?"Auto-scaled to your size · editable":"Used for ROI & payback"}/>
               <Field label="Current agency fill rate (%)" value={fillRateNow} min="0" max="100" step={0.5} onChange={v=>setFill(num(v,8))} info="Used for the capacity narrative (agency reliance reduced)."/>
               {showAdv && <Field label="Shift length (hours)" value={shiftHours} min="1" step={0.5} onChange={v=>setSH(num(v,8))}/>}
               {showAdv && <Field label="Bank on-cost (%)" value={oncost} min="0" step={1} onChange={v=>setOncost(num(v))} info="Employer NI + pension where applicable. Affects duty counts only, not the cash headline."/>}
@@ -686,8 +678,8 @@ function App(){
 
             <div className="card" style={{marginTop:12}}>
               <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600,color:C.navy,cursor:"pointer"}}>
-                <input type="checkbox" checked={admin.enabled} onChange={e=>setAdmin(a=>({...a,enabled:e.target.checked}))}/> Include admin time saving in cash (on by default)
-                <InfoTip text="On by default. Time released for roster managers, bank admins and temp/agency managers via self-booking automation. Time-saved-per-week is always shown; untick to remove its cash value from the saving total."/>
+                <input type="checkbox" checked={admin.enabled} onChange={e=>setAdmin(a=>({...a,enabled:e.target.checked}))}/> Include admin time saving in cash (off by default)
+                <InfoTip text="Off by default, treated as a secondary recommendation. Time released for roster managers, bank admins and temp/agency managers via self-booking automation. Time-saved-per-week is always shown; tick to add its cash value to the saving total."/>
               </label>
               <div className="inputs-grid" style={{marginTop:12}}>
                 <Field label="Admin / roster managers" value={admin.managers} min="0" onChange={v=>setAdmin(a=>({...a,managers:num(v)}))} info="Roster Managers, Bank Staff Administrators, Temp/Agency Managers."/>
@@ -754,31 +746,10 @@ function App(){
             {r.exceedsSpend && <div className="callout navy"><p className="title">⚠ Check your inputs</p><p>The modelled saving exceeds total agency spend, which isn't possible. Lower the premium or displacement, or check the agency-spend figures.</p></div>}
             {r.adminOnly && <div className="callout navy"><p className="title">Admin time only</p><p>No agency premium saving is modelled (agency spend is zero). This figure is the admin-time value on its own. {isQuick?"Set an agency fill rate above 0":"Add your agency spend"} to model the agency-displacement saving.</p></div>}
 
-            {/* SAVINGS OVER TIME (#5: phased ramp + cumulative) */}
+            {/* Single annual steady-state (Rev D: ramp removed) */}
             <div className="panel">
-              <div className="panel-title" style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
-                <span>Savings over time</span>
-                <span style={{display:"inline-flex",gap:3,background:C.navyLight,borderRadius:999,padding:3}}>
-                  {[3,5].map(y=>(<button key={y} type="button" onClick={()=>setRampYears(y)} style={{border:"none",cursor:"pointer",fontFamily:"inherit",fontSize:11,fontWeight:700,padding:"4px 12px",borderRadius:999,background:rampYears===y?C.teal:"transparent",color:rampYears===y?"#fff":C.textMid,transition:".15s"}}>{y}-year</button>))}
-                </span>
-              </div>
-              {(()=>{ const proj=project(r.grossBenefit,platformCost,rampYears), mx=Math.max(...proj.yrNet.map(v=>Math.abs(v)),1); return (
-                <div>
-                  <div style={{display:"flex",alignItems:"flex-end",gap:8,height:150}}>
-                    {proj.yrNet.map((v,i)=>(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end"}}>
-                      <div style={{fontSize:11,fontWeight:700,color:v<0?C.rose:C.navy,marginBottom:5}}>{fmtK(v)}</div>
-                      <div style={{width:"100%",maxWidth:50,height:Math.max(4,Math.round((Math.max(0,v)/mx)*112)),background:v<0?"#b25b76":"linear-gradient(180deg,"+C.tealMid+","+C.teal+")",borderRadius:"6px 6px 0 0",transition:"height .5s ease"}}></div>
-                      <div style={{fontSize:11,color:C.textMid,marginTop:6,fontWeight:600}}>Year {i+1}</div>
-                      <div style={{fontSize:9,color:C.textLight}}>{Math.round(proj.pcts[i]*100)}% ramp</div>
-                    </div>))}
-                  </div>
-                  <div style={{display:"flex",gap:12,marginTop:16,flexWrap:"wrap"}}>
-                    <div style={{flex:"1 1 150px",background:C.navyLight,borderRadius:10,padding:"12px 14px"}}><div style={{fontSize:11,color:C.navyMid}}>{rampYears}-year cumulative net</div><div style={{fontSize:22,fontWeight:700,color:C.navy}}>{fmt(proj.cumNet)}</div></div>
-                    <div style={{flex:"1 1 150px",background:C.navyLight,borderRadius:10,padding:"12px 14px"}}><div style={{fontSize:11,color:C.navyMid}}>{rampYears}-year gross benefit</div><div style={{fontSize:22,fontWeight:700,color:C.navy}}>{fmt(proj.cumGross)}</div></div>
-                  </div>
-                  <p style={{fontSize:11.5,color:C.textLight,marginTop:12,lineHeight:1.6}}>Benefits ramp as bank utilisation improves, modelled at {proj.pcts.map(p=>Math.round(p*100)+"%").join(" → ")} of the annual run-rate, with the platform cost recurring in full each year. Phasing mirrors the Galen migration model; figures are indicative.</p>
-                </div>
-              ); })()}
+              <div className="panel-title">Annual, ongoing saving</div>
+              <p style={{fontSize:12.5,color:C.textMid,lineHeight:1.6,margin:0}}>This is a <b>single annual, steady-state figure</b>, not a multi-year projection. Smart Match savings start once it is live and recur every year it is in use; the platform cost shown is an annual cost, so the net saving repeats each year.</p>
             </div>
 
             {!isQuick && <div className="table-wrap"><table>
@@ -810,13 +781,34 @@ function App(){
             </div>
 
             <div className="callout navy">
-              <p className="title">These figures don't capture the full picture.</p>
-              <p>They reflect quantifiable cash only. They exclude the wider time-releasing benefits for managers and admin teams, and the staff-experience uplift when bank workers can find and book duties that fit their skills and lives. Those benefits are real but are kept as a separate qualitative story, not added to the ROI number.</p>
+              <p className="title">These figures count cash only.</p>
+              <p>As a patient-safety company, much of Smart Match's value shows up in <b>safety and quality</b> — safer staffing, better continuity of care and less reliance on unfamiliar agency staff — alongside the time released for managers and admin teams and the staff-experience uplift when bank workers can find and book duties that fit their skills and lives. These wider benefits are real but are deliberately <b>not monetised</b> here; they are kept as a separate qualitative story, not added to the ROI number.</p>
             </div>
 
             <div className="callout quote">
               <p className="quote-txt">"I've just received my first Smart Match duty offer. Clicking the notification took me straight to the shift details and I booked it straight away, so easy. You're not constantly looking on a loop, frightened you'll miss something."</p>
               <p className="quote-by">Bank staff member, a community trust (Smart Match programme; anonymised)</p>
+            </div>
+
+            <div className="lead">
+              <h4>Want a copy, or to pressure-test these numbers?</h4>
+              <p className="sub">Optional: the calculator and PDF are open to everyone. Leave your details and a Smart Match specialist can validate the figures against your trust's own bank and agency rates.</p>
+              {lead.sent ? <p style={{color:C.navy,fontWeight:600,fontSize:14}}>Thanks, we'll be in touch. 👋</p> :
+              <form onSubmit={submitLead}><div className="lead-grid">
+                <input placeholder="Name" value={lead.name} onChange={e=>setLead(l=>({...l,name:e.target.value}))}/>
+                <input type="email" required placeholder="Work email" value={lead.email} onChange={e=>setLead(l=>({...l,email:e.target.value}))}/>
+                <input placeholder="Trust / organisation" value={lead.org} onChange={e=>setLead(l=>({...l,org:e.target.value}))}/>
+                <button className="btn primary" type="submit" disabled={!lead.consent||lead.busy}>{lead.busy?"Sending…":"Send to a specialist"}</button>
+              </div>
+              <label className="consent" style={{display:"flex",alignItems:"flex-start",gap:8,cursor:"pointer",marginTop:".6rem"}}><input type="checkbox" required checked={!!lead.consent} onChange={e=>setLead(l=>({...l,consent:e.target.checked}))} style={{marginTop:3}}/><span>I agree RLDatix may contact me about Smart Match and process these details in line with the RLDatix privacy notice.</span></label>
+              {lead.err==="failed" && <p className="consent" style={{color:"#b25b76"}}>Sorry, that didn't send. Please try again, or contact your RLDatix representative.</p>}
+              {lead.err==="unconfigured" && <p className="consent" style={{color:"#b25b76"}}>Lead capture isn't switched on yet. Your RLDatix contact can enable it (HubSpot portal + form ID).</p>}
+              </form>}
+            </div>
+
+            <div className="actions">
+              <button className="btn primary" onClick={downloadPDF} disabled={pdfBusy}>{pdfBusy?"Generating…":"⬇ Download PDF estimate"}</button>
+              <button className="btn" onClick={()=>window.scrollTo({top:0,behavior:"smooth"})}>↑ Adjust inputs</button>
             </div>
 
             <div className="assumptions">
@@ -841,27 +833,6 @@ function App(){
               {r.recruitSaving>0 && <><div className="arow"><span>Recruitment waste recovered (optional)</span><span>{fmt(r.recruitSaving)}</span></div>
               <div className="arow explain"><span className="albl">Source: recruitment <span className="conf low">low</span></span><span className="adesc">under-utilised workers × recruit/onboard cost × recovery share. No strong public benchmark, conservative and clearly optional.</span></div></>}
               <div className="arow explain"><span className="albl">Strategy &amp; framing</span><span className="adesc">Framed against the NHS 10 Year Plan + Workforce Paper and the Staff Health &amp; Wellbeing CQUIN. Pilot is a small (2-site), vendor-collected sample, encouraging but indicative, not solely attributable to Smart Match, and anonymised pending client sign-off.</span></div>
-            </div>
-
-            <div className="lead">
-              <h4>Want a copy, or to pressure-test these numbers?</h4>
-              <p className="sub">Optional: the calculator and PDF are open to everyone. Leave your details and a Smart Match specialist can validate the figures against your trust's own bank and agency rates.</p>
-              {lead.sent ? <p style={{color:C.navy,fontWeight:600,fontSize:14}}>Thanks, we'll be in touch. 👋</p> :
-              <form onSubmit={submitLead}><div className="lead-grid">
-                <input placeholder="Name" value={lead.name} onChange={e=>setLead(l=>({...l,name:e.target.value}))}/>
-                <input type="email" required placeholder="Work email" value={lead.email} onChange={e=>setLead(l=>({...l,email:e.target.value}))}/>
-                <input placeholder="Trust / organisation" value={lead.org} onChange={e=>setLead(l=>({...l,org:e.target.value}))}/>
-                <button className="btn primary" type="submit" disabled={!lead.consent||lead.busy}>{lead.busy?"Sending…":"Send to a specialist"}</button>
-              </div>
-              <label className="consent" style={{display:"flex",alignItems:"flex-start",gap:8,cursor:"pointer",marginTop:".6rem"}}><input type="checkbox" required checked={!!lead.consent} onChange={e=>setLead(l=>({...l,consent:e.target.checked}))} style={{marginTop:3}}/><span>I agree RLDatix may contact me about Smart Match and process these details in line with the RLDatix privacy notice.</span></label>
-              {lead.err==="failed" && <p className="consent" style={{color:"#b25b76"}}>Sorry, that didn't send. Please try again, or contact your RLDatix representative.</p>}
-              {lead.err==="unconfigured" && <p className="consent" style={{color:"#b25b76"}}>Lead capture isn't switched on yet. Your RLDatix contact can enable it (HubSpot portal + form ID).</p>}
-              </form>}
-            </div>
-
-            <div className="actions">
-              <button className="btn primary" onClick={downloadPDF} disabled={pdfBusy}>{pdfBusy?"Generating…":"⬇ Download PDF estimate"}</button>
-              <button className="btn" onClick={()=>window.scrollTo({top:0,behavior:"smooth"})}>↑ Adjust inputs</button>
             </div>
           </div>
         </div>

@@ -100,8 +100,9 @@ Use `embed-snippet.html` as the host-page reference. The iframe auto-resizes via
 
 ## Open items to confirm (from the research brief)
 
-1. **Platform cost** used as the ROI denominator — confirm the figure (~£17k) and
-   whether it includes implementation, not licence alone.
+1. **Platform cost** used as the ROI denominator — now **scales with organisation
+   size** (~£10k–£20k by bank headcount via `platformCostFor`, fully editable);
+   confirm the banding and that it includes implementation, not licence alone.
 2. **Displacement and admin defaults** — health-economist validation before
    publication.
 3. **Pilot data** — confirm permission to cite the specific pilot figures/trusts.
