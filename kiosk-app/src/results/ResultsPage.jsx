@@ -78,7 +78,7 @@ function KpiTile({ label, value, sub, iconKey }) {
 export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStartOver }) {
   if (!r) return null;
   const st = stance(displacement);
-  const fmtMonths = m => m == null ? "n/a" : `${m.toFixed(1)} mo`;
+  const fmtPayback = m => m == null ? "n/a" : `${Math.round(m * 365 / 12).toLocaleString("en-GB")} days`;
   const fmtPct1 = v => `${(Math.round(v * 10) / 10).toLocaleString("en-GB")}%`;
   const fmtMultiple = m => m == null ? "n/a" : (m >= 10 ? Math.round(m) : Math.round(m * 10) / 10) + "×";
 
@@ -156,7 +156,7 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
     {/* Secondary row */}
     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 28 }}>
       {[
-        { label: "Payback", value: fmtMonths(r.paybackMonths) },
+        { label: "Payback", value: fmtPayback(r.paybackMonths) },
         { label: "Gross benefit", value: <AnimVal value={r.grossBenefit} format={fmtK} /> },
         { label: "Return", value: r.roiMultiple == null ? "n/a" : <>{r.implausibleRoi ? "⚠ " : ""}<AnimVal value={r.roiMultiple} format={fmtMultiple} /></> },
         { label: "Agency premium displaced", value: <AnimVal value={r.agencySaving} format={fmtK} /> },
@@ -170,7 +170,7 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 28 }}>
       <KpiTile iconKey="dollar" label="Agency premium displaced" value={<AnimVal value={r.agencySaving} format={fmtK} />} sub="hard cash: agency vs bank gap" />
       <KpiTile iconKey="clock" label="Admin time saving" value={<AnimVal value={r.adminSaving} format={fmtK} />} sub="temp staffing team time, valued" />
-      <KpiTile iconKey="calendar" label="Payback" value={fmtMonths(r.paybackMonths)} sub="licence fee ÷ monthly benefit" />
+      <KpiTile iconKey="calendar" label="Payback" value={fmtPayback(r.paybackMonths)} sub="to recover the licence fee" />
       <KpiTile iconKey="check" label="Net saving" value={<AnimVal value={r.netSaving} format={fmtK} />} sub="after licence fee" />
     </div>
 
