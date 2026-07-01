@@ -256,6 +256,8 @@ const LOCALE="en-GB", SYMBOL="£";
 const fmt    = n => SYMBOL + Math.round(n||0).toLocaleString(LOCALE);
 const fmtK   = n => { n=n||0; return n>=1e6 ? `${SYMBOL}${(n/1e6).toFixed(2)}m` : n>=1000 ? `${SYMBOL}${Math.round(n/1000).toLocaleString(LOCALE)}k` : fmt(n); };
 const fmtNum = n => Math.round(n||0).toLocaleString(LOCALE);
+const fmtDays = m => m==null ? "n/a" : Math.round(m*365/12).toLocaleString(LOCALE)+" days";
+const fmtMult = m => m==null ? "n/a" : (m>=10 ? Math.round(m) : Math.round(m*10)/10)+"×";
 const pct    = n => `${Math.round(n)}%`;
 const num    = (v,f=0) => { const n=parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isNaN(n)?f:n; };  // strips £, commas, spaces from pasted figures
 
@@ -271,15 +273,16 @@ const AFC_DIVISOR = 1957.5;
 const SHIFT_HOURS_DEFAULT = 8;
 const BANK_ONCOST_DEFAULT = 0.20;     // affects shift counts only, not the cash headline
 const PLATFORM_COST_DEFAULT = 17000;
-/* [Rev D] Platform cost scales with org size (bank headcount), ~£10k–£20k; fully editable. */
+/* [G-Cloud] Annual Smart Match licence fee (ex VAT), stepped by number of Licensed Users
+   (≈ bank-staff size). Published G-Cloud price points; a given size takes the fee of the
+   highest band whose lower bound it reaches. Auto-linked to bank size; fully editable. */
+const GCLOUD_LICENCE = [[7501,29101.79],[6001,25284.06],[5001,22793.38],[4001,20900.78],[3001,18400.20],[2001,15167.54],[1401,13280.66],[901,11321.21],[601,9855.27],[0,9486.54]];
 function platformCostFor(totalBankHeadcount){
   const h = num(totalBankHeadcount);
-  if (h >= 3000) return 20000;
-  if (h >= 1500) return 17000;
-  if (h >= 500)  return 14000;
-  return 10000;
+  for (const [floor,fee] of GCLOUD_LICENCE) if (h >= floor) return fee;
+  return GCLOUD_LICENCE[GCLOUD_LICENCE.length-1][1];
 }
-/* Admin (Rev B): per admin/roster manager. Client said 2.5 h/day @ £18; 2.5 is optimistic, default lower. */
+/* Admin (Rev B): per member of the temporary staffing team. Client said 2.5 h/day @ £18; 2.5 is optimistic, default lower. */
 const ADMIN_HRS_PER_DAY_DEFAULT = 1.0;
 const ADMIN_WORKING_DAYS = 225;
 const ADMIN_LOADED_HOURLY = 18;
@@ -366,7 +369,7 @@ function scaleGroupsTo(groups,key,target){
 function stance(d){
   if (d<=18) return { key:"Conservative", color:C.navy, bg:C.navyLight, note:"Conservative (≈13%): about half the pilot's measured effect. Recommended default for public/self-serve use: defensible without trust-specific evidence." };
   if (d<=30) return { key:"Pilot / Expected", color:C.navyMid, bg:C.navyLight, note:"Pilot / Expected (≈26%): the effect measured at one community site (agency fill 8.1%→6.0%). Single-site and partly attributable, so best used in a guided commercial conversation." };
-  return { key:"Optimistic", color:C.teal, bg:C.tealLight, note:"Optimistic (≈35%): above the pilot result. Use only with strong, trust-specific evidence." };
+  return { key:"Optimistic", color:C.teal, bg:C.tealLight, note:"Optimistic: above the pilot result — the higher the setting, the bolder the assumption. Use only with strong, trust-specific evidence." };
 }
 
 /* ===== PURE CALC ENGINE (shared by Quick + Detailed + the kiosk variant) ===== */
@@ -387,6 +390,9 @@ function calc(input){
     totSpend+=spend; totSaving+=saving; totDisplaced+=displaced; totBaseline+=baseline; totHead+=head; totCapacityValue+=capacityValue;
     return { ...g, head, spend, bankShiftCost, agencyShiftCost, baseline, displaced, saving, capacityValue };
   });
+  const _dW = totDisplaced||1;   // duties-weighted average shift rates (for the premium-basis panel)
+  const bankShiftCost = rows.reduce((a,x)=>a+x.bankShiftCost*x.displaced,0)/_dW;
+  const agencyShiftCost = rows.reduce((a,x)=>a+x.agencyShiftCost*x.displaced,0)/_dW;
   // B: admin (per manager/day) + time saved/week (a co-headline; shown regardless of cash toggle)
   const mgrs=num(admin.managers), hpd=num(admin.hoursPerDay);
   const timeSavedWeek = mgrs * hpd * 5;
@@ -397,6 +403,7 @@ function calc(input){
   const grossBenefit = totSaving + adminSaving + recruitSaving;
   const netSaving = grossBenefit - num(platformCost);
   const roiPct = platformCost>0 ? (netSaving/platformCost)*100 : null;   // n/a (not 0%) when no platform cost
+  const roiMultiple = platformCost>0 ? netSaving/platformCost : null;   // net return on the licence fee (net saving ÷ cost)
   const paybackMonths = grossBenefit>0 ? platformCost/(grossBenefit/12) : null;
   const exceedsSpend = totSaving>totSpend && totSpend>0;
   const adminOnly = totSaving<=0 && (adminSaving>0 || recruitSaving>0);   // reachable sanity check: saving is admin time only
@@ -404,8 +411,8 @@ function calc(input){
   const fillNow=num(fillRateNow), fillAfter=fillNow*(1-d);
   const reg = agencyRegime(totSpend, input.turnover);
   return { rows, totSpend, totSaving, totDisplaced, totBaseline, totHead, totCapacityValue,
-    adminSaving, recruitSaving, timeSavedWeek, grossBenefit, netSaving, roiPct, paybackMonths,
-    exceedsSpend, adminOnly, implausibleRoi, fillNow, fillAfter,
+    adminSaving, recruitSaving, timeSavedWeek, grossBenefit, netSaving, roiPct, roiMultiple, paybackMonths,
+    exceedsSpend, adminOnly, implausibleRoi, fillNow, fillAfter, bankShiftCost, agencyShiftCost, shiftHours,
     displaceableShare:ds, turnover:num(input.turnover), agencyPctOfTurnover:reg.pct, regime:reg.key };
 }
 
@@ -502,7 +509,7 @@ function App(){
   const [calculated,setCalculated]=useState(false);
   const [lead,setLead]=useState({name:"",email:"",org:"",consent:false,sent:false,busy:false,err:null}), [pdfBusy,setPdfBusy]=useState(false);
   // simple state
-  const [simple,setSimple]=useState({ bankPool:660, agencyFillRate:15, numManagers:12, includeAdmin:false });
+  const [simple,setSimple]=useState({ bankPool:660, agencyFillRate:8.3, numManagers:12, includeAdmin:false });
   // detailed state
   const [groups,setGroups]=useState(()=>buildOrg("acute")); const [preset,setPreset]=useState("acute"); const [fillRateNow,setFill]=useState(8);
   const [admin,setAdmin]=useState({ enabled:false, managers:12, hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY });
@@ -556,9 +563,9 @@ function App(){
       doc.text("RLDatix · indicative · "+new Date().toLocaleDateString(LOCALE)+" · "+(mode==="quick"?"Quick estimate":"Detailed"),14,23); y=40;
       doc.setTextColor(15,65,70); doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.text("Headline",14,y); y+=6; doc.setFont("helvetica","normal"); doc.setFontSize(10);
       [["Net annual cash saving",fmt(r.netSaving)],["Admin time saved / week",Math.round(r.timeSavedWeek).toLocaleString(LOCALE)+" hours"],
-       ["Gross annual benefit",fmt(r.grossBenefit)],["Payback",r.paybackMonths?r.paybackMonths.toFixed(1)+" months":"n/a"],["ROI (net)",r.roiPct==null?"n/a":Math.round(r.roiPct)+"%"],
+       ["Gross annual benefit",fmt(r.grossBenefit)],["Payback",fmtDays(r.paybackMonths)],["Return",fmtMult(r.roiMultiple)],
        ["Agency premium displaced",fmt(r.totSaving)],["Admin saving",fmt(r.adminSaving)],["Recruitment waste recovered",fmt(r.recruitSaving)],
-       ["Total agency spend (anchor)",fmt(r.totSpend)],["Premium / displacement",premium+"% / "+displacement+"% ("+st.key+")"],["Platform cost",fmt(platformCost)+"/yr"]
+       ["Total agency spend (anchor)",fmt(r.totSpend)],["Premium / displacement",premium+"% / "+displacement+"% ("+st.key+")"],["Licence fee",fmt(platformCost)+"/yr"]
       ].forEach(([k,v])=>{ doc.text(k,14,y); doc.text(String(v),196,y,{align:"right"}); y+=6; });
       if(mode==="detailed" && doc.autoTable){ y+=2; doc.setFont("helvetica","bold"); doc.text("Saving by staff group",14,y);
         doc.autoTable({ startY:y+2, head:[["Staff group","Agency spend","Duties displaced","Cash saving"]], body:r.rows.map(x=>[x.role,fmt(x.spend),fmtNum(x.displaced),fmt(x.saving)]),
@@ -598,9 +605,9 @@ function App(){
             <p className="step-sub">A fast, conservative estimate for events and web. Switch to <b>Detailed</b> to model your real agency spend by staff group.</p>
             <div className="card">
               <div className="inputs-grid">
-                <Field label="Bank staff pool size" value={simple.bankPool} min="0" onChange={v=>setSimple(s=>({...s,bankPool:num(v)}))} hint="Total people on your bank" info="Total bank workers across all groups. We apply a conservative band-mix bank rate and ad-hoc shift volume."/>
-                <Field label="Current agency fill rate (%)" value={simple.agencyFillRate} min="0" max="100" step={0.5} onChange={v=>setSimple(s=>({...s,agencyFillRate:num(v)}))} hint="Share of temp duties filled by agency" info="The % of temporary duties currently filled by agency. The pilot moved from 8.1% to 6.0% at one site."/>
-                <Field label="Admin / roster managers" value={simple.numManagers} min="0" onChange={v=>setSimple(s=>({...s,numManagers:num(v)}))} hint="Roster mgrs, bank admins, temp/agency mgrs" info="People who spend time arranging temporary cover. Drives the time-saved-per-week and admin saving."/>
+                <Field label="Bank staff pool size" value={simple.bankPool} min="0" onChange={v=>setSimple(s=>({...s,bankPool:num(v)}))} hint="Total people on your bank" info="Total bank workers across all groups; scales for large systems (e.g. Leeds ~5,000, Sussex ~10,000). We apply a conservative 2026/27 AfC band-mix bank rate (~£34k blended, ~£20.84/hr loaded) and ad-hoc shift volume."/>
+                <Field label="Current agency fill rate (%)" value={simple.agencyFillRate} min="0" max="100" step={0.1} onChange={v=>setSimple(s=>({...s,agencyFillRate:num(v)}))} hint="Share of temp duties filled by agency (national avg 8.3%)" info="The % of temporary duties currently filled by agency. Default 8.3% is based on the national average of NHS organisations (RLDatix data); set your own for a tailored figure. The pilot moved from 8.1% to 6.0% at one site."/>
+                <Field label="Temporary staffing team" value={simple.numManagers} min="0" onChange={v=>setSimple(s=>({...s,numManagers:num(v)}))} hint="Bank/temp staffing coordinators & admins" info="The people who do the day-to-day booking, chasing and reconciling of temporary shifts. Drives the time-saved-per-week and admin saving."/>
               </div>
               <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600,color:C.navy,cursor:"pointer",marginTop:14}}>
                 <input type="checkbox" checked={simple.includeAdmin!==false} onChange={e=>setSimple(s=>({...s,includeAdmin:e.target.checked}))}/> Include admin time saving in the cash total (off by default)
@@ -610,16 +617,16 @@ function App(){
             <div className="params-grid" style={{marginTop:12}}>
               <div className="field">
                 <label>Modelling stance: {displacement}% · {st.key} <InfoTip text="Share of current agency usage that improved bank utilisation moves to bank. Driven by the Smart Match pilot: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable, so three stances are offered; public/self-serve defaults to Conservative."/></label>
-                <div className="stance-btns">{[["Conservative",13],["Pilot",26],["Optimistic",35]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
-                <input type="range" min="8" max="40" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Displacement stance, percent" aria-valuetext={displacement+"%, "+st.key}/>
-                <div className="slider-ctx"><span>8% conservative</span><span>26% pilot</span><span>40% optimistic</span></div>
+                <div className="stance-btns">{[["Conservative",13],["Pilot",26],["Optimistic",50]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
+                <input type="range" min="8" max="50" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Displacement stance, percent" aria-valuetext={displacement+"%, "+st.key}/>
+                <div className="slider-ctx"><span>8% conservative</span><span>26% pilot</span><span>50% optimistic</span></div>
               </div>
               <div style={{alignSelf:"center"}}><div className="disp-note" style={{marginTop:0,background:st.bg,color:st.color}}>{st.note}</div></div>
             </div>
-            <button className="adv-toggle" onClick={()=>setAdv(a=>!a)}>{showAdv?"Hide":"Show"} advanced defaults (premium, platform cost, shift length)</button>
+            <button className="adv-toggle" onClick={()=>setAdv(a=>!a)}>{showAdv?"Hide":"Show"} advanced defaults (premium, licence fee, shift length)</button>
             {showAdv && <div className="params-grid" style={{marginTop:10}}>
               <Field label="Agency premium over bank (%)" value={premium} min="0" max="150" step={5} onChange={v=>setPremium(num(v,20))} info="Default 20% (HoC Library average); contested at shift level, use your own rate." />
-              <Field label="Smart Match platform cost (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v,14000)); setPcAuto(false); }} info="Scales with your organisation size (~£10k–£20k by bank headcount); fully editable. ROI denominator — confirm it includes implementation, not licence alone."/>
+              <Field label="Smart Match licence fee (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v,14000)); setPcAuto(false); }} info="Auto-set from your bank size using G-Cloud pricing (ex VAT); fully editable. This is the ROI denominator."/>
               <Field label="Shift length (hours)" value={shiftHours} min="1" step={0.5} onChange={v=>setSH(num(v,8))}/>
               <Field label="Bank on-cost (%)" value={oncost} min="0" step={1} onChange={v=>setOncost(num(v))}/>
             </div>}
@@ -683,14 +690,14 @@ function App(){
               </div>
               <div className="field">
                 <label>Displacement stance: {displacement}% · {st.key} <InfoTip text="Share of your baseline agency usage that improved bank utilisation moves to bank. Driven by the Smart Match pilot: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; the commercial variant can show the Pilot case with a rep to frame the caveats."/></label>
-                <div className="stance-btns">{[["Conservative",13],["Pilot",26],["Optimistic",35]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
-                <input type="range" min="8" max="40" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Displacement stance, percent" aria-valuetext={displacement+"%, "+st.key}/>
-                <div className="slider-ctx"><span>8% conservative</span><span>26% pilot</span><span>40% optimistic</span></div>
+                <div className="stance-btns">{[["Conservative",13],["Pilot",26],["Optimistic",50]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
+                <input type="range" min="8" max="50" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Displacement stance, percent" aria-valuetext={displacement+"%, "+st.key}/>
+                <div className="slider-ctx"><span>8% conservative</span><span>26% pilot</span><span>50% optimistic</span></div>
               </div>
             </div>
             <div className="disp-note" style={{background:st.bg,color:st.color}}>{st.note}</div>
             <div className="params-grid" style={{marginTop:12}}>
-              <Field label="Smart Match platform cost (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v,14000)); setPcAuto(false); }} info="Scales with your organisation size (~£10k–£20k by bank headcount); fully editable. ROI denominator — confirm it includes implementation, not licence alone." hint={pcAuto?"Auto-scaled to your size · editable":"Used for ROI & payback"}/>
+              <Field label="Smart Match licence fee (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v,14000)); setPcAuto(false); }} info="Auto-set from your bank size using G-Cloud pricing (ex VAT); fully editable. This is the ROI denominator." hint={pcAuto?"Auto-scaled to your size · editable":"Used for ROI & payback"}/>
               <Field label="Current agency fill rate (%)" value={fillRateNow} min="0" max="100" step={0.5} onChange={v=>setFill(num(v,8))} info="Used for the capacity narrative (agency reliance reduced)."/>
               <Field label="Displaceable share of agency (%)" value={Math.round(displaceableShare*100)} min="0" max="100" step={5} onChange={v=>setDS(Math.min(1,Math.max(0,num(v,80)/100)))} info="Only part of agency spend can realistically move to bank — excludes break-glass / safety-critical cover and hard-to-fill specialist roles bank can't cover. Displacement is applied to this share only (benchmark default 80%), so the tool never implies 100% of agency is bankable." hint="Benchmark default 80% · editable"/>
               {showAdv && <Field label="Shift length (hours)" value={shiftHours} min="1" step={0.5} onChange={v=>setSH(num(v,8))}/>}
@@ -701,10 +708,10 @@ function App(){
             <div className="card" style={{marginTop:12}}>
               <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600,color:C.navy,cursor:"pointer"}}>
                 <input type="checkbox" checked={admin.enabled} onChange={e=>setAdmin(a=>({...a,enabled:e.target.checked}))}/> Include admin time saving in cash (off by default)
-                <InfoTip text="Off by default, treated as a secondary recommendation. Time released for roster managers, bank admins and temp/agency managers via self-booking automation. Time-saved-per-week is always shown; tick to add its cash value to the saving total."/>
+                <InfoTip text="Off by default, treated as a secondary recommendation. Time released for your temporary staffing team — bank/temp coordinators, officers and administrators — via self-booking automation. Time-saved-per-week is always shown; tick to add its cash value to the saving total."/>
               </label>
               <div className="inputs-grid" style={{marginTop:12}}>
-                <Field label="Admin / roster managers" value={admin.managers} min="0" onChange={v=>setAdmin(a=>({...a,managers:num(v)}))} info="Roster Managers, Bank Staff Administrators, Temp/Agency Managers."/>
+                <Field label="Temporary staffing team" value={admin.managers} min="0" onChange={v=>setAdmin(a=>({...a,managers:num(v)}))} info="Your temporary staffing team — bank/temp coordinators, officers and administrators."/>
                 <Field label="Hours saved / day each" value={admin.hoursPerDay} min="0" step={0.25} onChange={v=>setAdmin(a=>({...a,hoursPerDay:num(v)}))} info="Client suggested 2.5 h/day. That's optimistic (a third of every day). Default is a conservative 1.0; validate locally."/>
                 <Field label="Working days / year" value={admin.workingDays} min="0" onChange={v=>setAdmin(a=>({...a,workingDays:num(v)}))}/>
                 <Field label="Loaded hourly rate (£)" prefix="£" value={admin.loadedHourly} min="0" onChange={v=>setAdmin(a=>({...a,loadedHourly:num(v)}))}/>
@@ -741,37 +748,49 @@ function App(){
               <div className="roi-eyebrow">Estimated annual impact (indicative)</div>
               <div className="roi-co">
                 <div><div className="roi-hero"><AnimMoney v={r.netSaving}/></div><div className="roi-cap">Potential annual cash saving</div><div className="roi-desc">What you could save each year by filling more shifts from your bank instead of agency — the agency premium you stop paying.</div></div>
-                <div><div className="roi-hero">{Math.round(tswAnim).toLocaleString(LOCALE)}<small> hrs</small></div><div className="roi-cap">Administrative time released per week</div><div className="roi-desc">Time your roster and temporary-staffing teams get back each week as shift booking and matching become faster and more automated.</div></div>
-              </div>
-              <div style={{display:"inline-flex",alignItems:"center",gap:10,marginTop:"1rem",padding:"7px 16px",borderRadius:999,background:r.netSaving<0?"rgba(248,113,113,.15)":"rgba(52,222,194,.16)",border:"1px solid "+(r.netSaving<0?"rgba(248,113,113,.55)":"rgba(52,222,194,.5)")}}>
-                <span style={{fontSize:18,fontWeight:800,letterSpacing:".02em",color:r.netSaving<0?"#FCA5A5":"#34DEC2"}}>{r.paybackMonths?r.paybackMonths.toFixed(1)+" mo":"n/a"} payback</span>
+                <div><div className="roi-hero">{Math.round(tswAnim).toLocaleString(LOCALE)}<small> hrs</small></div><div className="roi-cap">Administrative time released per week</div><div className="roi-desc">Time your temporary staffing team gets back each week as shift booking and matching become faster and more automated. Driven by team size, not the confidence level.</div></div>
               </div>
               <div className="roi-sub">
-                <span>Payback <b>{r.paybackMonths?r.paybackMonths.toFixed(1)+" mo":"n/a"}</b></span>
+                <span>Payback <b>{fmtDays(r.paybackMonths)}</b></span>
                 <span>Gross benefit <b>{fmtK(r.grossBenefit)}</b></span>
-                <span>ROI (net) <b>{r.implausibleRoi?"⚠ ":""}{r.roiPct==null?"n/a":Math.round(r.roiPct).toLocaleString(LOCALE)+"%"}</b></span>
+                <span>Return <b>{r.implausibleRoi?"⚠ ":""}{fmtMult(r.roiMultiple)}</b></span>
                 <span>Agency premium displaced <b>{fmtK(r.totSaving)}</b></span>
               </div>
             </div>
 
             <div className="summary-grid">
-              <div className="s-card hl"><div className="s-lbl">Net annual saving</div><div className="s-val"><AnimMoney v={r.netSaving}/></div><div className="s-sub">after {fmt(platformCost)} platform cost</div></div>
+              <div className="s-card hl"><div className="s-lbl">Net annual saving</div><div className="s-val"><AnimMoney v={r.netSaving}/></div><div className="s-sub">after {fmt(platformCost)} licence fee</div></div>
               <div className="s-card"><div className="s-lbl">Agency premium displaced</div><div className="s-val"><AnimMoney v={r.totSaving}/></div><div className="s-sub">the genuine cash saving</div></div>
-              <div className="s-card"><div className="s-lbl">Admin saving {r.adminSaving>0?"":"(off)"}</div><div className="s-val"><AnimMoney v={r.adminSaving}/></div><div className="s-sub">{r.adminSaving>0?"modelled, conservative":"toggle to include"}</div></div>
-              <div className="s-card"><div className="s-lbl">Time saved / week</div><div className="s-val">{Math.round(r.timeSavedWeek).toLocaleString(LOCALE)}<span style={{fontSize:13}}> hrs</span></div><div className="s-sub">across the roster/admin team</div></div>
+              {r.adminSaving>0 && <div className="s-card"><div className="s-lbl">Admin saving</div><div className="s-val"><AnimMoney v={r.adminSaving}/></div><div className="s-sub">modelled, conservative</div></div>}
+              <div className="s-card"><div className="s-lbl">Time saved / week</div><div className="s-val">{Math.round(r.timeSavedWeek).toLocaleString(LOCALE)}<span style={{fontSize:13}}> hrs</span></div><div className="s-sub">across the temporary staffing team</div></div>
             </div>
 
             <p style={{padding:"0 1.5rem",margin:"1rem 0 0",fontSize:12,color:C.textLight,lineHeight:1.6}}>
-              Net saving is the agency premium displaced{r.adminSaving>0?<> plus <b style={{color:C.textMid}}>{fmtK(r.adminSaving)}</b> admin time</>:""}, less the platform cost. ROI and payback are measured against the <b style={{color:C.textMid}}>{fmt(platformCost)}/yr</b> platform cost only; the bank shifts used to deliver it are shown under Capacity, not netted here.{mode==="quick"?<> Modelled agency spend, <b style={{color:C.textMid}}>derived from your bank pool and agency fill rate</b>: <b style={{color:C.textMid}}>{fmtK(r.totSpend)}</b> — for your actual figure, use the Detailed calculator.</>:""}
+              Net saving is the agency premium displaced{r.adminSaving>0?<> plus <b style={{color:C.textMid}}>{fmtK(r.adminSaving)}</b> admin time</>:""}, less the licence fee. Return and payback are measured against the <b style={{color:C.textMid}}>{fmt(platformCost)}/yr</b> licence fee only; the bank shifts used to deliver it are shown under Capacity, not netted here.{mode==="quick"?<> Modelled agency spend, <b style={{color:C.textMid}}>derived from your bank pool and agency fill rate</b>: <b style={{color:C.textMid}}>{fmtK(r.totSpend)}</b> — for your actual figure, use the Detailed calculator.</>:""}
             </p>
 
             {r.exceedsSpend && <div className="callout navy"><p className="title">⚠ Check your inputs</p><p>The modelled saving exceeds total agency spend, which isn't possible. Lower the premium or displacement, or check the agency-spend figures.</p></div>}
             {r.adminOnly && <div className="callout navy"><p className="title">Admin time only</p><p>No agency premium saving is modelled (agency spend is zero). This figure is the admin-time value on its own. {isQuick?"Set an agency fill rate above 0":"Add your agency spend"} to model the agency-displacement saving.</p></div>}
 
+            {/* How the cash saving is worked out — bank vs agency rate vs the premium gap (the defensible basis) */}
+            <div className="panel">
+              <div className="panel-title">How the cash saving is worked out</div>
+              <p style={{fontSize:12.5,color:C.textMid,lineHeight:1.6,margin:"0 0 .6rem"}}>We only ever bank the <b>gap</b> between an agency shift and the same shift on your own bank — never the whole agency cost — and only on the shifts you realistically move to bank.</p>
+              {(()=>{ const hrs=r.shiftHours||8, bankHr=r.bankShiftCost/hrs, agHr=r.agencyShiftCost/hrs, gapS=r.agencyShiftCost-r.bankShiftCost, gapHr=gapS/hrs, m2=v=>"£"+(v||0).toFixed(2);
+                const rate=(s,h)=>(<>{fmt(s)} <small style={{color:C.textLight,fontWeight:400}}>/shift · {m2(h)}/hr</small></>);
+                return <>
+                  <div className="arow"><span>Your own bank (blended national rate)</span><span>{rate(r.bankShiftCost,bankHr)}</span></div>
+                  <div className="arow"><span>{perGroupPremium?"Agency, same shift (your per-group premiums)":"Agency, same shift (at "+premium+"% premium)"}</span><span>{rate(r.agencyShiftCost,agHr)}</span></div>
+                  <div className="arow"><span style={{fontWeight:700,color:C.navy}}>Premium displaced = the saving</span><span>{rate(gapS,gapHr)}</span></div>
+                  <p style={{fontSize:12.5,color:C.textMid,lineHeight:1.6,margin:".6rem 0 0"}}><b style={{color:C.navy}}>{m2(gapHr)}/hr</b> on each of <b style={{color:C.navy}}>{fmtNum(r.totDisplaced)}</b> shifts moved to bank = <b style={{color:C.navy}}>{fmt(r.totSaving)}</b> a year.</p>
+                </>; })()}
+              <p style={{fontSize:11.5,color:C.textLight,marginTop:".6rem",lineHeight:1.6}}>Bank rate = 2026/27 AfC blended midpoint, loaded with on-cost. Premium defaults to the official ~20% House of Commons Library average — deliberately conservative and contested at shift level (nursing ~35–50%, medics ~80–120%). Set your own premium and every figure updates.</p>
+            </div>
+
             {/* Single annual steady-state (Rev D: ramp removed) */}
             <div className="panel">
               <div className="panel-title">Annual, ongoing saving</div>
-              <p style={{fontSize:12.5,color:C.textMid,lineHeight:1.6,margin:0}}>This is a <b>single annual, steady-state figure</b>, not a multi-year projection. Smart Match savings start once it is live and recur every year it is in use; the platform cost shown is an annual cost, so the net saving repeats each year.</p>
+              <p style={{fontSize:12.5,color:C.textMid,lineHeight:1.6,margin:0}}>This is a <b>single annual, steady-state figure</b>, not a multi-year projection. Smart Match savings start once it is live and recur every year it is in use; the licence fee shown is an annual cost, so the net saving repeats each year.</p>
             </div>
 
             {!isQuick && r.regime && <div className="panel">
@@ -805,7 +824,7 @@ function App(){
                 <div className="cap-item"><div className="cv">{fmtK(r.totCapacityValue)}</div><div className="cl">bank backfill cost to deliver them <b>(spend, not saving)</b></div></div>
                 <div className="cap-item"><div className="cv">{r.fillNow?pct(r.fillNow)+" → "+r.fillAfter.toFixed(1)+"%":"n/a"}</div><div className="cl">illustrative agency reliance reduction</div></div>
               </div>
-              <p style={{fontSize:11.5,color:C.textLight,marginTop:".85rem",lineHeight:1.6}}>This is where the old "utilisation uplift" belongs: better utilisation fills more duties and builds resilience, but filling a bank shift is expenditure; only the agency-vs-bank premium above is cash saved.</p>
+              <p style={{fontSize:11.5,color:C.textLight,marginTop:".85rem",lineHeight:1.6}}>Filling more shifts from your own bank is real operational value — steadier rosters, better continuity of care and less last-minute agency reliance. It is deliberately kept separate from the cash saving above and never added to it.</p>
             </div>
 
             <div className="callout navy">
@@ -847,7 +866,7 @@ function App(){
                 your={<>Agency spend {fmt(r.totSpend)} · premium {premium}%{perGroupPremium?" (default; per-group overrides on)":""} · displacement {displacement}% ({st.key}) → <b>{fmt(r.totSaving)}</b>.</>}
                 source="Cash saving = agency_spend × displacement × premium/(1+premium); driven by agency spend, premium and displacement, not bank payroll." strength={{c:"high",t:"method"}}/>
               <div className="arow"><span>Time saved / week (co-headline)</span><span>{Math.round(r.timeSavedWeek).toLocaleString(LOCALE)} hours</span></div>
-              <div className="arow explain"><span className="albl">Admin model (per manager) <span className="conf low">low</span></span><span className="adesc">managers × hours/day × 5. Cash: × {ADMIN_WORKING_DAYS} working days × loaded rate. Roles: Roster Managers, Bank Staff Administrators, Temp/Agency Managers. Client suggested 2.5 h/day @ £18, treated as optimistic; default is a conservative 1.0 h/day. Validate locally.</span></div>
+              <div className="arow explain"><span className="albl">Admin model (per person) <span className="conf low">low</span></span><span className="adesc">team size × hours/day × 5. Cash: × {ADMIN_WORKING_DAYS} working days × loaded rate. Roles: bank/temp staffing coordinators, officers and administrators (the people who do the day-to-day booking). Client suggested 2.5 h/day @ £18, treated as optimistic; default is a conservative 1.0 h/day. Validate locally.</span></div>
               <div className="arow"><span>Agency premium {perGroupPremium?"(per staff group)":"(single, editable)"}</span><span>{premium}%{perGroupPremium?" default":""} <span className="contested">contested</span></span></div>
               <div className="arow explain"><span className="albl">Source: premium</span><span className="adesc">~20% average (House of Commons Library CBP-10539, Mar 2026); disputed at shift level; May 2026 REC FOI data show NHS bank can cost more than price-capped agency on some shifts. Treat as a range (nursing ~35–50%, medics ~80–120%) and use your own rates.</span></div>
               <div className="arow"><span>Displacement stance</span><span>{displacement}%, {st.key}</span></div>
@@ -857,7 +876,7 @@ function App(){
               <div className="arow"><span>Pay scale</span><span>2026/27 NHS AfC midpoints <span className="conf high">high</span></span></div>
               <div className="arow explain"><span className="albl">Source: pay</span><span className="adesc">NHS Employers 2026/27 (+3.3% confirmed from 1 Apr 2026): Band 2 ~£25,272; Band 3 ~£26,618; Band 5 mid ~£34,592; Band 6 mid ~£42,170. Medics use the SAS / specialty-doctor scale (~£52.5k–£67.5k, 2026/27); medical T&amp;Cs, not AfC. Add London HCAS (Inner 20% / Outer 15% / Fringe 5%) where relevant. Band 2/3 may rise further via the pending Staff Council structure reform.</span></div>
               <div className="arow"><span>Hourly divisor / shift length</span><span>1,957.5 h/yr · {shiftHours} h</span></div>
-              <div className="arow"><span>Platform cost (ROI denominator)</span><span>{fmt(platformCost)}/yr</span></div>
+              <div className="arow"><span>Licence fee (ROI denominator, G-Cloud)</span><span>{fmt(platformCost)}/yr</span></div>
               {r.recruitSaving>0 && <><div className="arow"><span>Recruitment waste recovered (optional)</span><span>{fmt(r.recruitSaving)}</span></div>
               <div className="arow explain"><span className="albl">Source: recruitment <span className="conf low">low</span></span><span className="adesc">under-utilised workers × recruit/onboard cost × recovery share. No strong public benchmark, conservative and clearly optional.</span></div></>}
               <div className="arow explain"><span className="albl">Strategy &amp; framing</span><span className="adesc">Framed against the NHS 10 Year Plan + Workforce Paper and the Staff Health &amp; Wellbeing CQUIN. Pilot is a small (2-site), vendor-collected sample, encouraging but indicative, not solely attributable to Smart Match, and anonymised pending client sign-off.</span></div>

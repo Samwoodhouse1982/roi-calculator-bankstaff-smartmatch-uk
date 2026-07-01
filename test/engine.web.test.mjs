@@ -23,24 +23,26 @@ const marker = body.indexOf('/* ===== HOOKS + SMALL COMPONENTS');
 assert.ok(marker > 0, 'could not locate the engine/components boundary in roi-calculator.html');
 const engineJS = body.slice(0, marker).replace(/const\s*\{\s*useState[^;]*\}\s*=\s*React;/, '');
 // eslint-disable-next-line no-new-func
-const E = new Function(engineJS + '\nreturn { calc, simpleToInput, buildOrg };')();
+const E = new Function(engineJS + '\nreturn { calc, simpleToInput, buildOrg, platformCostFor };')();
 
 const SHARED = { premium: 20, displacement: 13, platformCost: 17000, shiftHours: 8, oncost: 20, displaceableShare: 0.80 };
 const ADMIN = { enabled: true, managers: 12, hoursPerDay: 1.0, workingDays: 225, loadedHourly: 18 };
 const SAVING_PER_POUND = 0.13 * 0.80 * 0.20 / 1.20;   // displaceable share applied (benchmark §4)
 
-const quick = () => E.calc(E.simpleToInput({ bankPool: 660, agencyFillRate: 15, numManagers: 12, includeAdmin: true }, SHARED));
+const quick = () => E.calc(E.simpleToInput({ bankPool: 660, agencyFillRate: 8.3, numManagers: 12, includeAdmin: true }, SHARED));
 const detailed = (type, over = {}) => E.calc({ groups: E.buildOrg(type), ...SHARED, admin: ADMIN, recruit: { enabled: false }, fillRateNow: 8, perGroupPremium: false, ...over });
 
+// Post-amends default: agencyFillRate 8.3% (national average) at the SHARED 17k platform cost.
 test('Quick default matches the golden headline (parity with kiosk)', () => {
   const q = quick();
-  assert.equal(Math.round(q.netSaving), 55837);
+  assert.equal(Math.round(q.netSaving), 44031);
   assert.equal(Math.round(q.adminSaving), 48600);
-  assert.equal(Math.round(q.grossBenefit), 72837);
-  assert.equal(Math.round(q.roiPct), 328);
+  assert.equal(Math.round(q.grossBenefit), 61031);
+  assert.equal(Math.round(q.roiPct), 259);
+  assert.equal(Math.round(q.roiMultiple * 100) / 100, 2.59);   // net return on the licence fee (net saving ÷ cost)
   assert.equal(q.timeSavedWeek, 60);
-  assert.equal(Math.round(q.totSpend), 1398290);   // derived agency spend
-  assert.ok(Math.abs(q.paybackMonths - 2.80) < 0.01);
+  assert.equal(Math.round(q.totSpend), 717189);   // derived agency spend
+  assert.ok(Math.abs(q.paybackMonths - 3.34) < 0.01);
 });
 
 const DETAILED_GOLDEN = {
@@ -78,7 +80,9 @@ test('Displaceable share scales the agency saving (benchmark §4)', () => {
 });
 
 test('ROI is n/a (null), not 0%, when platform cost is zero (audit #16)', () => {
-  assert.equal(E.calc(E.simpleToInput({ bankPool: 660, agencyFillRate: 15, numManagers: 12, includeAdmin: true }, { ...SHARED, platformCost: 0 })).roiPct, null);
+  const zero = E.calc(E.simpleToInput({ bankPool: 660, agencyFillRate: 8.3, numManagers: 12, includeAdmin: true }, { ...SHARED, platformCost: 0 }));
+  assert.equal(zero.roiPct, null);
+  assert.equal(zero.roiMultiple, null);
   assert.equal(detailed('acute', { platformCost: 0 }).roiPct, null);
 });
 
@@ -86,4 +90,13 @@ test('adminOnly flags an agency-free saving, and is off by default (audit #14)',
   assert.equal(quick().adminOnly, false);
   const noAgency = E.calc(E.simpleToInput({ bankPool: 660, agencyFillRate: 0, numManagers: 12, includeAdmin: true }, SHARED));
   assert.equal(noAgency.adminOnly, true);
+});
+
+test('platformCostFor follows the G-Cloud licence bands (parity with kiosk)', () => {
+  assert.equal(E.platformCostFor(300), 9486.54);
+  assert.equal(E.platformCostFor(660), 9855.27);
+  assert.equal(E.platformCostFor(1000), 11321.21);
+  assert.equal(E.platformCostFor(2000), 13280.66);
+  assert.equal(E.platformCostFor(5000), 20900.78);
+  assert.equal(E.platformCostFor(12000), 29101.79);
 });
