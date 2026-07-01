@@ -63,7 +63,7 @@ function Row({ label, value, accent }) {
   </div>;
 }
 
-// One of the four KPI tiles.
+// One of the KPI tiles.
 function KpiTile({ label, value, sub, iconKey }) {
   return <div style={{ padding: "24px 22px", background: C.surface, borderRadius: 18, border: `1px solid ${C.accent}25` }}>
     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
@@ -166,13 +166,21 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
       </div>)}
     </div>
 
-    {/* KPI tiles */}
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 28 }}>
-      <KpiTile iconKey="dollar" label="Agency premium displaced" value={<AnimVal value={r.agencySaving} format={fmtK} />} sub="hard cash: agency vs bank gap" />
-      <KpiTile iconKey="clock" label="Admin time saving" value={<AnimVal value={r.adminSaving} format={fmtK} />} sub="temp staffing team time, valued" />
-      <KpiTile iconKey="calendar" label="Payback" value={fmtPayback(r.paybackMonths)} sub="to recover the licence fee" />
-      <KpiTile iconKey="check" label="Net saving" value={<AnimVal value={r.netSaving} format={fmtK} />} sub="after licence fee" />
-    </div>
+    {/* KPI tiles — the Admin time tile only shows when admin time is toggled on (adminSaving > 0) */}
+    {(() => {
+      const tiles = [
+        { iconKey: "dollar", label: "Agency premium displaced", value: <AnimVal value={r.agencySaving} format={fmtK} />, sub: "hard cash: agency vs bank gap" },
+        ...(r.adminSaving > 0 ? [{ iconKey: "clock", label: "Admin time saving", value: <AnimVal value={r.adminSaving} format={fmtK} />, sub: "temp staffing team time, valued" }] : []),
+        { iconKey: "calendar", label: "Payback", value: fmtPayback(r.paybackMonths), sub: "to recover the licence fee" },
+        { iconKey: "check", label: "Net saving", value: <AnimVal value={r.netSaving} format={fmtK} />, sub: "after licence fee" },
+      ];
+      const odd = tiles.length % 2 === 1;
+      return <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 28 }}>
+        {tiles.map((t, i) => <div key={i} style={odd && i === tiles.length - 1 ? { gridColumn: "1 / -1" } : undefined}>
+          <KpiTile iconKey={t.iconKey} label={t.label} value={t.value} sub={t.sub} />
+        </div>)}
+      </div>;
+    })()}
 
     {/* How the cash saving is worked out — bank vs agency rate vs the premium gap (the defensible basis) */}
     <Card style={{ marginBottom: 28 }}>
