@@ -123,6 +123,7 @@
   .roi-hero { font-family:'DM Serif Display',Georgia,serif; font-size:clamp(2.1rem,6vw,3.2rem); line-height:1; }
   .roi-hero small { font-size:1rem; opacity:.7; font-family:'DM Sans',sans-serif; }
   .roi-cap { font-size:12px; opacity:.75; margin-top:.4rem; }
+  .roi-desc { font-size:12px; opacity:.72; margin-top:.4rem; line-height:1.5; max-width:300px; }
   .roi-sub { font-size:13px; opacity:.85; margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,.15); display:flex; gap:1.5rem; flex-wrap:wrap; }
   .roi-sub b { color:var(--seafoam); }
 
@@ -577,7 +578,7 @@ function App(){
       <header><div className="wrap">
         <div className="logo"><b>RLDatix</b><span className="divider">·</span>Smart Match<span className="divider">·</span>Workforce Intelligence</div>
         <h1>Your Workforce<br/><em>ROI Calculator</em></h1>
-        <p>See the cash your NHS organisation could release by improving bank-staff utilisation, moving duties off expensive agency and onto your own bank. The saving is the <em>agency premium displaced</em>, not the cost of the shifts you fill.</p>
+        <p>Smart Match helps NHS organisations fill more shifts from their own staff bank and rely less on agency. This tool gives you an indicative overview of two things: the <strong>potential cash savings</strong> from reducing agency reliance, and the <strong>administrative and clinical time</strong> that better bank management could release. The figures draw on real pilot data and are deliberately conservative — a starting point for a conversation, not a fixed quote.</p>
       </div></header>
 
       <div className="strategy"><div className="wrap">
@@ -739,8 +740,8 @@ function App(){
             <div className="roi-header">
               <div className="roi-eyebrow">Estimated annual impact (indicative)</div>
               <div className="roi-co">
-                <div><div className="roi-hero"><AnimMoney v={r.netSaving}/></div><div className="roi-cap">net cash saving / year</div></div>
-                <div><div className="roi-hero">{Math.round(tswAnim).toLocaleString(LOCALE)}<small> hrs</small></div><div className="roi-cap">admin time saved / week</div></div>
+                <div><div className="roi-hero"><AnimMoney v={r.netSaving}/></div><div className="roi-cap">Potential annual cash saving</div><div className="roi-desc">What you could save each year by filling more shifts from your bank instead of agency — the agency premium you stop paying.</div></div>
+                <div><div className="roi-hero">{Math.round(tswAnim).toLocaleString(LOCALE)}<small> hrs</small></div><div className="roi-cap">Administrative time released per week</div><div className="roi-desc">Time your roster and temporary-staffing teams get back each week as shift booking and matching become faster and more automated.</div></div>
               </div>
               <div style={{display:"inline-flex",alignItems:"center",gap:10,marginTop:"1rem",padding:"7px 16px",borderRadius:999,background:r.netSaving<0?"rgba(248,113,113,.15)":"rgba(52,222,194,.16)",border:"1px solid "+(r.netSaving<0?"rgba(248,113,113,.55)":"rgba(52,222,194,.5)")}}>
                 <span style={{fontSize:18,fontWeight:800,letterSpacing:".02em",color:r.netSaving<0?"#FCA5A5":"#34DEC2"}}>{r.paybackMonths?r.paybackMonths.toFixed(1)+" mo":"n/a"} payback</span>
@@ -798,8 +799,9 @@ function App(){
 
             <div className="capacity">
               <span className="cap-tag">Capacity: not a cash saving</span>
+              <p style={{fontSize:12,color:C.textMid,margin:".55rem 0 0",lineHeight:1.55,maxWidth:560}}>Additional shifts covered by your own staff rather than agency — reducing reliance on agency and supporting continuity of care.</p>
               <div className="cap-grid">
-                <div className="cap-item"><div className="cv"><AnimNum v={r.totDisplaced}/></div><div className="cl">additional temp duties/yr filled by your own bank (off agency)</div></div>
+                <div className="cap-item"><div className="cv"><AnimNum v={r.totDisplaced}/></div><div className="cl">more shifts filled from your own bank each year (off agency)</div></div>
                 <div className="cap-item"><div className="cv">{fmtK(r.totCapacityValue)}</div><div className="cl">bank backfill cost to deliver them <b>(spend, not saving)</b></div></div>
                 <div className="cap-item"><div className="cv">{r.fillNow?pct(r.fillNow)+" → "+r.fillAfter.toFixed(1)+"%":"n/a"}</div><div className="cl">illustrative agency reliance reduction</div></div>
               </div>
@@ -807,8 +809,8 @@ function App(){
             </div>
 
             <div className="callout navy">
-              <p className="title">These figures count cash only.</p>
-              <p>As a patient-safety company, much of Smart Match's value shows up in <b>safety and quality</b> — safer staffing, better continuity of care and less reliance on unfamiliar agency staff — alongside the time released for managers and admin teams and the staff-experience uplift when bank workers can find and book duties that fit their skills and lives. These wider benefits are real but are deliberately <b>not monetised</b> here; they are kept as a separate qualitative story, not added to the ROI number.</p>
+              <p className="title">The value goes beyond the numbers</p>
+              <p>These figures capture cash savings only. Smart Match also supports safer staffing, better continuity of care and a fairer, more flexible experience for your bank workers — real benefits we've deliberately not put a pound figure on.</p>
             </div>
 
             <div className="callout quote">
