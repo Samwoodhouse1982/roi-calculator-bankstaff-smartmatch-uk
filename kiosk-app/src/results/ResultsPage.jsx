@@ -177,6 +177,32 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
       <KpiTile iconKey="check" label="Net saving" value={<AnimVal value={r.netSaving} format={fmtK} />} sub="after licence fee" />
     </div>
 
+    {/* How the cash saving is worked out — bank vs agency rate vs the premium gap (the defensible basis) */}
+    <Card style={{ marginBottom: 28 }}>
+      <CTitle iconKey="dollar">How the cash saving is worked out</CTitle>
+      <div style={{ fontSize: F.small, color: C.text, lineHeight: 1.7, marginBottom: 14 }}>
+        We only ever bank the <strong style={{ color: C.accent }}>gap</strong> between an agency shift and the same shift on your own bank — never the whole agency cost — and only on the shifts you realistically move to bank.
+      </div>
+      {(() => {
+        const hrs = r.shiftHours || 8;
+        const money2 = v => "£" + (v || 0).toFixed(2);
+        const bankHr = r.bankShiftCost / hrs, agencyHr = r.agencyShiftCost / hrs;
+        const gapShift = r.agencyShiftCost - r.bankShiftCost, gapHr = gapShift / hrs;
+        const rate = (shift, hr) => <>{fmt(shift)}<span style={{ fontSize: F.tiny, color: C.textMuted, fontWeight: 400 }}> /shift · {money2(hr)}/hr</span></>;
+        return <>
+          <Row label="Your own bank (blended national rate)" value={rate(r.bankShiftCost, bankHr)} />
+          <Row label={r.perGroupPremium ? "Agency, same shift (your per-group premiums)" : `Agency, same shift (at ${r.premium}% premium)`} value={rate(r.agencyShiftCost, agencyHr)} />
+          <Row label="Premium displaced = the saving" value={rate(gapShift, gapHr)} accent />
+          <div style={{ marginTop: 14, fontSize: F.small, color: C.textMid, lineHeight: 1.6 }}>
+            <strong style={{ color: C.text }}>{money2(gapHr)}/hr</strong> on each of <strong style={{ color: C.text }}>{fmtNum(r.displaced)}</strong> shifts moved to bank = <strong style={{ color: C.accent }}>{fmt(r.agencySaving)}</strong> a year.
+          </div>
+        </>;
+      })()}
+      <div style={{ marginTop: 14, fontSize: F.tiny, color: C.textMuted, fontStyle: "italic", lineHeight: 1.6 }}>
+        Bank rate = 2026/27 AfC blended midpoint, loaded with on-cost. Premium defaults to the official ~20% House of Commons Library average — deliberately conservative and contested at shift level (nursing ~35–50%, medics ~80–120%). Set your own premium and every figure updates.
+      </div>
+    </Card>
+
     {/* Wider benefits — cash is only part of the picture (copy brief §2) */}
     <Card style={{ marginBottom: 28, borderLeft: `3px solid ${C.accent}` }}>
       <CTitle iconKey="lightbulb">The value goes beyond the numbers</CTitle>

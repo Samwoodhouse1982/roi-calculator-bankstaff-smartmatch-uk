@@ -66,7 +66,8 @@ export function calc(inp) {
   const implausibleRoi = roiPct != null && roiPct > 3000;
   return { agencySpend, agencySaving, adminSaving, timeSavedWeek, grossBenefit, netSaving, roiPct, roiMultiple,
            paybackMonths, displaced, capacityValue, fillNow: agencyFillRate, fillAfter,
-           exceedsSpend, adminOnly, implausibleRoi, premium, displacement, platformCost };
+           exceedsSpend, adminOnly, implausibleRoi, premium, displacement, platformCost,
+           bankShiftCost, agencyShiftCost, shiftHours };
 }
 
 /* ============================================================================
@@ -184,6 +185,9 @@ export function calcDetailed(input) {
     totSpend += spend; totSaving += saving; totDisplaced += displaced; totHead += head; totCapacityValue += capacityValue;
     return { ...g, head, spend, pay, premiumPct: Math.round(gp * 100), bankShiftCost, agencyShiftCost, baseline, displaced, saving, capacityValue };
   });
+  const dW = totDisplaced || 1;   // duties-weighted average shift rates for the "how the premium is worked out" panel
+  const bankShiftCost = rows.reduce((a, x) => a + x.bankShiftCost * x.displaced, 0) / dW;
+  const agencyShiftCost = rows.reduce((a, x) => a + x.agencyShiftCost * x.displaced, 0) / dW;
   const mgrs = num(admin.managers), hpd = num(admin.hoursPerDay);
   const timeSavedWeek = mgrs * hpd * 5;
   const adminSaving = admin.enabled ? mgrs * hpd * num(admin.workingDays) * num(admin.loadedHourly) : 0;
@@ -200,7 +204,7 @@ export function calcDetailed(input) {
     adminSaving, recruitSaving, timeSavedWeek, grossBenefit, netSaving, roiPct, roiMultiple, paybackMonths,
     exceedsSpend: totSaving > totSpend && totSpend > 0, adminOnly: totSaving <= 0 && (adminSaving > 0 || recruitSaving > 0),
     implausibleRoi: roiPct != null && roiPct > 3000,
-    fillNow, fillAfter, premium, displacement, perGroupPremium, platformCost: num(platformCost),
+    fillNow, fillAfter, premium, displacement, perGroupPremium, platformCost: num(platformCost), bankShiftCost, agencyShiftCost, shiftHours,
     displaceableShare, turnover: num(turnover), agencyPctOfTurnover: reg.pct, regime: reg.key,
     // aliases so the shared ResultsPage can render either model unchanged:
     agencySaving: totSaving, displaced: totDisplaced, capacityValue: totCapacityValue,
