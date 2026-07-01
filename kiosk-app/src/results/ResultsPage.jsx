@@ -128,7 +128,7 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
         <span style={{ fontSize: F.h1, fontWeight: 800, color: C.accent }}>{displacement}%</span>
       </div>
       <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-        {[["Conservative", 13], ["Pilot", 26], ["Optimistic", 35]].map(([lbl, v]) => {
+        {[["Conservative", 13], ["Pilot", 26], ["Optimistic", 50]].map(([lbl, v]) => {
           const on = displacement === v;
           return <button key={v} onClick={() => setDisplacement(v)} style={{
             flex: 1, padding: "16px 8px", borderRadius: 14, cursor: "pointer", fontFamily: "inherit",
