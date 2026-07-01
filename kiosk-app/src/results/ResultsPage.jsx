@@ -80,6 +80,7 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
   const st = stance(displacement);
   const fmtMonths = m => m == null ? "n/a" : `${m.toFixed(1)} mo`;
   const fmtPct1 = v => `${(Math.round(v * 10) / 10).toLocaleString("en-GB")}%`;
+  const fmtMultiple = m => m == null ? "n/a" : (m >= 10 ? Math.round(m) : Math.round(m * 10) / 10) + "×";
 
   return <div style={{ animation: "rfade .5s ease-out" }}>
     <style>{`@keyframes rfade { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
@@ -107,14 +108,45 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
           <AnimVal value={r.timeSavedWeek} format={v => fmtNum(v)} />
         </div>
         <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>hours released each week</div>
-        <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, lineHeight: 1.5, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>Time your roster and temporary-staffing teams get back each week as shift booking and matching become faster and more automated.</div>
+        <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, lineHeight: 1.5, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>Time your temporary staffing team gets back each week as shift booking and matching become faster and more automated.</div>
       </div>
     </div>
 
     {/* Basis caption: what the headline includes + what ROI is measured against (audit P1 #5/#6/#7) */}
     <div style={{ textAlign: "center", fontSize: F.small, color: C.textMuted, lineHeight: 1.6, margin: "0 auto 22px", maxWidth: 880 }}>
-      Net saving is the agency premium displaced{r.adminSaving > 0 ? <> plus <strong style={{ color: C.textMid }}>{fmtK(r.adminSaving)}</strong> admin time</> : ""}, less the platform cost. ROI and payback are measured against the <strong style={{ color: C.textMid }}>{fmt(r.platformCost)}/yr</strong> platform cost only; the bank shifts used to deliver it are shown under Capacity, not netted here.{r.agencySpend != null ? <> Modelled agency spend, <strong style={{ color: C.textMid }}>derived from your bank pool and agency fill rate</strong>: <strong style={{ color: C.textMid }}>{fmtK(r.agencySpend)}</strong> — for your actual figure, use the Detailed calculator.</> : ""}
+      Net saving is the agency premium displaced{r.adminSaving > 0 ? <> plus <strong style={{ color: C.textMid }}>{fmtK(r.adminSaving)}</strong> admin time</> : ""}, less the licence fee. Return and payback are measured against the <strong style={{ color: C.textMid }}>{fmt(r.platformCost)}/yr</strong> licence fee only; the bank shifts used to deliver it are shown under Capacity, not netted here.{r.agencySpend != null ? <> Modelled agency spend, <strong style={{ color: C.textMid }}>derived from your bank pool and agency fill rate</strong>: <strong style={{ color: C.textMid }}>{fmtK(r.agencySpend)}</strong> — for your actual figure, use the Detailed calculator.</> : ""}
     </div>
+
+    {/* Confidence / modelling stance — set upfront, reconfigurable here at the top of the report */}
+    <Card style={{ marginBottom: 28 }}>
+      <CTitle iconKey="search">Confidence / modelling stance</CTitle>
+      <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6, marginBottom: 18 }}>
+        You set this earlier; adjust it here and every figure recomputes live. It is how much of today's agency activity you assume better bank utilisation moves onto your own bank.
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <span style={{ fontSize: F.body, fontWeight: 600, color: C.textMid }}>Agency displacement</span>
+        <span style={{ fontSize: F.h1, fontWeight: 800, color: C.accent }}>{displacement}%</span>
+      </div>
+      <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
+        {[["Conservative", 13], ["Pilot", 26], ["Optimistic", 35]].map(([lbl, v]) => {
+          const on = displacement === v;
+          return <button key={v} onClick={() => setDisplacement(v)} style={{
+            flex: 1, padding: "16px 8px", borderRadius: 14, cursor: "pointer", fontFamily: "inherit",
+            border: `1px solid ${on ? C.accent : C.border}`, background: on ? C.accent : C.surface2,
+            color: on ? "#fff" : C.textMid, fontWeight: 700, fontSize: F.small, transition: "all .15s",
+            display: "flex", flexDirection: "column", gap: 3, alignItems: "center"
+          }}>{lbl}<span style={{ fontSize: F.tiny, fontWeight: 600, opacity: 0.8 }}>{v}%</span></button>;
+        })}
+      </div>
+      <input type="range" min={8} max={50} step={1} value={displacement} onChange={e => setDisplacement(Number(e.target.value))} style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: F.tiny, color: C.textMuted, marginTop: 8 }}>
+        <span>8% · conservative</span><span>26% · pilot</span><span>50% · optimistic</span>
+      </div>
+      <div style={{ marginTop: 16, padding: "16px 20px", background: C.accentSoft, borderRadius: 14, border: `1px solid ${C.accent}30` }}>
+        <div style={{ fontSize: F.body, fontWeight: 800, color: C.accent, marginBottom: 6 }}>{st.key}</div>
+        <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6 }}>{st.note}</div>
+      </div>
+    </Card>
 
     {/* Guardrail */}
     {r.exceedsSpend && <div style={{ marginBottom: 14, padding: "14px 20px", background: C.accentSoft, border: `1px solid ${C.accent}`, borderRadius: 14, fontSize: F.small, color: C.text, lineHeight: 1.5 }}>
@@ -129,7 +161,7 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
       {[
         { label: "Payback", value: fmtMonths(r.paybackMonths) },
         { label: "Gross benefit", value: <AnimVal value={r.grossBenefit} format={fmtK} /> },
-        { label: "ROI (net)", value: r.roiPct == null ? "n/a" : <>{r.implausibleRoi ? "⚠ " : ""}<AnimVal value={r.roiPct} format={v => `${fmtNum(v)}%`} /></> },
+        { label: "Return", value: r.roiMultiple == null ? "n/a" : <>{r.implausibleRoi ? "⚠ " : ""}<AnimVal value={r.roiMultiple} format={fmtMultiple} /></> },
         { label: "Agency premium displaced", value: <AnimVal value={r.agencySaving} format={fmtK} /> },
       ].map((s, i) => <div key={i} style={{ flex: "1 1 220px", padding: "16px 20px", background: C.surface2, borderRadius: 14, border: `1px solid ${C.borderLight}` }}>
         <div style={{ fontSize: F.tiny, color: C.textMuted, textTransform: "uppercase", letterSpacing: 1, fontWeight: 600, marginBottom: 6 }}>{s.label}</div>
@@ -140,9 +172,9 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
     {/* KPI tiles */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 28 }}>
       <KpiTile iconKey="dollar" label="Agency premium displaced" value={<AnimVal value={r.agencySaving} format={fmtK} />} sub="hard cash: agency vs bank gap" />
-      <KpiTile iconKey="clock" label="Admin time saving" value={<AnimVal value={r.adminSaving} format={fmtK} />} sub="roster team time, valued" />
-      <KpiTile iconKey="calendar" label="Payback" value={fmtMonths(r.paybackMonths)} sub="platform cost ÷ monthly benefit" />
-      <KpiTile iconKey="check" label="Net saving" value={<AnimVal value={r.netSaving} format={fmtK} />} sub="after platform cost" />
+      <KpiTile iconKey="clock" label="Admin time saving" value={<AnimVal value={r.adminSaving} format={fmtK} />} sub="temp staffing team time, valued" />
+      <KpiTile iconKey="calendar" label="Payback" value={fmtMonths(r.paybackMonths)} sub="licence fee ÷ monthly benefit" />
+      <KpiTile iconKey="check" label="Net saving" value={<AnimVal value={r.netSaving} format={fmtK} />} sub="after licence fee" />
     </div>
 
     {/* Wider benefits — cash is only part of the picture (copy brief §2) */}
@@ -176,42 +208,11 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
       </div>
     </Card>}
 
-    {/* Modelling-stance slider (live) */}
-    <Card style={{ marginBottom: 28 }}>
-      <CTitle iconKey="search">Modelling stance</CTitle>
-      <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6, marginBottom: 18 }}>
-        How much of today's agency activity do you assume better bank utilisation moves onto your own bank? Drag to flex the model and watch every figure recompute.
-      </div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-        <span style={{ fontSize: F.body, fontWeight: 600, color: C.textMid }}>Agency displacement</span>
-        <span style={{ fontSize: F.h1, fontWeight: 800, color: C.accent }}>{displacement}%</span>
-      </div>
-      <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-        {[["Conservative", 13], ["Pilot", 26], ["Optimistic", 35]].map(([lbl, v]) => {
-          const on = displacement === v;
-          return <button key={v} onClick={() => setDisplacement(v)} style={{
-            flex: 1, padding: "16px 8px", borderRadius: 14, cursor: "pointer", fontFamily: "inherit",
-            border: `1px solid ${on ? C.accent : C.border}`, background: on ? C.accent : C.surface2,
-            color: on ? "#fff" : C.textMid, fontWeight: 700, fontSize: F.small, transition: "all .15s",
-            display: "flex", flexDirection: "column", gap: 3, alignItems: "center"
-          }}>{lbl}<span style={{ fontSize: F.tiny, fontWeight: 600, opacity: 0.8 }}>{v}%</span></button>;
-        })}
-      </div>
-      <input type="range" min={8} max={40} step={1} value={displacement} onChange={e => setDisplacement(Number(e.target.value))} style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: F.tiny, color: C.textMuted, marginTop: 8 }}>
-        <span>8% · conservative</span><span>26% · pilot</span><span>40% · optimistic</span>
-      </div>
-      <div style={{ marginTop: 16, padding: "16px 20px", background: C.accentSoft, borderRadius: 14, border: `1px solid ${C.accent}30` }}>
-        <div style={{ fontSize: F.body, fontWeight: 800, color: C.accent, marginBottom: 6 }}>{st.key}</div>
-        <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6 }}>{st.note}</div>
-      </div>
-    </Card>
-
     {/* Single annual steady-state (Rev D: ramp removed) */}
     <Card style={{ marginBottom: 28 }}>
       <CTitle iconKey="calendar">Annual, ongoing saving</CTitle>
       <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.7 }}>
-        This is a <strong style={{ color: C.text }}>single annual, steady-state figure</strong>, not a multi-year projection. Smart Match savings start once it is live and recur every year it is in use; the platform cost is an annual cost, so the net saving above repeats each year.
+        This is a <strong style={{ color: C.text }}>single annual, steady-state figure</strong>, not a multi-year projection. Smart Match savings start once it is live and recur every year it is in use; the licence fee is an annual cost, so the net saving above repeats each year.
       </div>
     </Card>
 
@@ -226,13 +227,13 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
     <Card style={{ marginBottom: 28, borderLeft: `3px solid ${C.amber}` }}>
       <CTitle iconKey="calendar" color={C.amber}>Capacity: not a cash saving</CTitle>
       <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6, marginBottom: 16 }}>
-        Additional shifts covered by your own staff rather than agency — reducing reliance on agency and supporting continuity of care. This is coverage, not cash, so we keep it well away from the saving above.
+        Filling more shifts from your own bank is real operational value — steadier rosters, better continuity of care and less last-minute reliance on agency. It is deliberately kept separate from the cash saving above and is never added to it.
       </div>
       <Row label="More shifts filled from your own bank each year (off agency)" value={<AnimVal value={r.displaced} format={fmtNum} />} />
       <Row label="Bank backfill cost (spend, not saving)" value={<AnimVal value={r.capacityValue} format={fmtK} />} />
       <Row label="Agency reliance reduced" value={<>{fmtPct1(r.fillNow)} → <span style={{ color: C.good, fontWeight: 800 }}>{fmtPct1(r.fillAfter)}</span></>} />
       <div style={{ marginTop: 14, fontSize: F.small, color: C.textMuted, fontStyle: "italic", lineHeight: 1.6 }}>
-        This is where "utilisation uplift" belongs: coverage, not cash.
+        Operational value, shown on its own — kept well clear of the cash-saving figure.
       </div>
     </Card>
 
@@ -264,7 +265,7 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
             Filling a bank shift is itself <strong style={{ color: C.text }}>expenditure</strong>; only the gap between an agency shift and the equivalent bank shift (the premium) is cash released. The premium here is <strong style={{ color: C.text }}>20%</strong>, a contested figure at shift level; the model is most credible on your own trust's rates.
           </p>
           <p>
-            <strong style={{ color: C.text }}>Admin time saving</strong> uses a per-manager model: each roster manager recovers a conservative <strong style={{ color: C.text }}>1 hour/day</strong> across 225 working days, valued at a loaded £18/hour (the client's 2.5 hours/day would be an optimistic upper bound). The same hours feed the "time saved per week" co-headline.
+            <strong style={{ color: C.text }}>Admin time saving</strong> uses a per-person model: each member of the temporary staffing team recovers a conservative <strong style={{ color: C.text }}>1 hour/day</strong> across 225 working days, valued at a loaded £18/hour (the client's 2.5 hours/day would be an optimistic upper bound). The same hours feed the "time saved per week" co-headline.
           </p>
           <p>
             Pay assumptions use <strong style={{ color: C.text }}>2026/27 NHS Agenda for Change midpoints</strong> (+3.3%; {r.rows ? "per staff group" : "a band-mix weighted blended bank pay"}), 1,957.5 AfC hours/year, 8-hour shifts and a 20% bank on-cost (on-cost affects duty counts, not the cash headline). Defaults are deliberately conservative.

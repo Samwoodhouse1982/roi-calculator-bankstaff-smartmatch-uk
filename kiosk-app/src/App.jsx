@@ -4,7 +4,7 @@ import { SplashScreen } from './components/SplashScreen';
 import { BackgroundParticles } from './components/BackgroundParticles';
 import { calc, calcDetailed, DEFAULTS, DETAILED_DEFAULTS, buildOrg, platformCostFor, ORG_TYPES } from './calc/engine';
 import { StepIndicator, NavButtons, PageTransition, BigChoice } from './components';
-import { BankStep, AgencyStep, TeamStep } from './steps';
+import { BankStep, AgencyStep, TeamStep, StanceStep } from './steps';
 import { OrgStep, GroupsStep, AssumptionsStep } from './steps/detailed';
 import { ResultsPage } from './results/ResultsPage';
 
@@ -296,7 +296,7 @@ function ModeChooser({ onChoose }) {
           </p>
         </div>
         <BigChoice value={null} onChange={onChoose} options={[
-          { key: "quick", iconKey: "clock", label: "Quick estimate", desc: "Three simple inputs: bank pool, agency reliance, roster team. A fast, conservative headline in under a minute. Ideal for events and a first look.", tag: "Best for operational managers" },
+          { key: "quick", iconKey: "clock", label: "Quick estimate", desc: "A few quick inputs: bank pool, agency reliance, temporary staffing team and your confidence level. A fast, conservative headline in under a minute. Ideal for events and a first look.", tag: "Best for operational managers" },
           { key: "detailed", iconKey: "network", label: "Detailed / commercial", desc: "Model agency spend by staff group, with per-group pay and AfC bands, an editable premium and optional admin & recruitment levers. For a guided commercial conversation.", tag: "Best for Finance leads & Workforce Directors" },
         ]} />
       </div>
@@ -334,7 +334,7 @@ export default function App() {
   const [agencyFillRate, setAgencyFillRate] = useState(DEFAULTS.agencyFillRate);
   const [numManagers, setNumManagers] = useState(DEFAULTS.numManagers);
   const [displacement, setDisplacement] = useState(DEFAULTS.displacement);
-  const [includeAdmin, setIncludeAdmin] = useState(false);  // roster-manager time in the cash total (off by default; secondary)
+  const [includeAdmin, setIncludeAdmin] = useState(false);  // temporary-staffing-team time in the cash total (off by default; secondary)
 
   // Detailed / commercial variant inputs.
   const [dPreset, setDPreset] = useState("acute");
@@ -343,7 +343,7 @@ export default function App() {
   const [dDisp, setDDisp] = useState(DETAILED_DEFAULTS.displacement);
   const [dPerGroup, setDPerGroup] = useState(false);
   const [dPlatform, setDPlatform] = useState(platformCostFor(660));
-  const [dPcAuto, setDPcAuto] = useState(true);   // platform cost auto-scales with size until edited
+  const [dPcAuto, setDPcAuto] = useState(true);   // licence fee auto-scales with size until edited
   const [dFill, setDFill] = useState(DETAILED_DEFAULTS.fillRateNow);
   const [dAdmin, setDAdmin] = useState(DETAILED_DEFAULTS.admin);
   const [dRecruit, setDRecruit] = useState(DETAILED_DEFAULTS.recruit);
@@ -415,7 +415,8 @@ export default function App() {
       case 0: return <BankStep bankPool={bankPool} setBankPool={setBankPool} />;
       case 1: return <AgencyStep agencyFillRate={agencyFillRate} setAgencyFillRate={setAgencyFillRate} />;
       case 2: return <TeamStep numManagers={numManagers} setNumManagers={setNumManagers} includeAdmin={includeAdmin} setIncludeAdmin={setIncludeAdmin} />;
-      case 3: return <ResultsPage r={rQuick} displacement={displacement} setDisplacement={setDisplacement} onAdjust={handleAdjust} onStartOver={handleStartOver} />;
+      case 3: return <StanceStep displacement={displacement} setDisplacement={setDisplacement} />;
+      case 4: return <ResultsPage r={rQuick} displacement={displacement} setDisplacement={setDisplacement} onAdjust={handleAdjust} onStartOver={handleStartOver} />;
       default: return null;
     }
   };

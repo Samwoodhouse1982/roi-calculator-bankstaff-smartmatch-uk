@@ -1,21 +1,34 @@
 export const AFC_DIVISOR = 1957.5;          // NHS AfC hours/year
 export const SHIFT_HOURS = 8;
 export const BANK_ONCOST = 0.20;            // affects duty counts only, not cash headline
-export const PLATFORM_COST = 17000;         // ROI denominator (confirm incl. implementation)
-/* [Rev D] Platform cost scales with org size (bank headcount), ~£10k–£20k; fully editable. */
+export const PLATFORM_COST = 17000;         // ROI denominator fallback (see platformCostFor for the live figure)
+/* [G-Cloud] Annual Smart Match licence fee (ex VAT), stepped by number of Licensed
+   Users (≈ bank-staff size). Published G-Cloud price points; a given size takes the
+   fee of the highest band whose lower bound it reaches. Auto-linked to bank size,
+   still editable in the detailed model. */
+export const GCLOUD_LICENCE = [
+  [7501, 29101.79],
+  [6001, 25284.06],
+  [5001, 22793.38],
+  [4001, 20900.78],
+  [3001, 18400.20],
+  [2001, 15167.54],
+  [1401, 13280.66],
+  [901,  11321.21],
+  [601,   9855.27],
+  [0,     9486.54],
+];
 export function platformCostFor(totalBankHeadcount) {
   const h = Number(totalBankHeadcount) || 0;
-  if (h >= 3000) return 20000;
-  if (h >= 1500) return 17000;
-  if (h >= 500)  return 14000;
-  return 10000;
+  for (const [floor, fee] of GCLOUD_LICENCE) if (h >= floor) return fee;
+  return GCLOUD_LICENCE[GCLOUD_LICENCE.length - 1][1];
 }
 export const ADMIN_HRS_PER_DAY = 1.0;       // conservative (client suggested 2.5 = optimistic)
 export const ADMIN_WORKING_DAYS = 225;
 export const ADMIN_LOADED_HOURLY = 18;
 export const SIMPLE_SHIFTS_PER_WORKER_YR = 60;   // bank work is ad-hoc, not full-time
 export const SIMPLE_BLENDED_BANK_PAY = 34000;    // AfC band-mix weighted midpoint (2026/27, +3.3%)
-export const DEFAULTS = { bankPool: 660, agencyFillRate: 15, numManagers: 12, premium: 20, displacement: 13 };
+export const DEFAULTS = { bankPool: 660, agencyFillRate: 8.3, numManagers: 12, premium: 20, displacement: 13 };  // agencyFillRate 8.3% = agreed national average (RLDatix internal data)
 /* [Benchmark §4] Displaceable share of agency that can realistically move to bank (excludes break-glass /
    safety-critical cover and hard-to-fill specialist roles); displacement applies to this share only. */
 export const DISPLACEABLE_SHARE_DEFAULT = 0.80;
@@ -23,7 +36,7 @@ export const DISPLACEABLE_SHARE_DEFAULT = 0.80;
 export function stance(d) {
   if (d <= 18) return { key: "Conservative", note: "≈13%, about half the pilot's measured effect. The recommended default for public / self-serve use: defensible without trust-specific evidence." };
   if (d <= 30) return { key: "Pilot / Expected", note: "≈26%, the effect measured at one community site (agency fill 8.1%→6.0%). Single-site and partly attributable, so best framed in a guided conversation." };
-  return { key: "Optimistic", note: "≈35%, above the pilot result. Use only with strong, trust-specific evidence." };
+  return { key: "Optimistic", note: "Above the pilot result — the higher the setting, the bolder the assumption. Use only with strong, trust-specific evidence." };
 }
 
 export function calc(inp) {
@@ -44,13 +57,14 @@ export function calc(inp) {
   const grossBenefit = agencySaving + adminSaving;
   const netSaving = grossBenefit - platformCost;
   const roiPct = platformCost > 0 ? (netSaving / platformCost) * 100 : null;   // n/a (not 0%) when no platform cost
+  const roiMultiple = platformCost > 0 ? grossBenefit / platformCost : null;   // "13×" return on the licence fee (gross ÷ cost)
   const paybackMonths = grossBenefit > 0 ? platformCost / (grossBenefit / 12) : null;
   const capacityValue = displaced * bankShiftCost;              // gross bank backfill cost (NON-cash)
   const fillAfter = agencyFillRate * (1 - d);
   const exceedsSpend = agencySaving > agencySpend && agencySpend > 0;
   const adminOnly = agencySaving <= 0 && adminSaving > 0;       // reachable check: saving is admin time only
   const implausibleRoi = roiPct != null && roiPct > 3000;
-  return { agencySpend, agencySaving, adminSaving, timeSavedWeek, grossBenefit, netSaving, roiPct,
+  return { agencySpend, agencySaving, adminSaving, timeSavedWeek, grossBenefit, netSaving, roiPct, roiMultiple,
            paybackMonths, displaced, capacityValue, fillNow: agencyFillRate, fillAfter,
            exceedsSpend, adminOnly, implausibleRoi, premium, displacement, platformCost };
 }
@@ -148,7 +162,7 @@ export function scaleGroupsTo(groups, key, target) {
 }
 
 export const DETAILED_DEFAULTS = {
-  premium: 20, displacement: 13, perGroupPremium: false, platformCost: PLATFORM_COST, fillRateNow: 8, displaceableShare: 0.80, turnover: 430000000,
+  premium: 20, displacement: 13, perGroupPremium: false, platformCost: PLATFORM_COST, fillRateNow: 8.3, displaceableShare: 0.80, turnover: 430000000,
   admin:   { enabled: false, managers: 12, hoursPerDay: ADMIN_HRS_PER_DAY, workingDays: ADMIN_WORKING_DAYS, loadedHourly: ADMIN_LOADED_HOURLY },
   recruit: { enabled: false, workers: 50, costPerWorker: 1000, recoveryRate: 0.10 },
 };
@@ -177,12 +191,13 @@ export function calcDetailed(input) {
   const grossBenefit = totSaving + adminSaving + recruitSaving;
   const netSaving = grossBenefit - num(platformCost);
   const roiPct = platformCost > 0 ? (netSaving / platformCost) * 100 : null;   // n/a (not 0%) when no platform cost
+  const roiMultiple = num(platformCost) > 0 ? grossBenefit / num(platformCost) : null;   // "13×" return on the licence fee
   const paybackMonths = grossBenefit > 0 ? platformCost / (grossBenefit / 12) : null;
   const fillNow = num(fillRateNow), fillAfter = fillNow * (1 - d);
   const reg = agencyRegime(totSpend, turnover);
   return {
     rows, totSpend, totSaving, totDisplaced, totHead, totCapacityValue,
-    adminSaving, recruitSaving, timeSavedWeek, grossBenefit, netSaving, roiPct, paybackMonths,
+    adminSaving, recruitSaving, timeSavedWeek, grossBenefit, netSaving, roiPct, roiMultiple, paybackMonths,
     exceedsSpend: totSaving > totSpend && totSpend > 0, adminOnly: totSaving <= 0 && (adminSaving > 0 || recruitSaving > 0),
     implausibleRoi: roiPct != null && roiPct > 3000,
     fillNow, fillAfter, premium, displacement, perGroupPremium, platformCost: num(platformCost),

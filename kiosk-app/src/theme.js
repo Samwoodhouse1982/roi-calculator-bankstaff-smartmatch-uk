@@ -16,4 +16,4 @@ export const W = 1080, H = 1920;
 export const fmt = n => "£" + Math.round(n || 0).toLocaleString("en-GB");
 export const fmtK = n => { n = n || 0; return n >= 1e6 ? `£${(n/1e6).toFixed(2)}m` : n >= 1000 ? `£${Math.round(n/1000).toLocaleString("en-GB")}k` : fmt(n); };
 export const fmtNum = n => Math.round(n || 0).toLocaleString("en-GB");
-export const KIOSK_STEPS = ["Your bank", "Agency", "Your team", "Results"];
+export const KIOSK_STEPS = ["Your bank", "Agency", "Your team", "Confidence", "Results"];

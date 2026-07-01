@@ -39,7 +39,7 @@ export function OrgStep({ preset, onPickPreset, groups, setGroups, turnover, set
     <BigChoice options={opts} value={preset} onChange={onPickPreset} />
     <Card style={{ marginTop: 22 }}>
       <CTitle iconKey="network">Size of your organisation</CTitle>
-      <BigNumberField label="Total bank headcount" value={totalHead} min={50} max={6000} step={10} onChange={v => setGroups(scaleGroupsTo(groups, "headcount", v))} format={fmtNum} tip="Approximate number of workers on your staff bank across all groups. Drag, or tap to type an exact figure. We rescale the staff-group mix to match; fine-tune per group next." />
+      <BigNumberField label="Total bank headcount" value={totalHead} min={50} max={12000} step={10} onChange={v => setGroups(scaleGroupsTo(groups, "headcount", v))} format={fmtNum} tip="Approximate number of workers on your staff bank across all groups. Drag, or tap to type an exact figure. Scales for large systems (e.g. Leeds ~5,000, Sussex ~10,000). We rescale the staff-group mix to match; fine-tune per group next." />
       <BigNumberField label="Total annual agency spend" prefix="£" value={totalSpend} min={0} max={80000000} step={100000} onChange={v => setGroups(scaleGroupsTo(groups, "agencySpend", v))} format={fmtK} tip="Your trust's total yearly temporary-staffing agency spend. This is the anchor for the saving, so it matters most. We rescale each group's spend proportionally; fine-tune per group next." />
       <BigNumberField label="Annual turnover (£, optional)" prefix="£" value={turnover} min={0} max={5000000000} step={10000000} onChange={v => setTurnover(v)} format={fmtK} tip="Your trust's annual operating turnover (optional). Sets agency intensity — agency as a % of turnover — which tailors the headline. You can also estimate a typical agency spend from it." />
       {turnover > 0 && (() => { const pct = (totalSpend / turnover) * 100; const key = pct < 1 ? "low" : (pct <= 4 ? "typical" : "high"); const lbl = { low: "low-agency / mature bank", typical: "typical reliance", high: "high reliance" }[key]; return (
@@ -73,7 +73,7 @@ export function GroupsStep({ groups, setGroups, perGroupPremium, premium }) {
         </div>
         <button onClick={() => removeGroup(i)} disabled={groups.length <= 1} style={{ width: 50, height: 50, borderRadius: 12, border: `1px solid ${C.border}`, background: C.surface2, color: groups.length <= 1 ? C.textMuted : C.textMid, fontSize: 28, cursor: groups.length <= 1 ? "default" : "pointer", fontFamily: "inherit", opacity: groups.length <= 1 ? 0.4 : 1 }}>×</button>
       </div>
-      <BigNumberField label="Bank headcount" value={g.headcount} min={0} max={3000} step={10} onChange={v => setG(i, "headcount", v)} format={fmtNum} />
+      <BigNumberField label="Bank headcount" value={g.headcount} min={0} max={6000} step={10} onChange={v => setG(i, "headcount", v)} format={fmtNum} />
       <BigNumberField label="Annual agency spend" prefix="£" value={g.agencySpend} min={0} max={20000000} step={50000} onChange={v => setG(i, "agencySpend", v)} format={fmtK} tip="Yearly agency spend for this group, the anchor for the saving." />
       <BigNumberField label="Bank pay (£/yr)" prefix="£" value={g.bankPay} min={18000} max={90000} step={500} onChange={v => setG(i, "bankPay", v)} format={fmt} tip="Actual bank rate preferred; or tap an AfC band below (2026/27 midpoints). Different pay per group is what makes each saving differ." />
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 2 }}>
@@ -109,9 +109,9 @@ export function AssumptionsStep({ premium, setPremium, perGroupPremium, setPerGr
         <span style={{ fontSize: F.h1, fontWeight: 800, color: C.accent }}>{displacement}%</span>
       </div>
       <StanceButtons displacement={displacement} setDisplacement={setDisplacement} />
-      <input type="range" min={8} max={40} step={1} value={displacement} onChange={e => setDisplacement(Number(e.target.value))} style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
+      <input type="range" min={8} max={50} step={1} value={displacement} onChange={e => setDisplacement(Number(e.target.value))} style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: F.tiny, color: C.textMuted, marginTop: 8 }}>
-        <span>8% · conservative</span><span>26% · pilot</span><span>40% · optimistic</span>
+        <span>8% · conservative</span><span>26% · pilot</span><span>50% · optimistic</span>
       </div>
       <div style={{ marginTop: 16, padding: "16px 20px", background: C.accentSoft, borderRadius: 14, border: `1px solid ${C.accent}30` }}>
         <div style={{ fontSize: F.body, fontWeight: 800, color: C.accent, marginBottom: 6 }}>{st.key}</div>
@@ -121,15 +121,15 @@ export function AssumptionsStep({ premium, setPremium, perGroupPremium, setPerGr
 
     <Card style={{ marginBottom: 18 }}>
       <CTitle iconKey="calendar">Platform &amp; capacity</CTitle>
-      <BigNumberField label="Smart Match platform cost (£/yr)" prefix="£" value={platformCost} min={0} max={100000} step={1000} onChange={setPlatformCost} format={fmt} tip="Scales with your organisation size (~£10k–£20k by bank headcount); fully editable. ROI denominator — confirm it includes implementation, not licence alone." />
-      <TouchSlider label="Current agency fill rate (%)" value={fillRateNow} min={0} max={30} step={0.5} onChange={setFillRateNow} format={v => v + "%"} tip="Used for the capacity narrative (agency reliance reduced)." />
+      <BigNumberField label="Smart Match licence fee (£/yr)" prefix="£" value={platformCost} min={0} max={100000} step={1000} onChange={setPlatformCost} format={fmt} tip="Auto-set from your bank size using G-Cloud pricing (ex VAT); fully editable. This is the ROI denominator." />
+      <TouchSlider label="Current agency fill rate (%)" value={fillRateNow} min={0} max={30} step={0.1} onChange={setFillRateNow} format={v => v + "%"} tip="Defaults to 8.3%, the agreed national average (RLDatix data). Used for the capacity narrative (agency reliance reduced)." />
       <TouchSlider label="Displaceable share of agency (%)" value={Math.round((displaceableShare != null ? displaceableShare : 0.8) * 100)} min={0} max={100} step={5} onChange={v => setDisplaceableShare(Math.min(1, Math.max(0, v / 100)))} format={v => v + "%"} tip="Only part of agency spend can realistically move to bank — excludes break-glass / safety-critical cover and hard-to-fill specialist roles. Displacement applies to this share only (benchmark default 80%)." />
     </Card>
 
     <Card style={{ marginBottom: 18 }}>
-      <ToggleRow on={admin.enabled} onToggle={v => setAdmin(a => ({ ...a, enabled: v }))} label="Include admin time saving in the cash total" tip="Off by default, a secondary recommendation. Time released for roster managers, bank admins and temp/agency managers via self-booking automation. The hours-per-week figure is always shown; turn this on to also add its cash value to the headline." />
+      <ToggleRow on={admin.enabled} onToggle={v => setAdmin(a => ({ ...a, enabled: v }))} label="Include admin time saving in the cash total" tip="Off by default, a secondary recommendation. Time released for your temporary staffing team — bank / temp coordinators, officers and administrators — via self-booking automation. The hours-per-week figure is always shown; turn this on to also add its cash value to the headline." />
       {admin.enabled && <div style={{ marginTop: 20 }}>
-        <Stepper label="Admin / roster managers" value={admin.managers} min={0} max={80} step={1} onChange={v => setAdmin(a => ({ ...a, managers: v }))} />
+        <Stepper label="Temporary staffing team" value={admin.managers} min={0} max={80} step={1} onChange={v => setAdmin(a => ({ ...a, managers: v }))} />
         <TouchSlider label="Hours saved / day each" value={admin.hoursPerDay} min={0} max={4} step={0.25} onChange={v => setAdmin(a => ({ ...a, hoursPerDay: v }))} format={v => v + " h"} tip="Client suggested 2.5 h/day (optimistic). Default 1.0 h is conservative." />
         <TouchSlider label="Loaded hourly rate" value={admin.loadedHourly} min={0} max={60} step={1} onChange={v => setAdmin(a => ({ ...a, loadedHourly: v }))} format={fmt} />
       </div>}
