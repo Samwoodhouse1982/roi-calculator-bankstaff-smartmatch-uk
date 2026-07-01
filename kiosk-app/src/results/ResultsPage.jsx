@@ -99,9 +99,6 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
         </div>
         <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>Potential annual cash saving</div>
         <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, lineHeight: 1.5, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>What you could save each year by filling more shifts from your bank instead of agency — the agency premium you stop paying.</div>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 10, marginTop: 16, padding: "9px 20px", borderRadius: 999, background: r.netSaving < 0 ? C.rosePale : C.accentSoft, border: `1px solid ${(r.netSaving < 0 ? C.rose : C.accent)}55` }}>
-          <span style={{ fontSize: F.h3, fontWeight: 800, color: r.netSaving < 0 ? C.rose : C.accent, letterSpacing: 0.5 }}>{fmtMonths(r.paybackMonths)} payback</span>
-        </div>
       </div>
       <div style={{ textAlign: "center", padding: "26px 18px", background: C.surface, borderRadius: 22, border: `1px solid ${C.accent}30` }}>
         <div style={{ fontSize: F.hero, fontWeight: 800, color: C.accent, lineHeight: 1, letterSpacing: "-3px" }}>
