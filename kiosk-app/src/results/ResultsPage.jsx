@@ -105,7 +105,7 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
           <AnimVal value={r.timeSavedWeek} format={v => fmtNum(v)} />
         </div>
         <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>hours released each week</div>
-        <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, lineHeight: 1.5, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>Time your temporary staffing team gets back each week as shift booking and matching become faster and more automated.</div>
+        <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, lineHeight: 1.5, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>Time your temporary staffing team gets back each week as shift booking and matching become faster and more automated. Driven by team size, not the confidence level.</div>
       </div>
     </div>
 
@@ -118,7 +118,7 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
     <Card style={{ marginBottom: 28 }}>
       <CTitle iconKey="search">Confidence / modelling stance</CTitle>
       <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6, marginBottom: 18 }}>
-        You set this earlier; adjust it here and every figure recomputes live. It is how much of today's agency activity you assume better bank utilisation moves onto your own bank.
+        You set this earlier; adjust it here and the cash figures recompute live. It is how much of today's agency activity you assume better bank utilisation moves onto your own bank.
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <span style={{ fontSize: F.body, fontWeight: 600, color: C.textMid }}>Agency displacement</span>
