@@ -96,7 +96,8 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
         <div style={{ fontSize: F.hero, fontWeight: 800, color: C.accent, lineHeight: 1, letterSpacing: "-3px", animation: "glow 3s ease-in-out infinite" }}>
           <AnimVal value={r.netSaving} format={fmtK} />
         </div>
-        <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>net cash saving / year</div>
+        <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>Potential annual cash saving</div>
+        <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, lineHeight: 1.5, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>What you could save each year by filling more shifts from your bank instead of agency — the agency premium you stop paying.</div>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 10, marginTop: 16, padding: "9px 20px", borderRadius: 999, background: r.netSaving < 0 ? C.rosePale : C.accentSoft, border: `1px solid ${(r.netSaving < 0 ? C.rose : C.accent)}55` }}>
           <span style={{ fontSize: F.h3, fontWeight: 800, color: r.netSaving < 0 ? C.rose : C.accent, letterSpacing: 0.5 }}>{fmtMonths(r.paybackMonths)} payback</span>
         </div>
@@ -105,7 +106,8 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
         <div style={{ fontSize: F.hero, fontWeight: 800, color: C.accent, lineHeight: 1, letterSpacing: "-3px" }}>
           <AnimVal value={r.timeSavedWeek} format={v => fmtNum(v)} />
         </div>
-        <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>hrs admin time saved / week</div>
+        <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>hours released each week</div>
+        <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, lineHeight: 1.5, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>Time your roster and temporary-staffing teams get back each week as shift booking and matching become faster and more automated.</div>
       </div>
     </div>
 
@@ -142,6 +144,14 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
       <KpiTile iconKey="calendar" label="Payback" value={fmtMonths(r.paybackMonths)} sub="platform cost ÷ monthly benefit" />
       <KpiTile iconKey="check" label="Net saving" value={<AnimVal value={r.netSaving} format={fmtK} />} sub="after platform cost" />
     </div>
+
+    {/* Wider benefits — cash is only part of the picture (copy brief §2) */}
+    <Card style={{ marginBottom: 28, borderLeft: `3px solid ${C.accent}` }}>
+      <CTitle iconKey="lightbulb">The value goes beyond the numbers</CTitle>
+      <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.7 }}>
+        These figures capture cash savings only. Smart Match also supports safer staffing, better continuity of care and a fairer, more flexible experience for your bank workers — real benefits we've deliberately not put a pound figure on.
+      </div>
+    </Card>
 
     {/* Per-group breakdown (detailed model only, carries rows) */}
     {r.rows && <Card style={{ marginBottom: 28 }}>
@@ -216,9 +226,9 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
     <Card style={{ marginBottom: 28, borderLeft: `3px solid ${C.amber}` }}>
       <CTitle iconKey="calendar" color={C.amber}>Capacity: not a cash saving</CTitle>
       <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6, marginBottom: 16 }}>
-        Filling more shifts from your own bank is real operational value, but it is coverage, not cash. We keep it well away from the saving above.
+        Additional shifts covered by your own staff rather than agency — reducing reliance on agency and supporting continuity of care. This is coverage, not cash, so we keep it well away from the saving above.
       </div>
-      <Row label="Additional temp duties / yr filled by your own bank (off agency)" value={<AnimVal value={r.displaced} format={fmtNum} />} />
+      <Row label="More shifts filled from your own bank each year (off agency)" value={<AnimVal value={r.displaced} format={fmtNum} />} />
       <Row label="Bank backfill cost (spend, not saving)" value={<AnimVal value={r.capacityValue} format={fmtK} />} />
       <Row label="Agency reliance reduced" value={<>{fmtPct1(r.fillNow)} → <span style={{ color: C.good, fontWeight: 800 }}>{fmtPct1(r.fillAfter)}</span></>} />
       <div style={{ marginTop: 14, fontSize: F.small, color: C.textMuted, fontStyle: "italic", lineHeight: 1.6 }}>
@@ -237,9 +247,6 @@ export function ResultsPage({ r, displacement, setDisplacement, onAdjust, onStar
       </ul>
       <div style={{ marginTop: 16, padding: "14px 18px", background: C.surface2, borderRadius: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.65, border: `1px solid ${C.borderLight}` }}>
         <strong style={{ color: C.text }}>Strategically</strong>, releasing cash and capacity from temporary staffing supports the <strong style={{ color: C.text }}>NHS 10 Year Plan</strong> and Workforce Paper, and the <strong style={{ color: C.text }}>Staff Health &amp; Wellbeing CQUIN</strong>.
-      </div>
-      <div style={{ marginTop: 12, fontSize: F.tiny, color: C.textMuted, fontStyle: "italic", lineHeight: 1.6 }}>
-        As a patient-safety company, much of Smart Match's value also shows up in safety and quality — safer staffing, better continuity of care and less reliance on unfamiliar agency staff — and in staff experience. These wider benefits are real but kept as a qualitative note, out of the ROI.
       </div>
     </Card>
 
