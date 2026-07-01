@@ -29,7 +29,7 @@ test('Quick default matches the golden headline', () => {
   assert.equal(Math.round(q.adminSaving), 48600);
   assert.equal(Math.round(q.grossBenefit), 61031);
   assert.equal(Math.round(q.roiPct), 259);
-  assert.equal(Math.round(q.roiMultiple * 100) / 100, 3.59);   // "13×"-style return on the licence fee (gross ÷ cost)
+  assert.equal(Math.round(q.roiMultiple * 100) / 100, 2.59);   // net return on the licence fee (net saving ÷ cost)
   assert.equal(q.timeSavedWeek, 60);
   assert.equal(Math.round(q.agencySpend), 717189);
   assert.ok(Math.abs(q.paybackMonths - 3.34) < 0.01);

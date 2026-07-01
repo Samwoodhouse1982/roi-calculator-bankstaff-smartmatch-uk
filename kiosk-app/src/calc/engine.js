@@ -57,7 +57,7 @@ export function calc(inp) {
   const grossBenefit = agencySaving + adminSaving;
   const netSaving = grossBenefit - platformCost;
   const roiPct = platformCost > 0 ? (netSaving / platformCost) * 100 : null;   // n/a (not 0%) when no platform cost
-  const roiMultiple = platformCost > 0 ? grossBenefit / platformCost : null;   // "13×" return on the licence fee (gross ÷ cost)
+  const roiMultiple = platformCost > 0 ? netSaving / platformCost : null;   // net return on the licence fee (net saving ÷ cost)
   const paybackMonths = grossBenefit > 0 ? platformCost / (grossBenefit / 12) : null;
   const capacityValue = displaced * bankShiftCost;              // gross bank backfill cost (NON-cash)
   const fillAfter = agencyFillRate * (1 - d);
@@ -195,7 +195,7 @@ export function calcDetailed(input) {
   const grossBenefit = totSaving + adminSaving + recruitSaving;
   const netSaving = grossBenefit - num(platformCost);
   const roiPct = platformCost > 0 ? (netSaving / platformCost) * 100 : null;   // n/a (not 0%) when no platform cost
-  const roiMultiple = num(platformCost) > 0 ? grossBenefit / num(platformCost) : null;   // "13×" return on the licence fee
+  const roiMultiple = num(platformCost) > 0 ? netSaving / num(platformCost) : null;   // net return on the licence fee (net saving ÷ cost)
   const paybackMonths = grossBenefit > 0 ? platformCost / (grossBenefit / 12) : null;
   const fillNow = num(fillRateNow), fillAfter = fillNow * (1 - d);
   const reg = agencyRegime(totSpend, turnover);
