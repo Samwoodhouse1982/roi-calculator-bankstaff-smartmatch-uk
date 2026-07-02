@@ -38,7 +38,7 @@ export function BankStep({ bankPool, setBankPool }) {
         Smart Match licence at this size: <strong style={{ color: C.accent }}>{fmt(platformCostFor(bankPool))}/yr</strong> <span style={{ color: C.textMuted }}>(G-Cloud pricing, ex VAT; this sets your ROI)</span>
       </div>
       <div style={{ marginTop: 10, fontSize: F.tiny, color: C.textMuted, lineHeight: 1.5 }}>
-        Bank shift costs use <strong style={{ color: C.textMid }}>2026/27 NHS Agenda for Change band-mix midpoints</strong> (~£{Math.round(SIMPLE_BLENDED_BANK_PAY / 1000)}k blended, £{((SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR) * (1 + BANK_ONCOST)).toFixed(2)}/hr loaded); medics use the SAS scale. Switch to the Detailed model to set pay per staff group.
+        Bank shift costs use <strong style={{ color: C.textMid }}>2026/27 NHS Agenda for Change band-mix midpoints</strong> (~£{Math.round(SIMPLE_BLENDED_BANK_PAY / 1000)}k blended, £{((SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR) * (1 + BANK_ONCOST)).toFixed(2)}/hr loaded); medics use the SAS scale.
       </div>
     </Card>
   </div>;
