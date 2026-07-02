@@ -35,8 +35,8 @@ export const DISPLACEABLE_SHARE_DEFAULT = 0.80;
 
 export function stance(d) {
   if (d <= 18) return { key: "Conservative", note: "≈13%, about half the pilot's measured effect. The recommended default for public / self-serve use: defensible without trust-specific evidence." };
-  if (d <= 30) return { key: "Pilot / Expected", note: "≈26%, the effect measured at one community site (agency fill 8.1%→6.0%). Single-site and partly attributable, so best framed in a guided conversation." };
-  return { key: "Optimistic", note: "Above the pilot result — the higher the setting, the bolder the assumption. Use only with strong, trust-specific evidence." };
+  if (d <= 30) return { key: "Expected", note: "≈26%, the effect measured at one community site (agency fill 8.1%→6.0%). Single-site and partly attributable, so best framed in a guided conversation." };
+  return { key: "Optimistic", note: "Above the pilot result; the higher the setting, the bolder the assumption. Use only with strong, trust-specific evidence." };
 }
 
 export function calc(inp) {

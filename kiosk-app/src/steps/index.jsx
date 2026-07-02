@@ -31,11 +31,11 @@ export function BankStep({ bankPool, setBankPool }) {
         step={10}
         onChange={setBankPool}
         format={fmtNum}
-        tip="The total number of registered workers on your staff bank, substantive staff doing extra shifts plus dedicated bank-only workers. A rough figure is fine; you can adjust it later. Scales for large systems (e.g. Leeds ~5,000, Sussex ~10,000)."
+        tip="The total number of registered workers on your staff bank, substantive staff doing extra shifts plus dedicated bank-only workers. A rough figure is fine; you can adjust it later."
       />
       <Helper>Drag to set the size of your bank. Better utilisation of this pool is the mechanism that displaces expensive agency spend.</Helper>
       <div style={{ marginTop: 16, padding: "14px 18px", background: C.accentSoft, borderRadius: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.5 }}>
-        Smart Match licence at this size: <strong style={{ color: C.accent }}>{fmt(platformCostFor(bankPool))}/yr</strong> <span style={{ color: C.textMuted }}>(G-Cloud pricing, ex VAT — this sets your ROI)</span>
+        Smart Match licence at this size: <strong style={{ color: C.accent }}>{fmt(platformCostFor(bankPool))}/yr</strong> <span style={{ color: C.textMuted }}>(G-Cloud pricing, ex VAT; this sets your ROI)</span>
       </div>
       <div style={{ marginTop: 10, fontSize: F.tiny, color: C.textMuted, lineHeight: 1.5 }}>
         Bank shift costs use <strong style={{ color: C.textMid }}>2026/27 NHS Agenda for Change band-mix midpoints</strong> (~£{Math.round(SIMPLE_BLENDED_BANK_PAY / 1000)}k blended, £{((SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR) * (1 + BANK_ONCOST)).toFixed(2)}/hr loaded); medics use the SAS scale. Switch to the Detailed model to set pay per staff group.
@@ -71,44 +71,44 @@ export function TeamStep({ numManagers, setNumManagers, includeAdmin, setInclude
     <SectionTitle number={3}>Your temporary staffing team</SectionTitle>
     <Lead>How many people spend their time booking, chasing and reconciling temporary shifts? Smart Match gives these colleagues back time.</Lead>
     <Card>
-      <Stepper
-        label="Temporary staffing team"
-        value={numManagers}
-        min={0}
-        max={60}
-        step={1}
-        onChange={setNumManagers}
-        tip="Count the people who do the day-to-day booking, chasing and reconciling of temporary shifts — your bank / temporary staffing coordinators, officers and administrators. Managers who don't do the day-to-day entry aren't counted."
+      <ToggleRow
+        on={includeAdmin}
+        onToggle={setIncludeAdmin}
+        label="Include admin time saving in the cash total"
+        tip="Off by default, a secondary recommendation. Turn this on to add the temporary staffing team's recovered time (a conservative 1.0 h/day at a loaded £18/h) to the headline saving, then set your team size below."
       />
-      <Helper>
-        Include your <strong style={{ color: C.text }}>bank / temporary staffing coordinators</strong>, <strong style={{ color: C.text }}>officers</strong> and <strong style={{ color: C.text }}>administrators</strong> — anyone whose day is spent placing and reconciling shifts, not the managers above them.
-      </Helper>
-      <div style={{ marginTop: 24, paddingTop: 22, borderTop: `1px solid ${C.border}` }}>
-        <ToggleRow
-          on={includeAdmin}
-          onToggle={setIncludeAdmin}
-          label="Include admin time saving in the cash total"
-          tip="Off by default, a secondary recommendation. The hours released are always shown as a per-week figure; turn this on to also add their cash value (a conservative 1.0 h/day at a loaded £18/h) to the headline saving."
+      <div style={{ marginTop: 24, paddingTop: 22, borderTop: `1px solid ${C.border}`, opacity: includeAdmin ? 1 : 0.4, pointerEvents: includeAdmin ? "auto" : "none", transition: "opacity .2s" }} aria-hidden={!includeAdmin}>
+        <Stepper
+          label="Temporary staffing team"
+          value={numManagers}
+          min={0}
+          max={60}
+          step={1}
+          onChange={setNumManagers}
+          tip="Count the people who do the day-to-day booking, chasing and reconciling of temporary shifts, your bank / temporary staffing coordinators, officers and administrators. Managers who don't do the day-to-day entry aren't counted."
         />
+        <Helper>
+          Include your <strong style={{ color: C.text }}>bank / temporary staffing coordinators</strong>, <strong style={{ color: C.text }}>officers</strong> and <strong style={{ color: C.text }}>administrators</strong>, anyone whose day is spent placing and reconciling shifts, not the managers above them.
+        </Helper>
       </div>
     </Card>
   </div>;
 }
 
 // STEP 3. Confidence / optimism: the modelling stance, set upfront (also editable on Results).
-export function StanceStep({ displacement, setDisplacement }) {
+export function StanceStep({ displacement, chosen, setDisplacement }) {
   const st = stance(displacement);
   return <div>
     <SectionTitle number={4}>Your confidence level</SectionTitle>
-    <Lead>How much of today's agency use do you expect better bank utilisation to displace onto your own bank? This sets how bold the estimate is. Conservative is the recommended default; you can revisit it on the results screen.</Lead>
+    <Lead>How much of today's agency use do you expect better bank utilisation to displace onto your own bank? Choose the outlook that fits your evidence; you can change it on the results screen.</Lead>
     <Card>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <span style={{ fontSize: F.body, fontWeight: 600, color: C.textMid }}>Agency displacement</span>
         <span style={{ fontSize: F.h1, fontWeight: 800, color: C.accent }}>{displacement}%</span>
       </div>
       <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-        {[["Conservative", 13], ["Pilot", 26], ["Optimistic", 50]].map(([lbl, v]) => {
-          const on = displacement === v;
+        {[["Conservative", 13], ["Expected", 26], ["Optimistic", 50]].map(([lbl, v]) => {
+          const on = chosen && displacement === v;
           return <button key={v} onClick={() => setDisplacement(v)} style={{
             flex: 1, padding: "20px 8px", borderRadius: 14, cursor: "pointer", fontFamily: "inherit",
             border: `1px solid ${on ? C.accent : C.border}`, background: on ? C.accent : C.surface2,
@@ -119,12 +119,12 @@ export function StanceStep({ displacement, setDisplacement }) {
       </div>
       <input type="range" min={8} max={50} step={1} value={displacement} onChange={e => setDisplacement(Number(e.target.value))} style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: F.tiny, color: C.textMuted, marginTop: 8 }}>
-        <span>8% · conservative</span><span>26% · pilot</span><span>50% · optimistic</span>
+        <span>8% · conservative</span><span>26% · expected</span><span>50% · optimistic</span>
       </div>
-      <div style={{ marginTop: 20, padding: "18px 22px", background: C.accentSoft, borderRadius: 14, border: `1px solid ${C.accent}30` }}>
+      {chosen && <div style={{ marginTop: 20, padding: "18px 22px", background: C.accentSoft, borderRadius: 14, border: `1px solid ${C.accent}30` }}>
         <div style={{ fontSize: F.body, fontWeight: 800, color: C.accent, marginBottom: 6 }}>{st.key}</div>
         <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6 }}>{st.note}</div>
-      </div>
+      </div>}
     </Card>
   </div>;
 }

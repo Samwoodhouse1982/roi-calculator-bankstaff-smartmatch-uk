@@ -2,10 +2,9 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { C, F, W, H, KIOSK_STEPS, fmtK, fmtNum } from './theme';
 import { SplashScreen } from './components/SplashScreen';
 import { BackgroundParticles } from './components/BackgroundParticles';
-import { calc, calcDetailed, DEFAULTS, DETAILED_DEFAULTS, buildOrg, platformCostFor, ORG_TYPES } from './calc/engine';
-import { StepIndicator, NavButtons, PageTransition, BigChoice } from './components';
+import { calc, DEFAULTS, platformCostFor } from './calc/engine';
+import { StepIndicator, NavButtons, PageTransition } from './components';
 import { BankStep, AgencyStep, TeamStep, StanceStep } from './steps';
-import { OrgStep, GroupsStep, AssumptionsStep } from './steps/detailed';
 import { ResultsPage } from './results/ResultsPage';
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -275,35 +274,6 @@ function CalibratingScreen({ onDone }) {
   );
 }
 
-const DETAILED_STEPS = ["Organisation", "Staff groups", "Assumptions", "Results"];
-const DETAILED_CONTEXT = [
-  { title: "Why this matters", text: "Your organisation type sets a realistic starting shape (typical staff groups, bank headcounts and agency spend) which you then refine to your own trust on the next screen." },
-  { title: "Why this matters", text: "Agency spend per staff group is the anchor for the saving. The cash released is the agency premium you stop paying when improved bank utilisation covers those duties, not the whole shift." },
-  { title: "Why this matters", text: "A single official ~20% premium and a conservative displacement stance keep the headline defensible. Admin and recruitment levers are optional and off until you can substantiate them." },
-];
-
-/* The very first choice after the splash: which calculator to run. */
-function ModeChooser({ onChoose }) {
-  return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, minHeight: H, color: C.text, position: "relative", zIndex: 0, overflow: "hidden" }}>
-      <BackgroundParticles />
-      <div style={{ position: "relative", zIndex: 1, padding: "150px 72px 0" }}>
-        <div style={{ textAlign: "center", marginBottom: 64 }}>
-          <div style={{ fontSize: F.small, fontWeight: 700, color: C.accent, letterSpacing: 6, textTransform: "uppercase", marginBottom: 18 }}>Smart Match · Workforce ROI</div>
-          <h1 style={{ fontSize: 68, fontWeight: 800, color: C.text, margin: "0 0 20px", letterSpacing: "-1.5px" }}>Choose your calculator</h1>
-          <p style={{ fontSize: F.h3, color: C.textMid, maxWidth: 840, margin: "0 auto", lineHeight: 1.6 }}>
-            Two ways to model the cash your trust could release by moving temporary work off agency and onto your own bank.
-          </p>
-        </div>
-        <BigChoice value={null} onChange={onChoose} options={[
-          { key: "quick", iconKey: "clock", label: "Quick estimate", desc: "A few quick inputs: bank pool, agency reliance, temporary staffing team and your confidence level. A fast, conservative headline in under a minute. Ideal for events and a first look.", tag: "Best for operational managers" },
-          { key: "detailed", iconKey: "network", label: "Detailed / commercial", desc: "Model agency spend by staff group, with per-group pay and AfC bands, an editable premium and optional admin & recruitment levers. For a guided commercial conversation.", tag: "Best for Finance leads & Workforce Directors" },
-        ]} />
-      </div>
-    </div>
-  );
-}
-
 // Idle warning shown ~60s before the kiosk resets to the attract splash, so an
 // in-progress session is not wiped without notice. Any tap/keypress dismisses it
 // (the document-level activity listeners re-arm the timer); the button is an
@@ -321,7 +291,7 @@ function IdleWarning({ seconds, onStay }) {
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
-  const [flow, setFlow] = useState(null);          // null = chooser · "quick" · "detailed"
+  const [stanceTouched, setStanceTouched] = useState(false);   // no confidence box highlighted until the user picks one
   const [kioskStep, setKioskStep] = useState(0);
   const [calibrating, setCalibrating] = useState(false);
   const [adminVisible, setAdminVisible] = useState(false);
@@ -336,87 +306,43 @@ export default function App() {
   const [displacement, setDisplacement] = useState(DEFAULTS.displacement);
   const [includeAdmin, setIncludeAdmin] = useState(false);  // temporary-staffing-team time in the cash total (off by default; secondary)
 
-  // Detailed / commercial variant inputs.
-  const [dPreset, setDPreset] = useState("acute");
-  const [dGroups, setDGroups] = useState(() => buildOrg("acute"));
-  const [dPremium, setDPremium] = useState(DETAILED_DEFAULTS.premium);
-  const [dDisp, setDDisp] = useState(DETAILED_DEFAULTS.displacement);
-  const [dPerGroup, setDPerGroup] = useState(false);
-  const [dPlatform, setDPlatform] = useState(platformCostFor(660));
-  const [dPcAuto, setDPcAuto] = useState(true);   // licence fee auto-scales with size until edited
-  const [dFill, setDFill] = useState(DETAILED_DEFAULTS.fillRateNow);
-  const [dAdmin, setDAdmin] = useState(DETAILED_DEFAULTS.admin);
-  const [dRecruit, setDRecruit] = useState(DETAILED_DEFAULTS.recruit);
-  const [dDisplaceable, setDDisplaceable] = useState(DETAILED_DEFAULTS.displaceableShare);   // benchmark §4
-  const [dTurnover, setDTurnover] = useState(ORG_TYPES.acute.turnover);                       // benchmark §1/§5
-
   const rQuick = useMemo(() => calc({ bankPool, agencyFillRate, numManagers, displacement, includeAdmin, platformCost: platformCostFor(bankPool) }),
     [bankPool, agencyFillRate, numManagers, displacement, includeAdmin]);
-  const rDet = useMemo(() => calcDetailed({ groups: dGroups, premium: dPremium, displacement: dDisp, perGroupPremium: dPerGroup, platformCost: dPlatform, admin: dAdmin, recruit: dRecruit, fillRateNow: dFill, displaceableShare: dDisplaceable, turnover: dTurnover }),
-    [dGroups, dPremium, dDisp, dPerGroup, dPlatform, dAdmin, dRecruit, dFill, dDisplaceable, dTurnover]);
-  useEffect(() => { if (!dPcAuto) return; const h = dGroups.reduce((s, g) => s + Number(g.headcount || 0), 0); setDPlatform(platformCostFor(h)); }, [dGroups, dPcAuto]);
-  const isDetailed = flow === "detailed";
-  const r = isDetailed ? rDet : rQuick;
-  const steps = isDetailed ? DETAILED_STEPS : KIOSK_STEPS;
+  const r = rQuick;
+  const chooseStance = useCallback((v) => { setDisplacement(v); setStanceTouched(true); }, []);
+  const steps = KIOSK_STEPS;
   const RESULTS_STEP = steps.length - 1;
-
-  const pickPreset = useCallback((k) => { setDPreset(k); setDGroups(buildOrg(k)); setDPcAuto(true); setDTurnover(ORG_TYPES[k].turnover); }, []);
 
   const handleCalculate = useCallback(() => setCalibrating(true), []);
   const handleCalibrationDone = useCallback(() => {
     setCalibrating(false);
     setKioskStep(RESULTS_STEP);
     recordCompletion({
-      flow, netSaving: r.netSaving, agencySaving: r.agencySaving, adminSaving: r.adminSaving,
-      displaced: r.displaced, timeSavedWeek: r.timeSavedWeek,
-      bankPool: isDetailed ? r.totHead : bankPool,
+      flow: "quick", netSaving: r.netSaving, agencySaving: r.agencySaving, adminSaving: r.adminSaving,
+      displaced: r.displaced, timeSavedWeek: r.timeSavedWeek, bankPool,
     });
-  }, [RESULTS_STEP, flow, isDetailed, r, bankPool]);
+  }, [RESULTS_STEP, r, bankPool]);
 
   const handleAdjust = useCallback(() => setKioskStep(0), []);
 
-  const resetQuick = useCallback(() => {
+  const resetAll = useCallback(() => {
     setBankPool(DEFAULTS.bankPool); setAgencyFillRate(DEFAULTS.agencyFillRate);
-    setNumManagers(DEFAULTS.numManagers); setDisplacement(DEFAULTS.displacement); setIncludeAdmin(true);
+    setNumManagers(DEFAULTS.numManagers); setDisplacement(DEFAULTS.displacement);
+    setIncludeAdmin(false); setStanceTouched(false);
   }, []);
-  const resetDetailed = useCallback(() => {
-    setDPreset("acute"); setDGroups(buildOrg("acute")); setDPremium(DETAILED_DEFAULTS.premium);
-    setDDisp(DETAILED_DEFAULTS.displacement); setDPerGroup(false); setDPlatform(platformCostFor(660)); setDPcAuto(true);
-    setDFill(DETAILED_DEFAULTS.fillRateNow); setDAdmin(DETAILED_DEFAULTS.admin); setDRecruit(DETAILED_DEFAULTS.recruit);
-    setDDisplaceable(DETAILED_DEFAULTS.displaceableShare); setDTurnover(ORG_TYPES.acute.turnover);
-  }, []);
-  const resetAll = useCallback(() => { resetQuick(); resetDetailed(); }, [resetQuick, resetDetailed]);
 
   // Results "Start over": back to the attract splash, fully reset (next visitor).
   const handleStartOver = useCallback(() => {
-    setShowSplash(true); setFlow(null); setKioskStep(0); setCalibrating(false); resetAll();
+    setShowSplash(true); setKioskStep(0); setCalibrating(false); resetAll();
   }, [resetAll]);
-  // Nav "Start over": back to the calculator chooser (lets you switch variant), reset.
-  const handleResetInputs = useCallback(() => {
-    setFlow(null); setKioskStep(0); setCalibrating(false); resetAll();
-  }, [resetAll]);
-
-  const chooseFlow = useCallback((k) => { setFlow(k); setKioskStep(0); }, []);
 
   const renderStep = () => {
-    if (isDetailed) {
-      switch (kioskStep) {
-        case 0: return <OrgStep preset={dPreset} onPickPreset={pickPreset} groups={dGroups} setGroups={setDGroups} turnover={dTurnover} setTurnover={setDTurnover} />;
-        case 1: return <GroupsStep groups={dGroups} setGroups={setDGroups} perGroupPremium={dPerGroup} premium={dPremium} />;
-        case 2: return <AssumptionsStep premium={dPremium} setPremium={setDPremium} perGroupPremium={dPerGroup} setPerGroupPremium={setDPerGroup}
-          displacement={dDisp} setDisplacement={setDDisp} platformCost={dPlatform} setPlatformCost={(v) => { setDPlatform(v); setDPcAuto(false); }}
-          fillRateNow={dFill} setFillRateNow={setDFill} admin={dAdmin} setAdmin={setDAdmin} recruit={dRecruit} setRecruit={setDRecruit}
-          displaceableShare={dDisplaceable} setDisplaceableShare={setDDisplaceable} />;
-        case 3: return <ResultsPage r={rDet} displacement={dDisp} setDisplacement={setDDisp} onAdjust={handleAdjust} onStartOver={handleStartOver} />;
-        default: return null;
-      }
-    }
     switch (kioskStep) {
       case 0: return <BankStep bankPool={bankPool} setBankPool={setBankPool} />;
       case 1: return <AgencyStep agencyFillRate={agencyFillRate} setAgencyFillRate={setAgencyFillRate} />;
       case 2: return <TeamStep numManagers={numManagers} setNumManagers={setNumManagers} includeAdmin={includeAdmin} setIncludeAdmin={setIncludeAdmin} />;
-      case 3: return <StanceStep displacement={displacement} setDisplacement={setDisplacement} />;
-      case 4: return <ResultsPage r={rQuick} displacement={displacement} setDisplacement={setDisplacement} onAdjust={handleAdjust} onStartOver={handleStartOver} />;
+      case 3: return <StanceStep displacement={displacement} chosen={stanceTouched} setDisplacement={chooseStance} />;
+      case 4: return <ResultsPage r={rQuick} displacement={displacement} chosen={stanceTouched} setDisplacement={chooseStance} onAdjust={handleAdjust} onStartOver={handleStartOver} />;
       default: return null;
     }
   };
@@ -430,7 +356,7 @@ export default function App() {
     const IDLE_MS = 15 * 60 * 1000, WARN_MS = 60 * 1000;
     let warnId, resetId, tickId;
     const clearTimers = () => { clearTimeout(warnId); clearTimeout(resetId); clearInterval(tickId); };
-    const goToSplash = () => { clearTimers(); setIdleWarn(false); setShowSplash(true); setFlow(null); setKioskStep(0); setCalibrating(false); resetAll(); };
+    const goToSplash = () => { clearTimers(); setIdleWarn(false); setShowSplash(true); setKioskStep(0); setCalibrating(false); resetAll(); };
     const arm = () => {
       clearTimers();
       setIdleWarn(false);
@@ -459,12 +385,6 @@ export default function App() {
     {adminVisible && <AdminOverlay onClose={() => setAdminVisible(false)} />}
   </>;
 
-  if (flow === null) return <>
-    <ModeChooser onChoose={chooseFlow} />
-    {adminVisible && <AdminOverlay onClose={() => setAdminVisible(false)} />}
-    {idleWarn && <IdleWarning seconds={idleSecs} onStay={() => armIdleRef.current()} />}
-  </>;
-
   if (calibrating) {
     return <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, minHeight: H, height: '100vh', color: C.text, position: "relative", zIndex: 0 }}>
       <BackgroundParticles />
@@ -478,15 +398,14 @@ export default function App() {
     <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, minHeight: H, color: C.text, lineHeight: 1.55, display: "flex", flexDirection: "column", position: "relative", zIndex: 0 }}>
       <BackgroundParticles />
       <div style={{ padding: "40px 56px 0", position: "relative", zIndex: 1 }}>
-        {kioskStep === 0 && <button onClick={() => setFlow(null)} style={{ background: "transparent", border: "none", color: C.textMuted, fontSize: F.small, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginBottom: 14, padding: 0 }}>← Choose a different calculator</button>}
         <StepIndicator steps={steps} current={kioskStep} onJump={setKioskStep} />
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "0 56px 32px", position: "relative", zIndex: 1 }}>
         <PageTransition step={kioskStep}>{renderStep()}</PageTransition>
       </div>
-      <NavButtons step={kioskStep} totalSteps={steps.length} context={isDetailed ? DETAILED_CONTEXT : undefined}
+      <NavButtons step={kioskStep} totalSteps={steps.length}
         onBack={() => setKioskStep(p => p - 1)} onNext={() => setKioskStep(p => p + 1)}
-        onCalculate={handleCalculate} onStartOver={handleResetInputs} />
+        onCalculate={handleCalculate} />
       {adminVisible && <AdminOverlay onClose={() => setAdminVisible(false)} />}
       {idleWarn && <IdleWarning seconds={idleSecs} onStay={() => armIdleRef.current()} />}
     </div>
