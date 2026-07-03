@@ -81,6 +81,9 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
   const fmtPayback = m => m == null ? "n/a" : `${Math.round(m * 365 / 12).toLocaleString("en-GB")} days`;
   const fmtPct1 = v => `${(Math.round(v * 10) / 10).toLocaleString("en-GB")}%`;
   const fmtMultiple = m => m == null ? "n/a" : (m >= 10 ? Math.round(m) : Math.round(m * 10) / 10) + "×";
+  // At a very small bank / low agency reliance the licence fee can exceed the modelled
+  // premium, so net saving goes <= 0. Reframe rather than show a negative headline.
+  const noNet = r.netSaving <= 0;
 
   return <div style={{ animation: "rfade .5s ease-out" }}>
     <style>{`@keyframes rfade { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
@@ -93,6 +96,13 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
 
     {/* Two co-headlines, side by side */}
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginBottom: 14 }}>
+      {noNet ? (
+      <div style={{ textAlign: "center", padding: "26px 22px", background: C.surface, borderRadius: 22, border: `1px solid ${C.amber}55`, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div style={{ fontSize: F.h1, fontWeight: 800, color: C.amber, lineHeight: 1.1 }}>No net cash saving</div>
+        <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 8 }}>at this scale</div>
+        <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 12, lineHeight: 1.55 }}>The <strong style={{ color: C.textMid }}>{fmt(r.platformCost)}/yr</strong> licence fee is larger than the <strong style={{ color: C.textMid }}>{fmtK(r.agencySaving)}</strong> agency premium you'd displace here. The value at this size is the released capacity and time below; the cash case grows with a larger bank or higher agency reliance.</div>
+      </div>
+      ) : (
       <div style={{ textAlign: "center", padding: "26px 18px", background: C.surface, borderRadius: 22, border: `1px solid ${C.accent}30` }}>
         <div style={{ fontSize: F.hero, fontWeight: 800, color: C.accent, lineHeight: 1, letterSpacing: "-3px", animation: "glow 3s ease-in-out infinite" }}>
           <AnimVal value={r.netSaving} format={fmtK} />
@@ -100,6 +110,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>Potential annual cash saving</div>
         <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, lineHeight: 1.5, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>What you could save each year by filling more shifts from your bank instead of agency, the agency premium you stop paying.</div>
       </div>
+      )}
       <div style={{ textAlign: "center", padding: "26px 18px", background: C.surface, borderRadius: 22, border: `1px solid ${C.accent}30` }}>
         <div style={{ fontSize: F.hero, fontWeight: 800, color: C.accent, lineHeight: 1, letterSpacing: "-3px" }}>
           <AnimVal value={r.timeSavedWeek} format={v => fmtNum(v)} />
@@ -110,9 +121,9 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
     </div>
 
     {/* Basis caption: one plain sentence. The licence/modelled-spend detail lives in the derivation card below. */}
-    <div style={{ textAlign: "center", fontSize: F.small, color: C.textMuted, lineHeight: 1.6, margin: "0 auto 22px", maxWidth: 880 }}>
+    {!noNet && <div style={{ textAlign: "center", fontSize: F.small, color: C.textMuted, lineHeight: 1.6, margin: "0 auto 22px", maxWidth: 880 }}>
       This is the agency premium you stop paying by filling more shifts from your own bank instead of agency{r.adminSaving > 0 ? <>, plus <strong style={{ color: C.textMid }}>{fmtK(r.adminSaving)}</strong> of admin time</> : ""}, shown as an annual figure after the <strong style={{ color: C.textMid }}>{fmt(r.platformCost)}/yr</strong> licence fee.
-    </div>
+    </div>}
 
     {/* Confidence / modelling stance — set upfront, reconfigurable here at the top of the report */}
     <Card style={{ marginBottom: 28 }}>
@@ -149,7 +160,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
     {r.exceedsSpend && <div style={{ marginBottom: 14, padding: "14px 20px", background: C.accentSoft, border: `1px solid ${C.accent}`, borderRadius: 14, fontSize: F.small, color: C.text, lineHeight: 1.5 }}>
       <strong>Check your inputs.</strong> The modelled saving exceeds your estimated agency spend. Try a lower displacement or a lower agency fill rate.
     </div>}
-    {r.adminOnly && <div style={{ marginBottom: 14, padding: "14px 20px", background: C.accentSoft, border: `1px solid ${C.accent}`, borderRadius: 14, fontSize: F.small, color: C.text, lineHeight: 1.5 }}>
+    {r.adminOnly && !noNet && <div style={{ marginBottom: 14, padding: "14px 20px", background: C.accentSoft, border: `1px solid ${C.accent}`, borderRadius: 14, fontSize: F.small, color: C.text, lineHeight: 1.5 }}>
       <strong>Admin time only.</strong> No agency premium saving is modelled (agency spend is zero), so this figure is the admin-time value on its own.
     </div>}
 
@@ -158,8 +169,8 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
       const tiles = [
         { iconKey: "dollar", label: "Agency premium avoided", value: <AnimVal value={r.agencySaving} format={fmtK} />, sub: "agency vs bank gap, before licence" },
         ...(r.adminSaving > 0 ? [{ iconKey: "clock", label: "Admin time saving", value: <AnimVal value={r.adminSaving} format={fmtK} />, sub: "temp staffing team time, valued" }] : []),
-        { iconKey: "calendar", label: "Payback", value: fmtPayback(r.paybackMonths), sub: "to recover the licence fee" },
-        { iconKey: "check", label: "Return", value: r.roiMultiple == null ? "n/a" : <>{r.implausibleRoi ? "⚠ " : ""}<AnimVal value={r.roiMultiple} format={fmtMultiple} /></>, sub: "net saving ÷ licence fee" },
+        { iconKey: "calendar", label: "Payback", value: noNet ? "n/a" : fmtPayback(r.paybackMonths), sub: "to recover the licence fee" },
+        { iconKey: "check", label: "Return", value: (r.roiMultiple == null || noNet) ? "n/a" : <>{r.implausibleRoi ? "⚠ " : ""}<AnimVal value={r.roiMultiple} format={fmtMultiple} /></>, sub: "net saving ÷ licence fee" },
       ];
       const odd = tiles.length % 2 === 1;
       return <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 28 }}>
@@ -191,7 +202,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
             <strong style={{ color: C.text }}>{money2(gapHr)}/hr</strong> on each of <strong style={{ color: C.text }}>{fmtNum(r.displaced)}</strong> shifts moved to bank = <strong style={{ color: C.text }}>{fmt(r.agencySaving)}</strong> gross a year.
           </div>
           {r.platformCost > 0 && <div style={{ marginTop: 12, padding: "14px 18px", background: C.accentSoft, borderRadius: 12, border: `1px solid ${C.accent}30`, fontSize: F.small, color: C.textMid, lineHeight: 1.7 }}>
-            <strong style={{ color: C.text }}>{fmt(grossR)}</strong> premium{adminR > 0 ? <> + <strong style={{ color: C.text }}>{fmt(adminR)}</strong> admin time</> : ""} − <strong style={{ color: C.text }}>{fmt(licR)}</strong> licence fee = <strong style={{ color: C.accent }}>{fmt(netR)}</strong> net, the headline saving shown at the top.
+            <strong style={{ color: C.text }}>{fmt(grossR)}</strong> premium{adminR > 0 ? <> + <strong style={{ color: C.text }}>{fmt(adminR)}</strong> admin time</> : ""} − <strong style={{ color: C.text }}>{fmt(licR)}</strong> licence fee = <strong style={{ color: netR > 0 ? C.accent : C.amber }}>{netR >= 0 ? fmt(netR) : "−" + fmt(-netR)}</strong> net{netR > 0 ? ", the headline saving shown at the top." : ", so the licence fee is larger than the premium at these inputs."}
           </div>}
         </>;
       })()}

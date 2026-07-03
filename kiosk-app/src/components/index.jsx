@@ -32,7 +32,7 @@ const STEP_CONTEXT = [
   { title: "Why this matters", text: "This sets how much of today's agency use you expect better bank utilisation to displace. Conservative is the safe default; Expected matches what one site achieved; Optimistic assumes more. It flexes every figure, and you can revisit it on the results screen." },
 ];
 
-export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate, onStartOver, context = STEP_CONTEXT }) {
+export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate, context = STEP_CONTEXT }) {
   if (step >= totalSteps - 1) return null;
   const ctx = context[step];
   return <div style={{ borderTop: `1px solid ${C.border}` }}>
@@ -45,21 +45,6 @@ export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate, onSt
     </div>}
     <div style={{ padding: "16px 56px 40px", display: "flex", gap: 20, alignItems: "center" }}>
       {step > 0 && <button onClick={onBack} style={{ padding: "24px 44px", borderRadius: 18, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: F.body, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>← Back</button>}
-      <div style={{ flex: 1 }} />
-      {/* Subtle "Change calculator" button - sits centred between Back and Next/Calculate.
-          Returns to the chooser to switch Quick/Detailed (distinct from the results
-          page "Start over", which resets to the attract splash for the next visitor).
-          Deliberately understated (no background, muted text colour, smaller
-          font) so it doesn't compete with the primary navigation. */}
-      {onStartOver && <button onClick={onStartOver} style={{
-        padding: "10px 18px", borderRadius: 12, border: "none",
-        background: "transparent", color: C.textMuted, fontSize: F.small,
-        fontWeight: 500, cursor: "pointer", fontFamily: "inherit",
-        letterSpacing: 0.3, opacity: 0.75, transition: "opacity .15s, color .15s"
-      }} onMouseEnter={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.color = C.textMid; }}
-         onMouseLeave={e => { e.currentTarget.style.opacity = "0.75"; e.currentTarget.style.color = C.textMuted; }}>
-        ↻  Change calculator
-      </button>}
       <div style={{ flex: 1 }} />
       {step < totalSteps - 2 ? (
         <button onClick={onNext} style={{ padding: "24px 64px", borderRadius: 18, border: "none", background: C.accent, color: "#fff", fontSize: F.h3, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Next →</button>
@@ -92,7 +77,7 @@ export function TouchSlider({ label, value, min, max, step = 1, onChange, format
       </div>
       <span style={{ fontSize: F.h1, fontWeight: 800, color: C.accent }}>{format ? format(value) : value}</span>
     </div>}
-    <input type="range" min={min} max={max} step={step} value={value} onChange={e => onChange(Number(e.target.value))} style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
+    <input type="range" aria-label={label} min={min} max={max} step={step} value={value} onChange={e => onChange(Number(e.target.value))} style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
   </div>;
 }
 
@@ -163,28 +148,6 @@ export function InfoTip({ text }) {
   </span>;
 }
 
-export function BigChoice({ options, value, onChange }) {
-  return <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-    {options.map((opt, i) => {
-      const isLastOdd = options.length % 2 === 1 && i === options.length - 1;
-      return <button key={opt.key} onClick={() => onChange(opt.key)} aria-pressed={value === opt.key} style={{
-        gridColumn: isLastOdd ? "1 / -1" : "auto",
-        padding: "32px 30px", textAlign: "left", cursor: "pointer",
-        border: value === opt.key ? `3px solid ${C.accent}` : `1px solid ${C.border}`,
-        borderRadius: 22, background: value === opt.key ? C.accentPale : C.surface,
-        transition: "all .2s", display: "flex", flexDirection: "column", alignItems: "flex-start"
-      }}>
-        <div style={{ marginBottom: 14 }}>
-          {opt.iconKey ? <Icon name={opt.iconKey} size={42} stroke={value === opt.key ? C.accent : C.textMid} /> : opt.icon && <span style={{ fontSize: 42 }}>{opt.icon}</span>}
-        </div>
-        <div style={{ fontSize: F.h3, fontWeight: 700, color: value === opt.key ? C.accent : C.text, marginBottom: 8, lineHeight: 1.2 }}>{opt.label}</div>
-        <div style={{ fontSize: F.small, color: C.textMuted, lineHeight: 1.5 }}>{opt.desc}</div>
-        {opt.tag && <div style={{ marginTop: 18, display: "inline-block", padding: "7px 14px", borderRadius: 999, background: value === opt.key ? C.accentSoft : C.surface2, border: `1px solid ${value === opt.key ? C.accent + "55" : C.border}`, fontSize: F.tiny, fontWeight: 700, color: value === opt.key ? C.accent : C.textMid, letterSpacing: 0.3 }}>{opt.tag}</div>}
-      </button>;
-    })}
-  </div>;
-}
-
 export function SectionTitle({ number, children }) {
   return <div style={{ fontSize: F.h2, fontWeight: 700, color: C.textMid, marginBottom: 28, display: "flex", alignItems: "center", gap: 16 }}>
     <span style={{ width: 52, height: 52, borderRadius: "50%", background: C.accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: F.h3, fontWeight: 800, flexShrink: 0 }}>{number}</span>
@@ -205,14 +168,3 @@ export function ToggleRow({ on, onToggle, label, tip }) {
   </div>;
 }
 
-export function SegmentedControl({ options, value, onChange, label, info }) {
-  return <div>
-    {label && <div style={{ fontSize: F.body, fontWeight: 600, color: C.textMid, marginBottom: 12, display: "flex", alignItems: "center", gap: 10 }}>
-      <span>{label}</span>
-      {info && <InfoTip text={info} />}
-    </div>}
-    <div style={{ display: "flex", gap: 10 }}>
-      {options.map(opt => <button key={opt.key} onClick={() => onChange(opt.key)} style={{ flex: 1, padding: "18px", borderRadius: 16, cursor: "pointer", border: value === opt.key ? `2px solid ${C.accent}` : `1px solid ${C.border}`, background: value === opt.key ? C.accentPale : C.surface, color: value === opt.key ? C.accent : C.textMid, fontSize: F.body, fontWeight: 600, fontFamily: "inherit" }}>{opt.label}</button>)}
-    </div>
-  </div>;
-}

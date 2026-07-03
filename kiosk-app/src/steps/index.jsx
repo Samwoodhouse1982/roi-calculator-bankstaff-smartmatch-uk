@@ -57,7 +57,7 @@ export function AgencyStep({ agencyFillRate, setAgencyFillRate }) {
         max={30}
         step={0.1}
         onChange={setAgencyFillRate}
-        format={v => `${v}%`}
+        format={v => `${Math.round(v * 10) / 10}%`}
         tip="The proportion of temporary shifts filled by agency staff. Each agency shift carries a premium over the equivalent bank shift; that premium is what improved bank utilisation displaces. Defaults to 8.3%, the agreed national average drawn from nationally available RLDatix data."
       />
       <Helper>Share of temp duties currently filled by agency. Default 8.3% based on national average of NHS organisations; set your own for a tailored figure.</Helper>
@@ -69,27 +69,27 @@ export function AgencyStep({ agencyFillRate, setAgencyFillRate }) {
 export function TeamStep({ numManagers, setNumManagers, includeAdmin, setIncludeAdmin }) {
   return <div>
     <SectionTitle number={3}>Your temporary staffing team</SectionTitle>
-    <Lead>How many people spend their time booking, chasing and reconciling temporary shifts? Smart Match gives these colleagues back time.</Lead>
+    <Lead>How many people spend their time booking, chasing and reconciling temporary shifts? Smart Match gives these colleagues back time, and this sets the "hours released each week" figure on your results.</Lead>
     <Card>
-      <ToggleRow
-        on={includeAdmin}
-        onToggle={setIncludeAdmin}
-        label="Include admin time saving in the cash total"
-        tip="Off by default, a secondary recommendation. Turn this on to add the temporary staffing team's recovered time (a conservative 1.0 h/day at a loaded £18/h) to the headline saving, then set your team size below."
+      <Stepper
+        label="Temporary staffing team"
+        value={numManagers}
+        min={0}
+        max={60}
+        step={1}
+        onChange={setNumManagers}
+        tip="Count the people who do the day-to-day booking, chasing and reconciling of temporary shifts, your bank / temporary staffing coordinators, officers and administrators. Managers who don't do the day-to-day entry aren't counted."
       />
-      <div style={{ marginTop: 24, paddingTop: 22, borderTop: `1px solid ${C.border}`, opacity: includeAdmin ? 1 : 0.4, pointerEvents: includeAdmin ? "auto" : "none", transition: "opacity .2s" }} aria-hidden={!includeAdmin}>
-        <Stepper
-          label="Temporary staffing team"
-          value={numManagers}
-          min={0}
-          max={60}
-          step={1}
-          onChange={setNumManagers}
-          tip="Count the people who do the day-to-day booking, chasing and reconciling of temporary shifts, your bank / temporary staffing coordinators, officers and administrators. Managers who don't do the day-to-day entry aren't counted."
+      <Helper>
+        Include your <strong style={{ color: C.text }}>bank / temporary staffing coordinators</strong>, <strong style={{ color: C.text }}>officers</strong> and <strong style={{ color: C.text }}>administrators</strong>, anyone whose day is spent placing and reconciling shifts, not the managers above them.
+      </Helper>
+      <div style={{ marginTop: 24, paddingTop: 22, borderTop: `1px solid ${C.border}` }}>
+        <ToggleRow
+          on={includeAdmin}
+          onToggle={setIncludeAdmin}
+          label="Also add this recovered time to the cash saving"
+          tip="Off by default, a secondary recommendation. Turn this on to value the team's recovered time (a conservative 1.0 h/day at a loaded £18/h) and add it to the headline cash saving. Either way, the hours released show on your results."
         />
-        <Helper>
-          Include your <strong style={{ color: C.text }}>bank / temporary staffing coordinators</strong>, <strong style={{ color: C.text }}>officers</strong> and <strong style={{ color: C.text }}>administrators</strong>, anyone whose day is spent placing and reconciling shifts, not the managers above them.
-        </Helper>
       </div>
     </Card>
   </div>;
@@ -103,7 +103,7 @@ export function StanceStep({ displacement, chosen, setDisplacement }) {
     <Lead>How much of today's agency use do you expect better bank utilisation to displace onto your own bank? Choose the outlook that fits your evidence; you can change it on the results screen.</Lead>
     <Card>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-        <span style={{ fontSize: F.body, fontWeight: 600, color: C.textMid }}>Agency displacement</span>
+        <span style={{ fontSize: F.body, fontWeight: 600, color: C.textMid }}>Agency work moved to your bank</span>
         <span style={{ fontSize: F.h1, fontWeight: 800, color: C.accent }}>{displacement}%</span>
       </div>
       <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
@@ -117,7 +117,7 @@ export function StanceStep({ displacement, chosen, setDisplacement }) {
           }}>{lbl}<span style={{ fontSize: F.small, fontWeight: 600, opacity: 0.8 }}>{v}%</span></button>;
         })}
       </div>
-      <input type="range" min={8} max={50} step={1} value={displacement} onChange={e => setDisplacement(Number(e.target.value))} style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
+      <input type="range" aria-label="Agency work moved to your bank (%)" min={8} max={50} step={1} value={displacement} onChange={e => setDisplacement(Number(e.target.value))} style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: F.tiny, color: C.textMuted, marginTop: 8 }}>
         <span>8% · conservative</span><span>26% · expected</span><span>50% · optimistic</span>
       </div>

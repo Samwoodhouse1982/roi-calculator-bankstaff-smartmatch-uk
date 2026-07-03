@@ -439,6 +439,11 @@ function IdleWarning({ seconds, onStay }) {
   </div>;
 }
 
+// The kiosk lands on the Expected stance (F1) for a stronger first impression.
+// The engine's DEFAULTS.displacement stays the conservative 13% baseline used by
+// the model and the golden tests; this only sets the UI's starting/reset value.
+const START_DISPLACEMENT = 26;
+
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [stanceTouched, setStanceTouched] = useState(false);   // no confidence box highlighted until the user picks one
@@ -453,7 +458,7 @@ export default function App() {
   const [bankPool, setBankPool] = useState(DEFAULTS.bankPool);
   const [agencyFillRate, setAgencyFillRate] = useState(DEFAULTS.agencyFillRate);
   const [numManagers, setNumManagers] = useState(DEFAULTS.numManagers);
-  const [displacement, setDisplacement] = useState(DEFAULTS.displacement);
+  const [displacement, setDisplacement] = useState(START_DISPLACEMENT);
   const [includeAdmin, setIncludeAdmin] = useState(false);  // temporary-staffing-team time in the cash total (off by default; secondary)
 
   const rQuick = useMemo(() => calc({ bankPool, agencyFillRate, numManagers, displacement, includeAdmin, platformCost: platformCostFor(bankPool) }),
@@ -482,7 +487,7 @@ export default function App() {
 
   const resetAll = useCallback(() => {
     setBankPool(DEFAULTS.bankPool); setAgencyFillRate(DEFAULTS.agencyFillRate);
-    setNumManagers(DEFAULTS.numManagers); setDisplacement(DEFAULTS.displacement);
+    setNumManagers(DEFAULTS.numManagers); setDisplacement(START_DISPLACEMENT);
     setIncludeAdmin(false); setStanceTouched(false);
   }, []);
 
