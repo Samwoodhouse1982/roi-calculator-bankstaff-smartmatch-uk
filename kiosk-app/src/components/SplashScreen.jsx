@@ -229,7 +229,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
         }}>RLDatix · Smart Match</div>
 
         <h1 style={{
-          fontSize: 86, fontWeight: 800, lineHeight: 1.12, color: '#fff',
+          fontSize: 76, fontWeight: 800, lineHeight: 1.12, color: '#fff',
           margin: '0 0 24px', letterSpacing: '-1.5px',
         }}>
           Measure your ROI from<br/>Smart Match AI
