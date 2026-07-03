@@ -3,6 +3,7 @@ import { C, F, W, H, KIOSK_STEPS, fmtK, fmtNum } from './theme';
 import { SplashScreen } from './components/SplashScreen';
 import { BackgroundParticles } from './components/BackgroundParticles';
 import { calc, DEFAULTS, platformCostFor, stance } from './calc/engine';
+import { newId, flushSync, syncEnabled } from './stats/sync';
 import { StepIndicator, NavButtons, PageTransition } from './components';
 import { BankStep, AgencyStep, TeamStep, StanceStep } from './steps';
 import { ResultsPage } from './results/ResultsPage';
@@ -91,7 +92,7 @@ function writeStore(data) {
 function recordCompletion(session) {
   try {
     const data = loadStore();
-    const row = { ts: Date.now(), ...session };
+    const row = { id: newId(), synced: false, ts: Date.now(), ...session };
     data.v = STATS_VERSION;
     data.sessions.push(row);
     data.total = (data.total || 0) + 1;
@@ -100,6 +101,7 @@ function recordCompletion(session) {
     accumulate(data.agg, row);
     if (data.sessions.length > SESSION_CAP) data.sessions = data.sessions.slice(-SESSION_CAP);
     writeStore(data);
+    flushSync(data, writeStore);   // push to the shared backend if configured (no-op otherwise)
   } catch (e) { /* ignore */ }
 }
 
@@ -153,8 +155,9 @@ function computeStats() {
   };
   const adminPct = agg.adminObserved ? Math.round(100 * (agg.adminIncluded || 0) / agg.adminObserved) : null;
   const stanceDist = agg.stance || { Conservative: 0, Expected: 0, Optimistic: 0 };
+  const pending = syncEnabled ? sessions.filter(s => s && s.id && s.synced !== true).length : 0;
 
-  return { total, today, last, cum, averages, adminPct, stanceDist, avgBankPool: averages.bankPool || 0 };
+  return { total, today, last, cum, averages, adminPct, stanceDist, avgBankPool: averages.bankPool || 0, pending };
 }
 
 function PinKeypad({ onSubmit, onCancel, error }) {
@@ -357,7 +360,13 @@ function AdminOverlay({ onClose }) {
           No sessions recorded yet.
         </div>}
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {syncEnabled
+            ? <div style={{ fontSize: 11, color: C.textMuted }}>
+                <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: stats.pending ? C.amber : C.good, marginRight: 7 }} />
+                Shared sync on{stats.pending ? ` · ${stats.pending} pending` : ' · up to date'}
+              </div>
+            : <span />}
           <button onClick={() => setPinOpen(true)} disabled={stats.total === 0} style={{ padding: '10px 18px', borderRadius: 10, border: '1px solid ' + C.border, background: 'transparent', color: stats.total === 0 ? C.textMuted : C.textMid, fontSize: 12, fontWeight: 600, cursor: stats.total === 0 ? 'default' : 'pointer', fontFamily: 'inherit', opacity: stats.total === 0 ? 0.4 : 1 }}>Reset stats (PIN required)</button>
         </div>
       </div>
@@ -496,7 +505,11 @@ export default function App() {
   // Ask the browser for durable storage once, so kiosk stats aren't evicted
   // under storage pressure. (Does not override an OS/browser "clear on exit"
   // policy or an ephemeral profile — those are fixed in the kiosk launch config.)
-  useEffect(() => { requestPersistentStorage(); }, []);
+  // Also flush any sessions queued while the shared backend was unreachable.
+  useEffect(() => {
+    requestPersistentStorage();
+    if (syncEnabled) { try { flushSync(loadStore(), writeStore); } catch (e) { /* ignore */ } }
+  }, []);
 
   // Idle handling: after 14 min of no activity show a 60s countdown warning,
   // then reset to the attract splash at 15 min. Any tap/keypress (or the
