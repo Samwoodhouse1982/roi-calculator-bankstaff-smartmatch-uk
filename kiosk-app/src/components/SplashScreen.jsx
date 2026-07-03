@@ -232,7 +232,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
           fontSize: 86, fontWeight: 800, lineHeight: 1.12, color: '#fff',
           margin: '0 0 24px', letterSpacing: '-1.5px',
         }}>
-          Your Smart Match AI ROI
+          Measure your ROI from<br/>Smart Match AI
         </h1>
 
         {/* Teal accent line under the title */}
