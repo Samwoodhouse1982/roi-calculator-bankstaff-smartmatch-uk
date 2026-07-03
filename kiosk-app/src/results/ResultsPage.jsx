@@ -105,23 +105,23 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
           <AnimVal value={r.timeSavedWeek} format={v => fmtNum(v)} />
         </div>
         <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>hours released each week</div>
-        <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, lineHeight: 1.5, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>Time your temporary staffing team gets back each week as shift booking and matching become faster and more automated. Driven by team size, not the confidence level.</div>
+        <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, lineHeight: 1.5, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>Time your temporary staffing team gets back each week as booking and matching get faster and more automated, based on the size of your team.</div>
       </div>
     </div>
 
-    {/* Basis caption: what the headline includes + what ROI is measured against (audit P1 #5/#6/#7) */}
+    {/* Basis caption: one plain sentence. The licence/modelled-spend detail lives in the derivation card below. */}
     <div style={{ textAlign: "center", fontSize: F.small, color: C.textMuted, lineHeight: 1.6, margin: "0 auto 22px", maxWidth: 880 }}>
-      Net saving is the agency premium displaced{r.adminSaving > 0 ? <> plus <strong style={{ color: C.textMid }}>{fmtK(r.adminSaving)}</strong> admin time</> : ""}, less the licence fee. Return and payback are measured against the <strong style={{ color: C.textMid }}>{fmt(r.platformCost)}/yr</strong> licence fee only; the bank shifts used to deliver it are shown under Capacity, not netted here.{r.agencySpend != null ? <> Modelled agency spend, <strong style={{ color: C.textMid }}>derived from your bank pool and agency fill rate</strong>: <strong style={{ color: C.textMid }}>{fmtK(r.agencySpend)}</strong>; for a figure built on your real agency spend, use the detailed web calculator.</> : ""}
+      This is the agency premium you stop paying by filling more shifts from your own bank instead of agency{r.adminSaving > 0 ? <>, plus <strong style={{ color: C.textMid }}>{fmtK(r.adminSaving)}</strong> of admin time</> : ""}, shown as an annual figure after the <strong style={{ color: C.textMid }}>{fmt(r.platformCost)}/yr</strong> licence fee.
     </div>
 
     {/* Confidence / modelling stance — set upfront, reconfigurable here at the top of the report */}
     <Card style={{ marginBottom: 28 }}>
-      <CTitle iconKey="search">Confidence / modelling stance</CTitle>
+      <CTitle iconKey="search">Confidence level</CTitle>
       <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6, marginBottom: 18 }}>
         You set this earlier; adjust it here and the cash figures recompute live. It is how much of today's agency activity you assume better bank utilisation moves onto your own bank.
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-        <span style={{ fontSize: F.body, fontWeight: 600, color: C.textMid }}>Agency displacement</span>
+        <span style={{ fontSize: F.body, fontWeight: 600, color: C.textMid }}>Agency work moved to your bank</span>
         <span style={{ fontSize: F.h1, fontWeight: 800, color: C.accent }}>{displacement}%</span>
       </div>
       <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
@@ -156,7 +156,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
     {/* KPI tiles — the Admin time tile only shows when admin time is toggled on (adminSaving > 0) */}
     {(() => {
       const tiles = [
-        { iconKey: "dollar", label: "Agency premium displaced", value: <AnimVal value={r.agencySaving} format={fmtK} />, sub: "hard cash: agency vs bank gap" },
+        { iconKey: "dollar", label: "Agency premium avoided", value: <AnimVal value={r.agencySaving} format={fmtK} />, sub: "agency vs bank gap, before licence" },
         ...(r.adminSaving > 0 ? [{ iconKey: "clock", label: "Admin time saving", value: <AnimVal value={r.adminSaving} format={fmtK} />, sub: "temp staffing team time, valued" }] : []),
         { iconKey: "calendar", label: "Payback", value: fmtPayback(r.paybackMonths), sub: "to recover the licence fee" },
         { iconKey: "check", label: "Return", value: r.roiMultiple == null ? "n/a" : <>{r.implausibleRoi ? "⚠ " : ""}<AnimVal value={r.roiMultiple} format={fmtMultiple} /></>, sub: "net saving ÷ licence fee" },
@@ -180,18 +180,23 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         const money2 = v => "£" + (v || 0).toFixed(2);
         const bankHr = r.bankShiftCost / hrs, agencyHr = r.agencyShiftCost / hrs;
         const gapShift = r.agencyShiftCost - r.bankShiftCost, gapHr = gapShift / hrs;
+        // Round each term first so the displayed premium - licence = net equation adds up exactly.
+        const grossR = Math.round(r.agencySaving), adminR = Math.round(r.adminSaving || 0), licR = Math.round(r.platformCost), netR = grossR + adminR - licR;
         const rate = (shift, hr) => <>{fmt(shift)}<span style={{ fontSize: F.tiny, color: C.textMuted, fontWeight: 400 }}> /shift · {money2(hr)}/hr</span></>;
         return <>
           <Row label="Your own bank (blended national rate)" value={rate(r.bankShiftCost, bankHr)} />
           <Row label={r.perGroupPremium ? "Agency, same shift (your per-group premiums)" : `Agency, same shift (at ${r.premium}% premium)`} value={rate(r.agencyShiftCost, agencyHr)} />
           <Row label="Premium displaced = the saving" value={rate(gapShift, gapHr)} accent />
           <div style={{ marginTop: 14, fontSize: F.small, color: C.textMid, lineHeight: 1.6 }}>
-            <strong style={{ color: C.text }}>{money2(gapHr)}/hr</strong> on each of <strong style={{ color: C.text }}>{fmtNum(r.displaced)}</strong> shifts moved to bank = <strong style={{ color: C.accent }}>{fmt(r.agencySaving)}</strong> a year.
+            <strong style={{ color: C.text }}>{money2(gapHr)}/hr</strong> on each of <strong style={{ color: C.text }}>{fmtNum(r.displaced)}</strong> shifts moved to bank = <strong style={{ color: C.text }}>{fmt(r.agencySaving)}</strong> gross a year.
           </div>
+          {r.platformCost > 0 && <div style={{ marginTop: 12, padding: "14px 18px", background: C.accentSoft, borderRadius: 12, border: `1px solid ${C.accent}30`, fontSize: F.small, color: C.textMid, lineHeight: 1.7 }}>
+            <strong style={{ color: C.text }}>{fmt(grossR)}</strong> premium{adminR > 0 ? <> + <strong style={{ color: C.text }}>{fmt(adminR)}</strong> admin time</> : ""} − <strong style={{ color: C.text }}>{fmt(licR)}</strong> licence fee = <strong style={{ color: C.accent }}>{fmt(netR)}</strong> net, the headline saving shown at the top.
+          </div>}
         </>;
       })()}
       <div style={{ marginTop: 14, fontSize: F.tiny, color: C.textMuted, fontStyle: "italic", lineHeight: 1.6 }}>
-        Bank rate = 2026/27 AfC blended midpoint, loaded with on-cost. Premium defaults to the official ~20% House of Commons Library average, deliberately conservative and contested at shift level (nursing ~35–50%, medics ~80–120%). Set your own premium and every figure updates.
+        Bank rate = 2026/27 AfC blended midpoint, loaded with on-cost. Premium defaults to the official ~20% House of Commons Library average, deliberately conservative and contested at shift level (nursing ~35–50%, medics ~80–120%).{r.agencySpend != null ? <> Your agency spend is modelled from your bank pool and fill rate ({fmtK(r.agencySpend)}); for a figure built on your real spend, use the detailed web calculator.</> : ""}
       </div>
     </Card>
 
