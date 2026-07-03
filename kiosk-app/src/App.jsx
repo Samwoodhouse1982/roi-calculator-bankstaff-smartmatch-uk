@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { C, F, W, H, KIOSK_STEPS, fmtK, fmtNum } from './theme';
 import { SplashScreen } from './components/SplashScreen';
 import { BackgroundParticles } from './components/BackgroundParticles';
-import { calc, DEFAULTS, platformCostFor } from './calc/engine';
+import { calc, DEFAULTS, platformCostFor, stance } from './calc/engine';
 import { StepIndicator, NavButtons, PageTransition } from './components';
 import { BankStep, AgencyStep, TeamStep, StanceStep } from './steps';
 import { ResultsPage } from './results/ResultsPage';
@@ -14,58 +14,147 @@ import { ResultsPage } from './results/ResultsPage';
    environment); falls back to 2580 (vertical line on a phone keypad) if unset.
    ──────────────────────────────────────────────────────────────────────── */
 const STATS_KEY = 'smartmatch-kiosk-stats';
+const STATS_BACKUP_KEY = 'smartmatch-kiosk-stats.bak';   // mirror copy; recovers the store if the primary is lost/corrupt. The store is never auto-wiped.
+const STATS_VERSION = 2;
 const ADMIN_PIN = import.meta.env.VITE_ADMIN_PIN || '2580'; // build-time env, not source-committed
+
+// Numeric fields for which we keep a running lifetime sum + count, so cumulative
+// totals and averages stay exact even after old raw rows roll off the cap below.
+const AGG_FIELDS = ['netSaving', 'agencySaving', 'adminSaving', 'grossBenefit', 'displaced',
+  'timeSavedWeek', 'capacityValue', 'roiMultiple', 'paybackMonths', 'agencySpend',
+  'platformCost', 'bankPool', 'agencyFillRate', 'numManagers', 'displacement'];
+const SESSION_CAP = 2000;   // raw rows kept (for the rolling 24h count); lifetime figures live in `agg`, so this cap never drops a headline stat.
+
+function newAgg() {
+  return { n: 0, sums: {}, counts: {}, stance: { Conservative: 0, Expected: 0, Optimistic: 0 }, adminObserved: 0, adminIncluded: 0 };
+}
+
+// Fold one completed session into the running aggregate (used both live and when
+// migrating an older store that only kept raw rows).
+function accumulate(agg, s) {
+  for (const f of AGG_FIELDS) {
+    const v = s[f];
+    if (typeof v === 'number' && isFinite(v)) {
+      agg.sums[f] = (agg.sums[f] || 0) + v;
+      agg.counts[f] = (agg.counts[f] || 0) + 1;
+    }
+  }
+  if (s.stance && agg.stance[s.stance] != null) agg.stance[s.stance] += 1;
+  if (typeof s.includeAdmin === 'boolean') {
+    agg.adminObserved = (agg.adminObserved || 0) + 1;
+    if (s.includeAdmin) agg.adminIncluded = (agg.adminIncluded || 0) + 1;
+  }
+  agg.n = (agg.n || 0) + 1;
+}
+
+function readRaw(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data || !Array.isArray(data.sessions)) return null;   // ignore (don't delete) anything malformed
+    return data;
+  } catch (e) { return null; }
+}
+
+// Rebuild the running-aggregate block from raw rows, so a v1 store (raw rows only)
+// upgrades to v2 without losing its cumulative history.
+function ensureAgg(data) {
+  if (data.agg && data.agg.sums && data.agg.counts && data.agg.stance) return data;
+  const agg = newAgg();
+  for (const s of (data.sessions || [])) accumulate(agg, s);
+  data.agg = agg;
+  return data;
+}
+
+// Load the store, preferring the primary copy and falling back to the backup.
+// Crucially it NEVER deletes: a corrupt/half-written copy is skipped, not wiped —
+// so an interrupted write (e.g. an overnight reboot mid-save) can't lose history.
+function loadStore() {
+  let data = readRaw(STATS_KEY);
+  let healed = false;
+  if (!data) { data = readRaw(STATS_BACKUP_KEY); healed = !!data; }
+  if (!data) return { v: STATS_VERSION, total: 0, sessions: [], agg: newAgg(), first: null, last: null };
+  data = ensureAgg(data);
+  if (typeof data.total !== 'number') data.total = data.agg.n || data.sessions.length;
+  if (healed) { try { localStorage.setItem(STATS_KEY, JSON.stringify(data)); } catch (e) { /* ignore */ } }
+  return data;
+}
+
+// Write both copies (primary first, then mirror) so at least one valid copy always exists.
+function writeStore(data) {
+  const payload = JSON.stringify(data);
+  try { localStorage.setItem(STATS_KEY, payload); } catch (e) { /* quota / storage disabled */ }
+  try { localStorage.setItem(STATS_BACKUP_KEY, payload); } catch (e) { /* ignore */ }
+}
 
 function recordCompletion(session) {
   try {
-    const raw = localStorage.getItem(STATS_KEY);
-    const data = raw ? JSON.parse(raw) : { sessions: [], total: 0 };
-    data.sessions.push({ ts: Date.now(), ...session });
+    const data = loadStore();
+    const row = { ts: Date.now(), ...session };
+    data.v = STATS_VERSION;
+    data.sessions.push(row);
     data.total = (data.total || 0) + 1;
-    if (data.sessions.length > 1000) data.sessions = data.sessions.slice(-1000);
-    localStorage.setItem(STATS_KEY, JSON.stringify(data));
+    if (data.first == null) data.first = row.ts;
+    data.last = row.ts;
+    accumulate(data.agg, row);
+    if (data.sessions.length > SESSION_CAP) data.sessions = data.sessions.slice(-SESSION_CAP);
+    writeStore(data);
   } catch (e) { /* ignore */ }
-}
-
-function loadSessions() {
-  try {
-    const raw = localStorage.getItem(STATS_KEY);
-    if (!raw) return { sessions: [], total: 0 };
-    const data = JSON.parse(raw);
-    if (!Array.isArray(data.sessions)) {
-      localStorage.removeItem(STATS_KEY);
-      return { sessions: [], total: 0 };
-    }
-    return { sessions: data.sessions, total: data.total || 0 };
-  } catch (e) {
-    try { localStorage.removeItem(STATS_KEY); } catch (e2) {}
-    return { sessions: [], total: 0 };
-  }
 }
 
 function resetStats() {
   try { localStorage.removeItem(STATS_KEY); } catch (e) { /* ignore */ }
+  try { localStorage.removeItem(STATS_BACKUP_KEY); } catch (e) { /* ignore */ }
 }
 
-// Compute aggregated stats: totals + cumulative impact across all sessions.
+// Ask the browser to keep our storage durable (exempt from automatic eviction
+// under storage pressure). Best-effort; unsupported browsers simply no-op.
+function requestPersistentStorage() {
+  try {
+    if (navigator.storage && navigator.storage.persist && navigator.storage.persisted) {
+      navigator.storage.persisted().then(p => { if (!p) navigator.storage.persist().catch(() => {}); }).catch(() => {});
+    }
+  } catch (e) { /* ignore */ }
+}
+
+// Totals + lifetime cumulative impact + lifetime averages across all sessions.
 function computeStats() {
-  const { sessions, total } = loadSessions();
+  const data = loadStore();
+  const { sessions, total, agg } = data;
   const now = Date.now();
   const oneDayAgo = now - 24 * 60 * 60 * 1000;
   const today = sessions.filter(s => s.ts >= oneDayAgo).length;
-  const last = sessions.length ? sessions[sessions.length - 1].ts : null;
+  const last = data.last || (sessions.length ? sessions[sessions.length - 1].ts : null);
 
-  const cum = sessions.reduce((acc, s) => ({
-    netSaving: acc.netSaving + (s.netSaving || 0),
-    agencySaving: acc.agencySaving + (s.agencySaving || 0),
-    adminSaving: acc.adminSaving + (s.adminSaving || 0),
-    displaced: acc.displaced + (s.displaced || 0),
-    timeSavedWeek: acc.timeSavedWeek + (s.timeSavedWeek || 0),
-  }), { netSaving: 0, agencySaving: 0, adminSaving: 0, displaced: 0, timeSavedWeek: 0 });
+  // Cumulative (lifetime) read from the running aggregate, so it survives rolloff.
+  const cum = {
+    netSaving: agg.sums.netSaving || 0,
+    agencySaving: agg.sums.agencySaving || 0,
+    adminSaving: agg.sums.adminSaving || 0,
+    displaced: agg.sums.displaced || 0,
+    timeSavedWeek: agg.sums.timeSavedWeek || 0,
+  };
 
-  const avgBankPool = sessions.length ? Math.round(sessions.reduce((s, x) => s + (x.bankPool || 0), 0) / sessions.length) : 0;
+  // Lifetime average of a field, over the sessions that actually carried it (so
+  // fields added in a later build aren't dragged down by older rows lacking them).
+  const avg = (f, dp = 0) => {
+    const c = agg.counts[f] || 0;
+    if (!c) return null;
+    const m = (agg.sums[f] || 0) / c;
+    return dp ? +m.toFixed(dp) : Math.round(m);
+  };
+  const averages = {
+    netSaving: avg('netSaving'), agencySaving: avg('agencySaving'),
+    roiMultiple: avg('roiMultiple', 2), paybackMonths: avg('paybackMonths', 2),
+    bankPool: avg('bankPool'), agencyFillRate: avg('agencyFillRate', 1),
+    numManagers: avg('numManagers', 1), displacement: avg('displacement', 1),
+    agencySpend: avg('agencySpend'),
+  };
+  const adminPct = agg.adminObserved ? Math.round(100 * (agg.adminIncluded || 0) / agg.adminObserved) : null;
+  const stanceDist = agg.stance || { Conservative: 0, Expected: 0, Optimistic: 0 };
 
-  return { total, today, last, cum, avgBankPool };
+  return { total, today, last, cum, averages, adminPct, stanceDist, avgBankPool: averages.bankPool || 0 };
 }
 
 function PinKeypad({ onSubmit, onCancel, error }) {
@@ -123,6 +212,25 @@ function PinKeypad({ onSubmit, onCancel, error }) {
   );
 }
 
+function AvgTile({ label, value, color }) {
+  return (
+    <div style={{ padding: '14px 16px', background: C.bg, borderRadius: 12, border: '1px solid ' + C.borderLight }}>
+      <div style={{ fontSize: 11, color: C.textMuted }}>{label}</div>
+      <div style={{ fontSize: 22, fontWeight: 800, color: color || C.text, marginTop: 4 }}>{value}</div>
+    </div>
+  );
+}
+
+function StanceLegend({ color, label, n }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+      <span style={{ width: 12, height: 12, borderRadius: 3, background: color, display: 'inline-block' }} />
+      <span style={{ fontSize: 12, color: C.textMid }}>{label}</span>
+      <span style={{ fontSize: 12, color: C.text, fontWeight: 700 }}>{n}</span>
+    </div>
+  );
+}
+
 function AdminOverlay({ onClose }) {
   const [stats, setStats] = useState(computeStats());
   const [pinOpen, setPinOpen] = useState(false);
@@ -144,6 +252,8 @@ function AdminOverlay({ onClose }) {
   };
   const handleConfirmReset = () => { resetStats(); setConfirmReset(false); refresh(); };
   const lastStr = stats.last ? new Date(stats.last).toLocaleString('en-GB') : 'never';
+  const sd = stats.stanceDist || { Conservative: 0, Expected: 0, Optimistic: 0 };
+  const stanceTotal = sd.Conservative + sd.Expected + sd.Optimistic;
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(11,20,36,0.94)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40, overflow: 'auto' }}>
@@ -209,6 +319,37 @@ function AdminOverlay({ onClose }) {
               <div style={{ fontSize: 11, color: C.textMuted }}>Last completion</div>
               <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginTop: 8, lineHeight: 1.4 }}>{lastStr}</div>
             </div>
+          </div>
+        </div>}
+
+        {/* Average per completed session (from lifetime running aggregate) */}
+        {stats.total > 0 && <div style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: 11, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 600, marginBottom: 10 }}>Average per completed session (indicative)</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+            <AvgTile label="Net cash saving" color={C.accent} value={stats.averages.netSaving == null ? '—' : fmtK(stats.averages.netSaving)} />
+            <AvgTile label="ROI multiple" color={C.accent} value={stats.averages.roiMultiple == null ? '—' : stats.averages.roiMultiple.toFixed(2) + '×'} />
+            <AvgTile label="Payback" color={C.good} value={stats.averages.paybackMonths == null ? '—' : Math.round(stats.averages.paybackMonths * 365 / 12).toLocaleString('en-GB') + ' days'} />
+            <AvgTile label="Bank workforce modelled" color={C.text} value={stats.averages.bankPool == null ? '—' : fmtNum(stats.averages.bankPool)} />
+            <AvgTile label="Agency fill entered" color={C.text} value={stats.averages.agencyFillRate == null ? '—' : stats.averages.agencyFillRate.toFixed(1) + '%'} />
+            <AvgTile label="Confidence level chosen" color={C.text} value={stats.averages.displacement == null ? '—' : stats.averages.displacement.toFixed(1) + '%'} />
+            <AvgTile label="Temp staffing team size" color={C.text} value={stats.averages.numManagers == null ? '—' : stats.averages.numManagers.toFixed(1)} />
+            <AvgTile label="Agency premium saving" color={C.accent} value={stats.averages.agencySaving == null ? '—' : fmtK(stats.averages.agencySaving)} />
+            <AvgTile label="Admin time included" color={C.amber} value={stats.adminPct == null ? '—' : stats.adminPct + '%'} />
+          </div>
+        </div>}
+
+        {/* Confidence stance distribution */}
+        {stanceTotal > 0 && <div style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: 11, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 600, marginBottom: 10 }}>Confidence stance chosen</div>
+          <div style={{ display: 'flex', height: 26, borderRadius: 8, overflow: 'hidden', border: '1px solid ' + C.borderLight }}>
+            {sd.Conservative > 0 && <div style={{ width: (100 * sd.Conservative / stanceTotal) + '%', background: C.accent }} />}
+            {sd.Expected > 0 && <div style={{ width: (100 * sd.Expected / stanceTotal) + '%', background: C.blue }} />}
+            {sd.Optimistic > 0 && <div style={{ width: (100 * sd.Optimistic / stanceTotal) + '%', background: C.amber }} />}
+          </div>
+          <div style={{ display: 'flex', gap: 18, marginTop: 8, flexWrap: 'wrap' }}>
+            <StanceLegend color={C.accent} label="Conservative" n={sd.Conservative} />
+            <StanceLegend color={C.blue} label="Expected" n={sd.Expected} />
+            <StanceLegend color={C.amber} label="Optimistic" n={sd.Optimistic} />
           </div>
         </div>}
 
@@ -318,10 +459,15 @@ export default function App() {
     setCalibrating(false);
     setKioskStep(RESULTS_STEP);
     recordCompletion({
-      flow: "quick", netSaving: r.netSaving, agencySaving: r.agencySaving, adminSaving: r.adminSaving,
-      displaced: r.displaced, timeSavedWeek: r.timeSavedWeek, bankPool,
+      flow: "quick",
+      netSaving: r.netSaving, agencySaving: r.agencySaving, adminSaving: r.adminSaving,
+      grossBenefit: r.grossBenefit, displaced: r.displaced, timeSavedWeek: r.timeSavedWeek,
+      capacityValue: r.capacityValue, roiMultiple: r.roiMultiple, paybackMonths: r.paybackMonths,
+      agencySpend: r.agencySpend, platformCost: r.platformCost,
+      bankPool, agencyFillRate, numManagers, displacement, includeAdmin,
+      stance: stance(displacement).key,
     });
-  }, [RESULTS_STEP, r, bankPool]);
+  }, [RESULTS_STEP, r, bankPool, agencyFillRate, numManagers, displacement, includeAdmin]);
 
   const handleAdjust = useCallback(() => setKioskStep(0), []);
 
@@ -346,6 +492,11 @@ export default function App() {
       default: return null;
     }
   };
+
+  // Ask the browser for durable storage once, so kiosk stats aren't evicted
+  // under storage pressure. (Does not override an OS/browser "clear on exit"
+  // policy or an ephemeral profile — those are fixed in the kiosk launch config.)
+  useEffect(() => { requestPersistentStorage(); }, []);
 
   // Idle handling: after 14 min of no activity show a 60s countdown warning,
   // then reset to the attract splash at 15 min. Any tap/keypress (or the
