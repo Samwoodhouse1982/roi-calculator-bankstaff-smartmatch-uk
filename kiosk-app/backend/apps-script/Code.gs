@@ -18,20 +18,36 @@ var HEADERS = ['id', 'ts', 'kioskId', 'flow', 'netSaving', 'agencySaving', 'admi
   'agencySpend', 'platformCost', 'bankPool', 'agencyFillRate', 'numManagers', 'displacement',
   'includeAdmin', 'stance'];
 
+// Target spreadsheet. A `SHEET_ID` script property (Settings > Script properties)
+// overrides this; otherwise the script writes to this id. It only auto-creates a
+// fresh sheet if neither is openable.
+var DEFAULT_SHEET_ID = '16lrLkIk08hyxYNr6DePJkSa8J8nzoXaCZA1tG9EiZ_0';
+
 function prop(k) { return PropertiesService.getScriptProperties().getProperty(k); }
 function setProp(k, v) { PropertiesService.getScriptProperties().setProperty(k, v); }
 
 function getSpreadsheet() {
-  var id = prop('SHEET_ID');
-  if (id) { try { return SpreadsheetApp.openById(id); } catch (e) { /* recreate below */ } }
-  var ss = SpreadsheetApp.create('Smart Match Kiosk Stats');
-  setProp('SHEET_ID', ss.getId());
-  var sh = ss.getSheets()[0];
-  sh.setName(SHEET_NAME);
-  sh.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]).setFontWeight('bold');
-  sh.setFrozenRows(1);
-  buildDashboard(ss);
+  var id = prop('SHEET_ID') || DEFAULT_SHEET_ID;
+  var ss = null;
+  if (id) { try { ss = SpreadsheetApp.openById(id); } catch (e) { ss = null; } }
+  if (!ss) {
+    ss = SpreadsheetApp.create('Smart Match Kiosk Stats');
+    setProp('SHEET_ID', ss.getId());
+  }
+  ensureSheets(ss);
   return ss;
+}
+
+// Ensure the target sheet has a headed Sessions tab and a Dashboard tab, whether
+// it was newly created or an existing (possibly blank) sheet we opened.
+function ensureSheets(ss) {
+  var sh = ss.getSheetByName(SHEET_NAME);
+  if (!sh) sh = ss.insertSheet(SHEET_NAME);
+  if (sh.getLastRow() === 0) {
+    sh.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  }
+  if (!ss.getSheetByName('Dashboard')) buildDashboard(ss);
 }
 
 function getSessionsSheet(ss) {

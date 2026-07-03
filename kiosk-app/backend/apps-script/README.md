@@ -9,8 +9,9 @@ stats only), so you can deploy this whenever you're ready.
 
 1. Each time a visitor completes the calculator, the kiosk POSTs that session to
    your Apps Script web-app URL.
-2. The Apps Script appends the row to a Google Sheet it creates and owns
-   ("Smart Match Kiosk Stats").
+2. The Apps Script appends the row to one Google Sheet — the id in
+   `DEFAULT_SHEET_ID` at the top of Code.gs (override with a `SHEET_ID` script
+   property). It creates the `Sessions` + `Dashboard` tabs there on first use.
 3. The Sheet's **Dashboard** tab shows combined totals and averages across all
    kiosks, live. Share or export it like any Google Sheet.
 4. The kiosk still keeps its own local stats (in the hidden admin panel) and
