@@ -243,10 +243,10 @@ export function SplashScreen({ onStart, onAdminReveal }) {
         }} />
 
         <p style={{
-          fontSize: 28, fontWeight: 400, color: 'rgba(255,255,255,0.80)',
-          lineHeight: 1.6, margin: '0 auto 75px', maxWidth: 760,
+          fontSize: 26, fontWeight: 400, color: 'rgba(255,255,255,0.80)',
+          lineHeight: 1.55, margin: '0 auto 60px', maxWidth: 820,
         }}>
-          See how much Smart Match could save you by getting more from your own staff bank.
+          Smart Match automatically connects your bank workforce with vacant shifts through Loop, to improve fill rates, lower agency usage, and reduce the administrative burden.<br/><br/><span style={{ color: '#fff', fontWeight: 500 }}>See how much your Trust could save with Smart Match.</span>
         </p>
 
         <button ref={buttonRef} onClick={handleStart} style={{
