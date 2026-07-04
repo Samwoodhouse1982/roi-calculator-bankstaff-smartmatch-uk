@@ -246,7 +246,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
           fontSize: 28, fontWeight: 400, color: 'rgba(255,255,255,0.80)',
           lineHeight: 1.6, margin: '0 auto 75px', maxWidth: 760,
         }}>
-          See what Smart Match could save you.<br/>In under a minute, get an indicative view of the agency spend you could save by getting more from your own staff bank.
+          See how much Smart Match could save you by getting more from your own staff bank.
         </p>
 
         <button ref={buttonRef} onClick={handleStart} style={{
