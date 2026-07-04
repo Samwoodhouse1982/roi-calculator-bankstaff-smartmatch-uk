@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { C, F, fmt, fmtK, fmtNum } from '../theme';
 import { Icon } from '../components/Icons';
 import { Card, InfoTip } from '../components';
-import { stance } from '../calc/engine';
+import { stance, ADMIN_HRS_PER_DAY, ADMIN_WORKING_DAYS, ADMIN_LOADED_HOURLY } from '../calc/engine';
 
 /**
  * Animates a numeric value to a target over `duration` ms with ease-out cubic.
@@ -64,11 +64,12 @@ function Row({ label, value, accent }) {
 }
 
 // One of the KPI tiles.
-function KpiTile({ label, value, sub, iconKey }) {
+function KpiTile({ label, value, sub, iconKey, tip }) {
   return <div style={{ padding: "24px 22px", background: C.surface, borderRadius: 18, border: `1px solid ${C.accent}25` }}>
     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
       <Icon name={iconKey} size={26} stroke={C.accent} />
       <span style={{ fontSize: F.tiny, fontWeight: 600, color: C.textMuted }}>{label}</span>
+      {tip && <InfoTip text={tip} />}
     </div>
     <div style={{ fontSize: F.h1, fontWeight: 800, color: C.accent, marginBottom: 4 }}>{value}</div>
     {sub && <div style={{ fontSize: F.tiny, color: C.textMid }}>{sub}</div>}
@@ -163,16 +164,20 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
 
     {/* KPI tiles — the Admin time tile only shows when admin time is toggled on (adminSaving > 0) */}
     {(() => {
+      // Admin saving = team × hrs/day × working days × loaded hourly rate. teamSize is
+      // recovered from the always-computed weekly hours (team × hrs/day × 5).
+      const teamSize = Math.round(r.timeSavedWeek / (ADMIN_HRS_PER_DAY * 5));
+      const adminTip = `${teamSize} ${teamSize === 1 ? "person" : "people"} × ${ADMIN_HRS_PER_DAY} h/day × ${ADMIN_WORKING_DAYS} working days × £${ADMIN_LOADED_HOURLY}/h (loaded) = ${fmt(r.adminSaving)}`;
       const tiles = [
         { iconKey: "pound", label: "Agency premium avoided", value: <AnimVal value={r.agencySaving} format={fmtK} />, sub: "agency vs bank gap, before licence" },
-        ...(r.adminSaving > 0 ? [{ iconKey: "clock", label: "Admin time saving", value: <AnimVal value={r.adminSaving} format={fmtK} />, sub: "temp staffing team time, valued" }] : []),
+        ...(r.adminSaving > 0 ? [{ iconKey: "clock", label: "Admin time saving", value: <AnimVal value={r.adminSaving} format={fmtK} />, sub: "temp staffing team time, valued", tip: adminTip }] : []),
         { iconKey: "calendar", label: "Payback", value: noNet ? "n/a" : fmtPayback(r.paybackMonths), sub: "to recover the annual licence fee" },
         { iconKey: "check", label: "Return", value: (r.roiMultiple == null || noNet) ? "n/a" : <>{r.implausibleRoi ? "⚠ " : ""}<AnimVal value={r.roiMultiple} format={fmtMultiple} /></>, sub: "net saving ÷ licence fee, per year" },
       ];
       const odd = tiles.length % 2 === 1;
       return <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 14 }}>
         {tiles.map((t, i) => <div key={i} style={odd && i === tiles.length - 1 ? { gridColumn: "1 / -1" } : undefined}>
-          <KpiTile iconKey={t.iconKey} label={t.label} value={t.value} sub={t.sub} />
+          <KpiTile iconKey={t.iconKey} label={t.label} value={t.value} sub={t.sub} tip={t.tip} />
         </div>)}
       </div>;
     })()}
