@@ -164,7 +164,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
     {/* KPI tiles — the Admin time tile only shows when admin time is toggled on (adminSaving > 0) */}
     {(() => {
       const tiles = [
-        { iconKey: "dollar", label: "Agency premium avoided", value: <AnimVal value={r.agencySaving} format={fmtK} />, sub: "agency vs bank gap, before licence" },
+        { iconKey: "pound", label: "Agency premium avoided", value: <AnimVal value={r.agencySaving} format={fmtK} />, sub: "agency vs bank gap, before licence" },
         ...(r.adminSaving > 0 ? [{ iconKey: "clock", label: "Admin time saving", value: <AnimVal value={r.adminSaving} format={fmtK} />, sub: "temp staffing team time, valued" }] : []),
         { iconKey: "calendar", label: "Payback", value: noNet ? "n/a" : fmtPayback(r.paybackMonths), sub: "to recover the licence fee" },
         { iconKey: "check", label: "Return", value: (r.roiMultiple == null || noNet) ? "n/a" : <>{r.implausibleRoi ? "⚠ " : ""}<AnimVal value={r.roiMultiple} format={fmtMultiple} /></>, sub: "net saving ÷ licence fee" },
@@ -179,7 +179,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
 
     {/* How the cash saving is worked out — bank vs agency rate vs the premium gap (the defensible basis) */}
     <Card style={{ marginBottom: 28 }}>
-      <CTitle iconKey="dollar">How the cash saving is worked out</CTitle>
+      <CTitle iconKey="pound">How the cash saving is worked out</CTitle>
       <div style={{ fontSize: F.small, color: C.text, lineHeight: 1.7, marginBottom: 14 }}>
         We only ever bank the <strong style={{ color: C.accent }}>gap</strong> between an agency shift and the same shift on your own bank, never the whole agency cost, and only on the shifts you realistically move to bank.
       </div>
@@ -210,7 +210,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
 
     {/* Per-group breakdown (detailed model only, carries rows) */}
     {r.rows && <Card style={{ marginBottom: 28 }}>
-      <CTitle iconKey="dollar">Cash saving by staff group</CTitle>
+      <CTitle iconKey="pound">Cash saving by staff group</CTitle>
       {(() => { const mx = Math.max(...r.rows.map(x => x.saving), 1); return r.rows.map(x => (
         <div key={x.id} style={{ marginBottom: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6, gap: 12 }}>

@@ -158,9 +158,11 @@ export const IconClock = ({ size, stroke }) => <I size={size} stroke={stroke}>
   <path d="M12 6v6l4 2" />
 </I>;
 
-export const IconDollar = ({ size, stroke }) => <I size={size} stroke={stroke}>
-  <path d="M12 2v20" />
-  <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+export const IconPound = ({ size, stroke }) => <I size={size} stroke={stroke}>
+  <path d="M18 7c0-5.333-8-5.333-8 0" />
+  <path d="M10 7v14" />
+  <path d="M6 21h12" />
+  <path d="M6 13h10" />
 </I>;
 
 export const IconShield = ({ size, stroke }) => <I size={size} stroke={stroke}>
@@ -225,7 +227,7 @@ export const ICONS = {
   ltach: IconLTACH,
   unlock: IconUnlock,
   clock: IconClock,
-  dollar: IconDollar,
+  pound: IconPound,
   shield: IconShield,
   network: IconNetwork,
   graduation: IconGraduation,
