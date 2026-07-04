@@ -574,7 +574,7 @@ export default function App() {
       </div>
       <NavButtons step={kioskStep} totalSteps={steps.length}
         onBack={() => setKioskStep(p => p - 1)} onNext={() => setKioskStep(p => p + 1)}
-        onCalculate={handleCalculate} />
+        onCalculate={handleCalculate} onHome={handleStartOver} />
       {adminVisible && <AdminOverlay onClose={() => setAdminVisible(false)} />}
       {idleWarn && <IdleWarning seconds={idleSecs} onStay={() => armIdleRef.current()} />}
     </div>

@@ -118,6 +118,13 @@ export const IconHomeHealth = ({ size, stroke }) => <I size={size} stroke={strok
   <path d="M12 13.5c-.8-1.2-2.5-1.5-3-.5s.5 2.5 3 4.5c2.5-2 3.5-3.5 3-4.5s-2.2-.7-3 .5z" />
 </I>;
 
+// Home - plain house with a door
+export const IconHome = ({ size, stroke }) => <I size={size} stroke={stroke}>
+  <path d="M3 10l9-7 9 7" />
+  <path d="M5 9v11a1 1 0 001 1h12a1 1 0 001-1V9" />
+  <path d="M9.5 21v-6h5v6" />
+</I>;
+
 // Behavioral Health - brain outline with heart
 export const IconBehavioral = ({ size, stroke }) => <I size={size} stroke={stroke}>
   <path d="M12 3c-1.5 0-3 .5-4 1.5s-1.5 2-2 3c-.5 1.5-.5 3 0 4s1 1.5 1 2.5c0 1.5.5 3 1.5 4S10.5 20 12 20" />
@@ -222,6 +229,7 @@ export const ICONS = {
   dialysis: IconDialysis,
   snf: IconSNF,
   homeHealth: IconHomeHealth,
+  home: IconHome,
   behavioral: IconBehavioral,
   rehab: IconRehab,
   ltach: IconLTACH,

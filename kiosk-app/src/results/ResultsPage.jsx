@@ -118,7 +118,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
           <AnimVal value={r.timeSavedWeek} format={v => fmtNum(v)} />
         </div>
         <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>hours released each week</div>
-        <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, lineHeight: 1.5, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>Time your temporary staffing team gets back each week as booking and matching get faster and more automated, based on the size of your team.</div>
+        <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, lineHeight: 1.5, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>Time your temporary staffing team gets back each week as Smart Match automates shift booking and matching, scaled to your team's size.</div>
       </div>
     </div>
 

@@ -32,7 +32,7 @@ const STEP_CONTEXT = [
   { title: "Why this matters", text: "This sets how much of today's agency use you expect better bank utilisation to displace. Conservative is the safe default; Expected matches what one site achieved; Optimistic assumes more. It flexes every figure, and you can revisit it on the results screen." },
 ];
 
-export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate, context = STEP_CONTEXT }) {
+export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate, onHome, context = STEP_CONTEXT }) {
   if (step >= totalSteps - 1) return null;
   const ctx = context[step];
   return <div style={{ borderTop: `1px solid ${C.border}` }}>
@@ -45,6 +45,7 @@ export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate, cont
     </div>}
     <div style={{ padding: "16px 56px 40px", display: "flex", gap: 20, alignItems: "center" }}>
       {step > 0 && <button onClick={onBack} style={{ padding: "24px 44px", borderRadius: 18, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: F.body, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>← Back</button>}
+      {step === 0 && onHome && <button onClick={onHome} aria-label="Home" style={{ padding: "22px 34px", borderRadius: 18, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: F.body, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 12 }}><Icon name="home" size={22} stroke={C.textMid} /> Home</button>}
       <div style={{ flex: 1 }} />
       {step < totalSteps - 2 ? (
         <button onClick={onNext} style={{ padding: "24px 64px", borderRadius: 18, border: "none", background: C.accent, color: "#fff", fontSize: F.h3, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Next →</button>
