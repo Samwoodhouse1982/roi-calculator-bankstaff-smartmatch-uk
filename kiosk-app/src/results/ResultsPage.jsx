@@ -166,16 +166,21 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
       const tiles = [
         { iconKey: "pound", label: "Agency premium avoided", value: <AnimVal value={r.agencySaving} format={fmtK} />, sub: "agency vs bank gap, before licence" },
         ...(r.adminSaving > 0 ? [{ iconKey: "clock", label: "Admin time saving", value: <AnimVal value={r.adminSaving} format={fmtK} />, sub: "temp staffing team time, valued" }] : []),
-        { iconKey: "calendar", label: "Payback", value: noNet ? "n/a" : fmtPayback(r.paybackMonths), sub: "to recover the licence fee" },
-        { iconKey: "check", label: "Return", value: (r.roiMultiple == null || noNet) ? "n/a" : <>{r.implausibleRoi ? "⚠ " : ""}<AnimVal value={r.roiMultiple} format={fmtMultiple} /></>, sub: "net saving ÷ licence fee" },
+        { iconKey: "calendar", label: "Payback", value: noNet ? "n/a" : fmtPayback(r.paybackMonths), sub: "to recover the annual licence fee" },
+        { iconKey: "check", label: "Return", value: (r.roiMultiple == null || noNet) ? "n/a" : <>{r.implausibleRoi ? "⚠ " : ""}<AnimVal value={r.roiMultiple} format={fmtMultiple} /></>, sub: "net saving ÷ licence fee, per year" },
       ];
       const odd = tiles.length % 2 === 1;
-      return <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 28 }}>
+      return <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 14 }}>
         {tiles.map((t, i) => <div key={i} style={odd && i === tiles.length - 1 ? { gridColumn: "1 / -1" } : undefined}>
           <KpiTile iconKey={t.iconKey} label={t.label} value={t.value} sub={t.sub} />
         </div>)}
       </div>;
     })()}
+
+    {/* Annual-figures clarifier: these are steady-state, per-year numbers, not one-offs. */}
+    {!noNet && <div style={{ textAlign: "center", fontSize: F.small, color: C.textMuted, lineHeight: 1.5, margin: "0 auto 28px", maxWidth: 760 }}>
+      These are annual figures: the saving recurs every year Smart Match is in use.
+    </div>}
 
     {/* How the cash saving is worked out — bank vs agency rate vs the premium gap (the defensible basis) */}
     <Card style={{ marginBottom: 28 }}>
