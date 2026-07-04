@@ -83,7 +83,7 @@ export function TeamStep({ numManagers, setNumManagers, includeAdmin, setInclude
       <Helper>
         Include your <strong style={{ color: C.text }}>bank / temporary staffing coordinators</strong>, <strong style={{ color: C.text }}>officers</strong> and <strong style={{ color: C.text }}>administrators</strong>, anyone whose day is spent placing and reconciling shifts, not the managers above them.
       </Helper>
-      <div style={{ marginTop: 24, paddingTop: 22, borderTop: `1px solid ${C.border}` }}>
+      <div style={{ marginTop: 24, padding: "18px 22px", background: C.surface2, borderRadius: 16, border: `1px solid ${C.accent}55` }}>
         <ToggleRow
           on={includeAdmin}
           onToggle={setIncludeAdmin}

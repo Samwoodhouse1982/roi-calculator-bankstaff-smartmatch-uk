@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { C, F, fmt, fmtK, fmtNum } from '../theme';
 import { Icon } from '../components/Icons';
-import { Card } from '../components';
+import { Card, InfoTip } from '../components';
 import { stance } from '../calc/engine';
 
 /**
@@ -84,6 +84,8 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
   // At a very small bank / low agency reliance the licence fee can exceed the modelled
   // premium, so net saving goes <= 0. Reframe rather than show a negative headline.
   const noNet = r.netSaving <= 0;
+  // Basis note, shown as an info tooltip on the headline (was an inline caption).
+  const basisNote = `This is the agency premium you stop paying by filling more shifts from your own bank instead of agency${r.adminSaving > 0 ? `, plus ${fmtK(r.adminSaving)} of admin time` : ""}, shown as an annual figure after the ${fmt(r.platformCost)}/yr licence fee.`;
 
   return <div style={{ animation: "rfade .5s ease-out" }}>
     <style>{`@keyframes rfade { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
@@ -107,7 +109,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         <div style={{ fontSize: F.hero, fontWeight: 800, color: C.accent, lineHeight: 1, letterSpacing: "-3px", animation: "glow 3s ease-in-out infinite" }}>
           <AnimVal value={r.netSaving} format={fmtK} />
         </div>
-        <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>Potential annual cash saving</div>
+        <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14, display: "inline-flex", alignItems: "center", gap: 8 }}>Potential annual cash saving <InfoTip text={basisNote} /></div>
         <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, lineHeight: 1.5, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>What you could save each year by filling more shifts from your bank instead of agency, the agency premium you stop paying.</div>
       </div>
       )}
@@ -119,11 +121,6 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, lineHeight: 1.5, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>Time your temporary staffing team gets back each week as booking and matching get faster and more automated, based on the size of your team.</div>
       </div>
     </div>
-
-    {/* Basis caption: one plain sentence. The licence/modelled-spend detail lives in the derivation card below. */}
-    {!noNet && <div style={{ textAlign: "center", fontSize: F.small, color: C.textMuted, lineHeight: 1.6, margin: "0 auto 22px", maxWidth: 880 }}>
-      This is the agency premium you stop paying by filling more shifts from your own bank instead of agency{r.adminSaving > 0 ? <>, plus <strong style={{ color: C.textMid }}>{fmtK(r.adminSaving)}</strong> of admin time</> : ""}, shown as an annual figure after the <strong style={{ color: C.textMid }}>{fmt(r.platformCost)}/yr</strong> licence fee.
-    </div>}
 
     {/* Confidence / modelling stance — set upfront, reconfigurable here at the top of the report */}
     <Card style={{ marginBottom: 28 }}>
