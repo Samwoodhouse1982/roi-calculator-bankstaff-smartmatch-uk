@@ -117,9 +117,9 @@ export function StanceStep({ displacement, chosen, setDisplacement }) {
           }}>{lbl}<span style={{ fontSize: F.small, fontWeight: 600, opacity: 0.8 }}>{v}%</span></button>;
         })}
       </div>
-      <input type="range" aria-label="Agency work moved to your bank (%)" min={8} max={50} step={1} value={displacement} onChange={e => setDisplacement(Number(e.target.value))} style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
+      <input type="range" aria-label="Agency work moved to your bank (%)" min={13} max={50} step={1} value={displacement} onChange={e => setDisplacement(Number(e.target.value))} style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: F.tiny, color: C.textMuted, marginTop: 8 }}>
-        <span>8% · conservative</span><span>26% · expected</span><span>50% · optimistic</span>
+        <span>13% · conservative</span><span>26% · expected</span><span>50% · optimistic</span>
       </div>
       {chosen && <div style={{ marginTop: 20, padding: "18px 22px", background: C.accentSoft, borderRadius: 14, border: `1px solid ${C.accent}30` }}>
         <div style={{ fontSize: F.body, fontWeight: 800, color: C.accent, marginBottom: 6 }}>{st.key}</div>
