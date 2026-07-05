@@ -9,6 +9,7 @@
     "test": "node --test"
   },
   "dependencies": {
+    "@fontsource-variable/dm-sans": "^5.2.8",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

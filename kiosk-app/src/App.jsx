@@ -555,7 +555,7 @@ export default function App() {
   </>;
 
   if (calibrating) {
-    return <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, minHeight: H, height: '100vh', color: C.text, position: "relative", zIndex: 0 }}>
+    return <div style={{ fontFamily: "'DM Sans Variable', 'DM Sans', sans-serif", background: C.bg, width: W, minHeight: H, height: '100vh', color: C.text, position: "relative", zIndex: 0 }}>
       <BackgroundParticles />
       <CalibratingScreen onDone={handleCalibrationDone} />
       {adminVisible && <AdminOverlay onClose={() => setAdminVisible(false)} />}
@@ -564,7 +564,7 @@ export default function App() {
   }
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", background: C.bg, width: W, minHeight: H, color: C.text, lineHeight: 1.55, display: "flex", flexDirection: "column", position: "relative", zIndex: 0 }}>
+    <div style={{ fontFamily: "'DM Sans Variable', 'DM Sans', sans-serif", background: C.bg, width: W, minHeight: H, color: C.text, lineHeight: 1.55, display: "flex", flexDirection: "column", position: "relative", zIndex: 0 }}>
       <BackgroundParticles />
       <div style={{ padding: "40px 56px 0", position: "relative", zIndex: 1 }}>
         <StepIndicator steps={steps} current={kioskStep} onJump={setKioskStep} />
