@@ -301,7 +301,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
             Pay assumptions use <strong style={{ color: C.text }}>2026/27 NHS Agenda for Change midpoints</strong> (+3.3%; {r.rows ? "per staff group" : "a band-mix weighted blended bank pay"}), 1,957.5 AfC hours/year, 8-hour shifts and a 20% bank on-cost, included in the modelled shift costs. The modelled agency spend assumes each bank worker covers about 60 ad-hoc shifts a year. Defaults are deliberately conservative.
           </p>
           <p style={{ marginBottom: 0 }}>
-            Outputs are <strong style={{ color: C.text }}>indicative</strong> and are recomputed live as you move the modelling-stance slider above.
+            Outputs are <strong style={{ color: C.text }}>indicative</strong> and are recomputed live as you adjust the confidence level above.
           </p>
         </div>
       </Collapsible>
