@@ -286,7 +286,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
       </div>
 
       <img src={rldatixLogo} alt="RLDatix" onClick={handleLogoTap} style={{
-        position: 'absolute', bottom: 50, left: '50%', transform: 'translateX(-50%)',
+        position: 'absolute', bottom: 110, left: '50%', transform: 'translateX(-50%)',
         width: 450, opacity: launching ? 0.15 : 0.5, zIndex: 3, cursor: 'pointer',
         transition: 'opacity 600ms ease-out',
       }} />
