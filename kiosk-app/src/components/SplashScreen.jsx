@@ -2,6 +2,9 @@ import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { C } from '../theme';
 import rldatixLogo from '../assets/rldatix-logo.png';
 
+// Build version shown in the splash footer. Bump this on each release.
+const APP_VERSION = 'v1.4 July26';
+
 // Timings (ms) for the launch animation. Tune here.
 const CONVERGE_MS = 700;       // particles fly toward the button
 const WIPE_DELAY_MS = 500;     // radial wipe starts before convergence finishes (overlap)
@@ -295,7 +298,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
         fontSize: 14, color: 'rgba(255,255,255,0.4)', letterSpacing: 1, zIndex: 3, whiteSpace: 'nowrap',
         transition: 'opacity 600ms ease-out',
         opacity: launching ? 0.2 : 1,
-      }}>Smart Match · Bank-Staff Utilisation ROI</div>
+      }}>Smart Match · Bank-Staff Utilisation ROI · <span style={{ opacity: 0.75 }}>{APP_VERSION}</span></div>
 
       {/* Radial wipe overlay, expands from the button position to cover the screen.
           Becomes visible after WIPE_DELAY_MS (overlapping the tail of particle convergence),
