@@ -127,7 +127,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
     <Card style={{ marginBottom: 28 }}>
       <CTitle iconKey="search">Confidence level</CTitle>
       <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6, marginBottom: 18 }}>
-        You set this earlier; adjust it here and the cash figures recompute live. It is how much of today's agency activity you assume better bank utilisation moves onto your own bank.
+        Adjust it here and the cash figures recompute live. It sets how much of today's agency work you assume moves onto your own bank.
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <span style={{ fontSize: F.body, fontWeight: 600, color: C.textMid }}>Agency work moved to your bank</span>
@@ -181,6 +181,11 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         </div>)}
       </div>;
     })()}
+
+    {/* Explains the ⚠ shown on the Return tile when the multiple is implausibly high (>30x). */}
+    {r.implausibleRoi && !noNet && <div style={{ marginBottom: 14, padding: "14px 20px", background: C.surface, border: `1px solid ${C.amber}66`, borderRadius: 14, fontSize: F.small, color: C.text, lineHeight: 1.5 }}>
+      <strong style={{ color: C.amber }}>⚠ Unusually high return.</strong> At these inputs the modelled saving is more than 30 times the licence fee, which usually reflects a very large bank with high agency fill. Sense-check against your organisation's real agency spend before quoting it.
+    </div>}
 
     {/* Annual-figures clarifier: these are steady-state, per-year numbers, not one-offs. */}
     {!noNet && <div style={{ textAlign: "center", fontSize: F.small, color: C.textMuted, lineHeight: 1.5, margin: "0 auto 28px", maxWidth: 760 }}>
@@ -268,7 +273,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
       <ul style={{ margin: 0, paddingLeft: 22, fontSize: F.small, color: C.textMid, lineHeight: 1.75 }}>
         <li>These figures are <strong style={{ color: C.text }}>indicative</strong>, not a guarantee or a quote.</li>
         <li>The pilot evidence is a small <strong style={{ color: C.text }}>two-site vendor sample within a four-trust programme</strong>, anonymised here as "a community trust" and "an acute trust". Results are not solely attributable to Smart Match.</li>
-        <li>The <strong style={{ color: C.text }}>agency premium is contested</strong> at shift level; the model is most credible when run on your own trust's rates.</li>
+        <li>The <strong style={{ color: C.text }}>agency premium is contested</strong> at shift level; the model is most credible when run on your own organisation's rates.</li>
         <li>Better bank <strong style={{ color: C.text }}>utilisation is the mechanism</strong>; the cash is the agency premium displaced. Capacity gained is coverage, not cash, and is reported separately above.</li>
       </ul>
       <div style={{ marginTop: 16, padding: "14px 18px", background: C.surface2, borderRadius: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.65, border: `1px solid ${C.borderLight}` }}>
@@ -287,13 +292,13 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
             agency_saving = displaced_duties × bank_shift_cost × premium
           </div>
           <p>
-            Filling a bank shift is itself <strong style={{ color: C.text }}>expenditure</strong>; only the gap between an agency shift and the equivalent bank shift (the premium) is cash released. The premium here is <strong style={{ color: C.text }}>20%</strong>, a contested figure at shift level; the model is most credible on your own trust's rates.
+            Filling a bank shift is itself <strong style={{ color: C.text }}>expenditure</strong>; only the gap between an agency shift and the equivalent bank shift (the premium) is cash released. The premium here is <strong style={{ color: C.text }}>20%</strong>, a contested figure at shift level; the model is most credible on your own organisation's rates.
           </p>
           <p>
-            <strong style={{ color: C.text }}>Admin time saving</strong> uses a per-person model: each member of the temporary staffing team recovers a conservative <strong style={{ color: C.text }}>1 hour/day</strong> across 225 working days, valued at a loaded £18/hour (the client's 2.5 hours/day would be an optimistic upper bound). The same hours feed the "time saved per week" co-headline.
+            <strong style={{ color: C.text }}>Admin time saving</strong> uses a per-person model: each member of the temporary staffing team recovers a conservative <strong style={{ color: C.text }}>1 hour/day</strong> across 225 working days, valued at a loaded £18/hour (some teams report up to 2.5 hours/day; we deliberately use 1). The same hours feed the "time saved per week" co-headline.
           </p>
           <p>
-            Pay assumptions use <strong style={{ color: C.text }}>2026/27 NHS Agenda for Change midpoints</strong> (+3.3%; {r.rows ? "per staff group" : "a band-mix weighted blended bank pay"}), 1,957.5 AfC hours/year, 8-hour shifts and a 20% bank on-cost (on-cost affects duty counts, not the cash headline). Defaults are deliberately conservative.
+            Pay assumptions use <strong style={{ color: C.text }}>2026/27 NHS Agenda for Change midpoints</strong> (+3.3%; {r.rows ? "per staff group" : "a band-mix weighted blended bank pay"}), 1,957.5 AfC hours/year, 8-hour shifts and a 20% bank on-cost, included in the modelled shift costs. The modelled agency spend assumes each bank worker covers about 60 ad-hoc shifts a year. Defaults are deliberately conservative.
           </p>
           <p style={{ marginBottom: 0 }}>
             Outputs are <strong style={{ color: C.text }}>indicative</strong> and are recomputed live as you move the modelling-stance slider above.

@@ -35,10 +35,10 @@ export function BankStep({ bankPool, setBankPool }) {
       />
       <Helper>Drag to set the size of your bank. Better utilisation of this pool is the mechanism that displaces expensive agency spend.</Helper>
       <div style={{ marginTop: 16, padding: "14px 18px", background: C.accentSoft, borderRadius: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.5 }}>
-        Smart Match licence at this size: <strong style={{ color: C.accent }}>{fmt(platformCostFor(bankPool))}/yr</strong> <span style={{ color: C.textMuted }}>(G-Cloud pricing, ex VAT; this sets your ROI)</span>
+        Smart Match licence at this size: <strong style={{ color: C.accent }}>{fmt(platformCostFor(bankPool))}/yr</strong> <span style={{ color: C.textMuted }}>(G-Cloud pricing, ex VAT; your return is measured against this fee)</span>
       </div>
       <div style={{ marginTop: 10, fontSize: F.tiny, color: C.textMuted, lineHeight: 1.5 }}>
-        Bank shift costs use <strong style={{ color: C.textMid }}>2026/27 NHS Agenda for Change band-mix midpoints</strong> (~£{Math.round(SIMPLE_BLENDED_BANK_PAY / 1000)}k blended, £{((SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR) * (1 + BANK_ONCOST)).toFixed(2)}/hr loaded); medics use the SAS scale.
+        Bank shift costs use <strong style={{ color: C.textMid }}>2026/27 NHS Agenda for Change band-mix midpoints</strong> (~£{Math.round(SIMPLE_BLENDED_BANK_PAY / 1000)}k blended, £{((SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR) * (1 + BANK_ONCOST)).toFixed(2)}/hr loaded); for per-staff-group rates, use the detailed web calculator.
       </div>
     </Card>
   </div>;
@@ -100,7 +100,7 @@ export function StanceStep({ displacement, chosen, setDisplacement }) {
   const st = stance(displacement);
   return <div>
     <SectionTitle number={4}>Your confidence level</SectionTitle>
-    <Lead>How much of today's agency use do you expect better bank utilisation to displace onto your own bank? Choose the outlook that fits your evidence; you can change it on the results screen.</Lead>
+    <Lead>How much of today's agency work do you expect to move onto your own bank? Choose the outlook that fits your evidence; you can change it on the results screen.</Lead>
     <Card>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <span style={{ fontSize: F.body, fontWeight: 600, color: C.textMid }}>Agency work moved to your bank</span>

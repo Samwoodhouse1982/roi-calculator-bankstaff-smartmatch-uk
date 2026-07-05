@@ -131,7 +131,7 @@ export function InfoTip({ text }) {
   }, [show]);
 
   return <span ref={iconRef} style={{ position: "relative", display: "inline-flex" }}>
-    <span onClick={() => setShow(!show)} style={{ width: 30, height: 30, borderRadius: "50%", background: C.border, color: C.textMid, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: F.small, fontWeight: 700, cursor: "pointer" }}>i</span>
+    <span onClick={() => setShow(!show)} style={{ width: 40, height: 40, borderRadius: "50%", background: C.border, color: C.textMid, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: F.body, fontWeight: 700, cursor: "pointer" }}>i</span>
     {show && <>
       <div onClick={() => setShow(false)} style={{ position: "fixed", inset: 0, zIndex: 99996 }} />
       <span style={{
