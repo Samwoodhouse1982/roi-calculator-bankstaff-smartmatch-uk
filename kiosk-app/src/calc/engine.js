@@ -37,9 +37,9 @@ export const DEFAULTS = { bankPool: 660, agencyFillRate: 8.3, numManagers: 12, p
 export const DISPLACEABLE_SHARE_DEFAULT = 0.80;
 
 export function stance(d) {
-  if (d <= 18) return { key: "Conservative", note: `Assumes ${d}% of today's agency shifts move to your own bank, a cautious setting below the pilot's measured 26%. It holds up without your own organisation's data.` };
-  if (d <= 30) return { key: "Expected", note: `Assumes ${d}% moves to your own bank, ${d === 26 ? "matching" : "close to"} the 26% a community trust reached in the pilot (agency fill fell 8.1%→6.0%).` };
-  return { key: "Optimistic", note: `Assumes ${d}% moves to your own bank, above the pilot result, so it is best backed by your own organisation's figures.` };
+  if (d <= 18) return { key: "Conservative", note: `Assumes ${d}% of today's agency shifts move to your own bank, a cautious setting below the 26% measured in a pilot study. It holds up without your own organisation's data.` };
+  if (d <= 30) return { key: "Expected", note: `Assumes ${d}% moves to your own bank, ${d === 26 ? "matching" : "close to"} the 26% reached in a pilot study at a community trust (agency fill fell 8.1%→6.0%).` };
+  return { key: "Optimistic", note: `Assumes ${d}% moves to your own bank, above a pilot study's result, so it is best backed by your own organisation's figures.` };
 }
 
 export function calc(inp) {
