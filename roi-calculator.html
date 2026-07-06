@@ -273,13 +273,16 @@ const AFC_DIVISOR = 1957.5;
 const SHIFT_HOURS_DEFAULT = 8;
 const BANK_ONCOST_DEFAULT = 0.20;     // affects shift counts only, not the cash headline
 const PLATFORM_COST_DEFAULT = 17000;
-/* [G-Cloud] Annual Smart Match licence fee (ex VAT), stepped by number of Licensed Users
-   (≈ bank-staff size). Published G-Cloud price points; a given size takes the fee of the
-   highest band whose lower bound it reaches. Auto-linked to bank size; fully editable. */
-const GCLOUD_LICENCE = [[7501,29101.79],[6001,25284.06],[5001,22793.38],[4001,20900.78],[3001,18400.20],[2001,15167.54],[1401,13280.66],[901,11321.21],[601,9855.27],[0,9486.54]];
+/* [G-Cloud] Annual Smart Match licence fee (ex VAT) by number of Licensed Users
+   (≈ bank-staff size). The published G-Cloud bands are quoted as ranges with gaps
+   (1,401–1,500 then 2,001–2,200, …); a bank whose size lands in a gap licences the
+   tier that COVERS it, so we round UP to the next band (e.g. 2,000 → the 2,001–2,200
+   fee, £15,167.54). Pairs are [inclusive upper bound, annual fee]; top band unbounded.
+   Auto-linked to bank size; fully editable. */
+const GCLOUD_LICENCE = [[600,9486.54],[700,9855.27],[1000,11321.21],[1500,13280.66],[2200,15167.54],[3200,18400.20],[4200,20900.78],[5200,22793.38],[6500,25284.06],[Infinity,29101.79]];
 function platformCostFor(totalBankHeadcount){
   const h = num(totalBankHeadcount);
-  for (const [floor,fee] of GCLOUD_LICENCE) if (h >= floor) return fee;
+  for (const [ceil,fee] of GCLOUD_LICENCE) if (h <= ceil) return fee;
   return GCLOUD_LICENCE[GCLOUD_LICENCE.length-1][1];
 }
 /* Admin (Rev B): per member of the temporary staffing team. Client said 2.5 h/day @ £18; 2.5 is optimistic, default lower. */

@@ -92,11 +92,14 @@ test('adminOnly flags an agency-free saving, and is off by default (audit #14)',
   assert.equal(noAgency.adminOnly, true);
 });
 
-test('platformCostFor follows the G-Cloud licence bands (parity with kiosk)', () => {
+test('platformCostFor follows the G-Cloud licence bands (rounds a gap size UP to the covering tier; parity with kiosk)', () => {
   assert.equal(E.platformCostFor(300), 9486.54);
+  assert.equal(E.platformCostFor(600), 9486.54);    // upper edge of band 1
   assert.equal(E.platformCostFor(660), 9855.27);
   assert.equal(E.platformCostFor(1000), 11321.21);
-  assert.equal(E.platformCostFor(2000), 13280.66);
-  assert.equal(E.platformCostFor(5000), 20900.78);
-  assert.equal(E.platformCostFor(12000), 29101.79);
+  assert.equal(E.platformCostFor(1500), 13280.66);  // upper edge of the 1,401–1,500 tier
+  assert.equal(E.platformCostFor(1501), 15167.54);  // one over -> rounds up to the next tier
+  assert.equal(E.platformCostFor(2000), 15167.54);  // covered by the 2,001–2,200 tier (kiosk default)
+  assert.equal(E.platformCostFor(5000), 22793.38);  // above the 4,200 tier -> 5,001–5,200 tier
+  assert.equal(E.platformCostFor(12000), 29101.79);  // top band caps large systems
 });
