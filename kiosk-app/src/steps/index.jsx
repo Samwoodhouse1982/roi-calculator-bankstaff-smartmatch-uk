@@ -63,7 +63,7 @@ export function AgencyStep({ agencyFillRate, setAgencyFillRate }) {
         format={v => `${Math.round(v * 10) / 10}%`}
         tip="The proportion of temporary shifts filled by agency staff. Each agency shift carries a premium over the equivalent bank shift; that premium is what improved bank utilisation displaces. Defaults to 8.3%, the agreed national average drawn from nationally available RLDatix data."
       />
-      <Helper>Share of temp duties currently filled by agency. Default 8.3% based on national average of NHS organisations; set your own for a tailored figure.</Helper>
+      <Helper>Percentage refers to the proportion of staffing requirements fulfilled by agency workers. The default 8.3% is a starting point based on national average of organisations; set your own for a tailored figure.</Helper>
     </Card>
   </div>;
 }
