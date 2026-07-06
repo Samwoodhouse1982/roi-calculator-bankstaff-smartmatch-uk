@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { C, F, fmt, fmtK, fmtNum } from '../theme';
 import { Icon } from '../components/Icons';
 import { Card, InfoTip } from '../components';
-import { stance, ADMIN_HRS_PER_DAY, ADMIN_WORKING_DAYS, ADMIN_LOADED_HOURLY } from '../calc/engine';
+import { stance, ADMIN_HRS_PER_DAY, ADMIN_WORKING_DAYS, ADMIN_LOADED_HOURLY, BANK_ONCOST } from '../calc/engine';
 
 /**
  * Animates a numeric value to a target over `duration` ms with ease-out cubic.
@@ -207,7 +207,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         const grossR = Math.round(r.agencySaving), adminR = Math.round(r.adminSaving || 0), licR = Math.round(r.platformCost), netR = grossR + adminR - licR;
         const rate = (shift, hr) => <>{fmt(shift)}<span style={{ fontSize: F.tiny, color: C.textMuted, fontWeight: 400 }}> /shift · {money2(hr)}/hr</span></>;
         return <>
-          <Row label="Your own bank (blended national rate)" value={rate(r.bankShiftCost, bankHr)} />
+          <Row label={<span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Your own bank (blended rate, all-in) <InfoTip text={`Already includes a ${Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension) on top of raw Agenda for Change pay. This is the true cost of a bank shift; the saving is the gap between it and the agency rate, so on-costs are counted once, never twice.`} /></span>} value={rate(r.bankShiftCost, bankHr)} />
           <Row label={r.perGroupPremium ? "Agency, same shift (your per-group premiums)" : `Agency, same shift (at ${r.premium}% premium)`} value={rate(r.agencyShiftCost, agencyHr)} />
           <Row label="Premium displaced = the saving" value={rate(gapShift, gapHr)} accent />
           <div style={{ marginTop: 14, fontSize: F.small, color: C.textMid, lineHeight: 1.6 }}>
@@ -219,7 +219,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         </>;
       })()}
       <div style={{ marginTop: 14, fontSize: F.tiny, color: C.textMuted, fontStyle: "italic", lineHeight: 1.6 }}>
-        Bank rate = 2026/27 AfC blended midpoint, loaded with on-cost. Premium defaults to the official ~20% House of Commons Library average, deliberately conservative and contested at shift level (nursing ~35–50%, medics ~80–120%).{r.agencySpend != null ? <> Your agency spend is modelled from your bank pool and fill rate ({fmtK(r.agencySpend)}); for a figure built on your real spend, use the detailed web calculator.</> : ""}
+        Bank rate = 2026/27 AfC blended midpoint, already including a {Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension), so on-costs are counted once and never added on top. Premium defaults to the official ~20% House of Commons Library average, deliberately conservative and contested at shift level (nursing ~35–50%, medics ~80–120%).{r.agencySpend != null ? <> Your agency spend is modelled from your bank pool and fill rate ({fmtK(r.agencySpend)}); for a figure built on your real spend, use the detailed web calculator.</> : ""}
       </div>
     </Card>
 
@@ -298,7 +298,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
             <strong style={{ color: C.text }}>Admin time saving</strong> uses a per-person model: each member of the temporary staffing team recovers a conservative <strong style={{ color: C.text }}>1 hour/day</strong> across 225 working days, valued at a loaded £18/hour (some teams report up to 2.5 hours/day; we deliberately use 1). The same hours feed the "time saved per week" co-headline.
           </p>
           <p>
-            Pay assumptions use <strong style={{ color: C.text }}>2026/27 NHS Agenda for Change midpoints</strong> (+3.3%; {r.rows ? "per staff group" : "a band-mix weighted blended bank pay"}), 1,957.5 AfC hours/year, 8-hour shifts and a 20% bank on-cost, included in the modelled shift costs. The modelled agency spend assumes each bank worker covers about 60 ad-hoc shifts a year. Defaults are deliberately conservative.
+            Pay assumptions use <strong style={{ color: C.text }}>2026/27 NHS Agenda for Change midpoints</strong> (+3.3%; {r.rows ? "per staff group" : "a band-mix weighted blended bank pay"}), 1,957.5 AfC hours/year, 8-hour shifts and a <strong style={{ color: C.text }}>{Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension)</strong>, already included in the modelled bank shift costs and never added on top. The modelled agency spend assumes each bank worker covers about 60 ad-hoc shifts a year. Defaults are deliberately conservative.
           </p>
           <p style={{ marginBottom: 0 }}>
             Outputs are <strong style={{ color: C.text }}>indicative</strong> and are recomputed live as you adjust the confidence level above.

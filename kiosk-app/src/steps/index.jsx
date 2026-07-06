@@ -37,8 +37,11 @@ export function BankStep({ bankPool, setBankPool }) {
       <div style={{ marginTop: 16, padding: "14px 18px", background: C.accentSoft, borderRadius: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.5 }}>
         Smart Match licence at this size: <strong style={{ color: C.accent }}>{fmt(platformCostFor(bankPool))}/yr</strong> <span style={{ color: C.textMuted }}>(G-Cloud pricing, ex VAT; your return is measured against this fee)</span>
       </div>
-      <div style={{ marginTop: 10, fontSize: F.tiny, color: C.textMuted, lineHeight: 1.5 }}>
-        Bank shift costs use <strong style={{ color: C.textMid }}>2026/27 NHS Agenda for Change band-mix midpoints</strong> (~£{Math.round(SIMPLE_BLENDED_BANK_PAY / 1000)}k blended, £{((SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR) * (1 + BANK_ONCOST)).toFixed(2)}/hr loaded); for per-staff-group rates, use the detailed web calculator.
+      <div style={{ marginTop: 10, fontSize: F.tiny, color: C.textMuted, lineHeight: 1.5, display: "flex", alignItems: "flex-start", gap: 8 }}>
+        <span>
+          Bank shift costs use <strong style={{ color: C.textMid }}>2026/27 NHS Agenda for Change band-mix midpoints</strong> (~£{Math.round(SIMPLE_BLENDED_BANK_PAY / 1000)}k blended). The rate <strong style={{ color: C.textMid }}>already includes a {Math.round(BANK_ONCOST * 100)}% employer on-cost</strong> (employer NI and pension): £{(SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR).toFixed(2)}/hr base → <strong style={{ color: C.textMid }}>£{((SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR) * (1 + BANK_ONCOST)).toFixed(2)}/hr all-in</strong>. For per-staff-group rates, use the detailed web calculator.
+        </span>
+        <InfoTip text={`Employer on-costs are the costs on top of gross pay: employer National Insurance and pension contributions. The bank rate here already includes a ${Math.round(BANK_ONCOST * 100)}% on-cost, so raw Agenda for Change pay of £${(SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR).toFixed(2)}/hr becomes £${((SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR) * (1 + BANK_ONCOST)).toFixed(2)}/hr all-in. Every saving on this calculator is measured against this all-in cost, so on-costs are counted once and never added again.`} />
       </div>
     </Card>
   </div>;
