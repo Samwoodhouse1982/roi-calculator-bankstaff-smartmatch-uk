@@ -35,7 +35,7 @@ export function BankStep({ bankPool, setBankPool }) {
       />
       <Helper>Drag to set the size of your bank. Better utilisation of this pool is the mechanism that displaces expensive agency spend.</Helper>
       <div style={{ marginTop: 16, padding: "14px 18px", background: C.accentSoft, borderRadius: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.5 }}>
-        Smart Match licence at this size: <strong style={{ color: C.accent }}>{fmt(platformCostFor(bankPool))}/yr</strong> <span style={{ color: C.textMuted }}>(G-Cloud pricing, ex VAT; your return is measured against this fee)</span>
+        BankStaff+ licence at this size: <strong style={{ color: C.accent }}>{fmt(platformCostFor(bankPool))}/yr</strong> <span style={{ color: C.textMuted }}>(G-Cloud pricing, ex VAT; your return is measured against this fee)</span>
       </div>
       <div style={{ marginTop: 10, fontSize: F.tiny, color: C.textMuted, lineHeight: 1.5, display: "flex", alignItems: "flex-start", gap: 8 }}>
         <span>
