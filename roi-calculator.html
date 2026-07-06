@@ -634,7 +634,7 @@ function App(){
               <Field label="Agency premium over bank (%)" value={premium} min="0" max="150" step={5} onChange={v=>setPremium(num(v,20))} info="Default 20% (HoC Library average); contested at shift level, use your own rate." />
               <Field label="Smart Match licence fee (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v,14000)); setPcAuto(false); }} info="Auto-set from your bank size using G-Cloud pricing (ex VAT); fully editable. This is the ROI denominator."/>
               <Field label="Shift length (hours)" value={shiftHours} min="1" step={0.5} onChange={v=>setSH(num(v,8))}/>
-              <Field label="Bank on-cost (%)" value={oncost} min="0" step={1} onChange={v=>setOncost(num(v))}/>
+              <Field label="Bank on-cost (%)" value={oncost} min="0" step={1} onChange={v=>setOncost(num(v))} info="Employer NI + pension on bank pay, already included in the bank rate (default 20%). It sets the all-in bank shift cost the saving is measured against, so on-costs are counted once, never added on top."/>
             </div>}
           </div>
         ) : (
@@ -707,7 +707,7 @@ function App(){
               <Field label="Current agency fill rate (%)" value={fillRateNow} min="0" max="100" step={0.5} onChange={v=>setFill(num(v,8))} info="Used for the capacity narrative (agency reliance reduced)."/>
               <Field label="Displaceable share of agency (%)" value={Math.round(displaceableShare*100)} min="0" max="100" step={5} onChange={v=>setDS(Math.min(1,Math.max(0,num(v,80)/100)))} info="Only part of agency spend can realistically move to bank — excludes break-glass / safety-critical cover and hard-to-fill specialist roles bank can't cover. Displacement is applied to this share only (benchmark default 80%), so the tool never implies 100% of agency is bankable." hint="Benchmark default 80% · editable"/>
               {showAdv && <Field label="Shift length (hours)" value={shiftHours} min="1" step={0.5} onChange={v=>setSH(num(v,8))}/>}
-              {showAdv && <Field label="Bank on-cost (%)" value={oncost} min="0" step={1} onChange={v=>setOncost(num(v))} info="Employer NI + pension where applicable. Affects duty counts only, not the cash headline."/>}
+              {showAdv && <Field label="Bank on-cost (%)" value={oncost} min="0" step={1} onChange={v=>setOncost(num(v))} info="Already included in the bank rate (default 20%, employer NI + pension). In the detailed model it changes modelled duty counts, not the cash headline."/>}
             </div>
             <button className="adv-toggle" onClick={()=>setAdv(a=>!a)}>{showAdv?"Hide":"Show"} advanced inputs (on-costs, shift length)</button>
 
@@ -793,7 +793,7 @@ function App(){
                 // Round each term first so the displayed premium - licence = net equation adds up exactly.
                 const grossR=Math.round(r.totSaving), adminR=Math.round(r.adminSaving||0), recR=Math.round(r.recruitSaving||0), licR=Math.round(num(platformCost)), netR=grossR+adminR+recR-licR;
                 return <>
-                  <div className="arow"><span>Your own bank (blended national rate)</span><span>{rate(r.bankShiftCost,bankHr)}</span></div>
+                  <div className="arow"><span>Your own bank (blended rate, all-in)</span><span>{rate(r.bankShiftCost,bankHr)}</span></div>
                   <div className="arow"><span>{perGroupPremium?"Agency, same shift (your per-group premiums)":"Agency, same shift (at "+premium+"% premium)"}</span><span>{rate(r.agencyShiftCost,agHr)}</span></div>
                   <div className="arow"><span style={{fontWeight:700,color:C.navy}}>Premium displaced = the saving</span><span>{rate(gapS,gapHr)}</span></div>
                   <p style={{fontSize:12.5,color:C.textMid,lineHeight:1.6,margin:".6rem 0 0"}}><b style={{color:C.navy}}>{m2(gapHr)}/hr</b> on each of <b style={{color:C.navy}}>{fmtNum(r.totDisplaced)}</b> shifts moved to bank = <b style={{color:C.navy}}>{fmt(r.totSaving)}</b> gross a year.</p>
@@ -801,7 +801,7 @@ function App(){
                     <b style={{color:C.navy}}>{fmt(grossR)}</b> premium{adminR>0?<> + <b style={{color:C.navy}}>{fmt(adminR)}</b> admin time</>:""}{recR>0?<> + <b style={{color:C.navy}}>{fmt(recR)}</b> recruitment</>:""} − <b style={{color:C.navy}}>{fmt(licR)}</b> licence fee = <b style={{color:netR>0?C.teal:"#B8860B"}}>{netR>=0?fmt(netR):"−"+fmt(-netR)}</b> net{netR>0?", the headline saving shown at the top.":", so the licence fee is larger than the premium at these inputs."}
                   </p>
                 </>; })()}
-              <p style={{fontSize:11.5,color:C.textLight,marginTop:".6rem",lineHeight:1.6}}>Bank rate = 2026/27 AfC blended midpoint, loaded with on-cost. Premium defaults to the official ~20% House of Commons Library average — deliberately conservative and contested at shift level (nursing ~35–50%, medics ~80–120%). Set your own premium and every figure updates.{isQuick?<> Your agency spend is modelled from your bank pool and fill rate ({fmtK(r.totSpend)}), assuming ~60 ad-hoc shifts per bank worker a year — for a figure built on your real spend, switch to Detailed.</>:""}</p>
+              <p style={{fontSize:11.5,color:C.textLight,marginTop:".6rem",lineHeight:1.6}}>Bank rate = 2026/27 AfC blended midpoint, already including the employer on-cost (default 20%, employer NI + pension), so on-costs are counted once, not added on top. Premium defaults to the official ~20% House of Commons Library average — deliberately conservative and contested at shift level (nursing ~35–50%, medics ~80–120%). Set your own premium and every figure updates.{isQuick?<> Your agency spend is modelled from your bank pool and fill rate ({fmtK(r.totSpend)}), assuming ~60 ad-hoc shifts per bank worker a year — for a figure built on your real spend, switch to Detailed.</>:""}</p>
             </div>
 
             {/* Single annual steady-state (Rev D: ramp removed) */}
