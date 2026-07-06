@@ -444,6 +444,11 @@ function IdleWarning({ seconds, onStay }) {
 // the model and the golden tests; this only sets the UI's starting/reset value.
 const START_DISPLACEMENT = 26;
 
+// The kiosk seeds the bank-staff pool slider at 2000 (a mid-size trust); every
+// figure recomputes from it. The engine's DEFAULTS.bankPool (660) is left as the
+// golden tests' fixed baseline; this only sets the UI's starting/reset value.
+const START_BANKPOOL = 2000;
+
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [stanceTouched, setStanceTouched] = useState(false);   // no confidence box highlighted until the user picks one
@@ -455,7 +460,7 @@ export default function App() {
   const armIdleRef = useRef(() => {});
 
   // Quick variant inputs (+ the modelling-stance displacement flexed live on Results).
-  const [bankPool, setBankPool] = useState(DEFAULTS.bankPool);
+  const [bankPool, setBankPool] = useState(START_BANKPOOL);
   const [agencyFillRate, setAgencyFillRate] = useState(DEFAULTS.agencyFillRate);
   const [numManagers, setNumManagers] = useState(DEFAULTS.numManagers);
   const [displacement, setDisplacement] = useState(START_DISPLACEMENT);
@@ -486,7 +491,7 @@ export default function App() {
   const handleAdjust = useCallback(() => setKioskStep(0), []);
 
   const resetAll = useCallback(() => {
-    setBankPool(DEFAULTS.bankPool); setAgencyFillRate(DEFAULTS.agencyFillRate);
+    setBankPool(START_BANKPOOL); setAgencyFillRate(DEFAULTS.agencyFillRate);
     setNumManagers(DEFAULTS.numManagers); setDisplacement(START_DISPLACEMENT);
     setIncludeAdmin(false); setStanceTouched(false);
   }, []);
