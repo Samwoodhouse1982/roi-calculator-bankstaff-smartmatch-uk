@@ -2,25 +2,28 @@ export const AFC_DIVISOR = 1957.5;          // NHS AfC hours/year
 export const SHIFT_HOURS = 8;
 export const BANK_ONCOST = 0.20;            // affects duty counts only, not cash headline
 export const PLATFORM_COST = 17000;         // ROI denominator fallback (see platformCostFor for the live figure)
-/* [G-Cloud] Annual Smart Match licence fee (ex VAT), stepped by number of Licensed
-   Users (≈ bank-staff size). Published G-Cloud price points; a given size takes the
-   fee of the highest band whose lower bound it reaches. Auto-linked to bank size,
-   still editable in the detailed model. */
+/* [G-Cloud] Annual Smart Match licence fee (ex VAT) by number of Licensed Users
+   (≈ bank-staff size). The published G-Cloud bands are quoted as ranges with gaps
+   between them (1–600, 601–700, 901–1,000, 1,401–1,500, 2,001–2,200, …). A bank whose
+   size lands in a gap must licence the tier that COVERS it, so we round UP to the next
+   band: e.g. a 2,000-worker bank sits above the 1,500-user tier, so it pays the
+   2,001–2,200 fee (£15,167.54). Each pair is [inclusive upper bound, annual fee],
+   ascending; the final band is unbounded. Auto-linked to bank size, editable in detailed. */
 export const GCLOUD_LICENCE = [
-  [7501, 29101.79],
-  [6001, 25284.06],
-  [5001, 22793.38],
-  [4001, 20900.78],
-  [3001, 18400.20],
-  [2001, 15167.54],
-  [1401, 13280.66],
-  [901,  11321.21],
-  [601,   9855.27],
-  [0,     9486.54],
+  [600,      9486.54],   // 1–600
+  [700,      9855.27],   // 601–700
+  [1000,    11321.21],   // 901–1,000
+  [1500,    13280.66],   // 1,401–1,500
+  [2200,    15167.54],   // 2,001–2,200
+  [3200,    18400.20],   // 3,001–3,200
+  [4200,    20900.78],   // 4,001–4,200
+  [5200,    22793.38],   // 5,001–5,200
+  [6500,    25284.06],   // 6,001–6,500
+  [Infinity, 29101.79],  // 7,501–8,000+
 ];
 export function platformCostFor(totalBankHeadcount) {
   const h = Number(totalBankHeadcount) || 0;
-  for (const [floor, fee] of GCLOUD_LICENCE) if (h >= floor) return fee;
+  for (const [ceil, fee] of GCLOUD_LICENCE) if (h <= ceil) return fee;
   return GCLOUD_LICENCE[GCLOUD_LICENCE.length - 1][1];
 }
 export const ADMIN_HRS_PER_DAY = 1.0;       // conservative (client suggested 2.5 = optimistic)

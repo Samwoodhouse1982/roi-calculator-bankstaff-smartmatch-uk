@@ -86,13 +86,16 @@ test('adminOnly flags an agency-free saving, and is off by default (audit #14)',
   assert.equal(Math.round(noAgency.agencySaving), 0);
 });
 
-test('platformCostFor follows the G-Cloud licence bands', () => {
+test('platformCostFor follows the G-Cloud licence bands (rounds a gap size UP to the covering tier)', () => {
   assert.equal(platformCostFor(300), 9486.54);
+  assert.equal(platformCostFor(600), 9486.54);    // upper edge of band 1
   assert.equal(platformCostFor(660), 9855.27);
   assert.equal(platformCostFor(1000), 11321.21);
-  assert.equal(platformCostFor(2000), 13280.66);
-  assert.equal(platformCostFor(5000), 20900.78);
-  assert.equal(platformCostFor(12000), 29101.79);   // top band caps large systems
+  assert.equal(platformCostFor(1500), 13280.66);  // upper edge of the 1,401–1,500 tier
+  assert.equal(platformCostFor(1501), 15167.54);  // one over -> rounds up to the next tier
+  assert.equal(platformCostFor(2000), 15167.54);  // default kiosk size: covered by the 2,001–2,200 tier
+  assert.equal(platformCostFor(5000), 22793.38);  // above the 4,200 tier -> 5,001–5,200 tier
+  assert.equal(platformCostFor(12000), 29101.79);  // top band caps large systems
 });
 
 test('agencyRegime classifies by % of turnover (benchmark §5)', () => {
