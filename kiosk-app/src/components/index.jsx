@@ -29,7 +29,7 @@ const STEP_CONTEXT = [
   // 2 - Your team
   { title: "Why this matters", text: "The people who book, chase and reconcile temporary shifts spend real hours on admin. Smart Match gives a conservative slice of that time back per person, which we value as cash and also show as hours saved per week." },
   // 3 - Confidence / optimism
-  { title: "Why this matters", text: "This sets how much of today's agency work you expect to move onto your own bank. Conservative is the cautious choice; Expected matches what one site achieved; Optimistic assumes more. It flexes every figure, and you can revisit it on the results screen." },
+  { title: "Why this matters", text: "This sets how much of today's agency work you expect to move onto your own bank. Conservative is the cautious choice; Moderate matches what one site achieved; Optimistic assumes more. It flexes every figure, and you can revisit it on the results screen." },
 ];
 
 export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate, onHome, context = STEP_CONTEXT }) {

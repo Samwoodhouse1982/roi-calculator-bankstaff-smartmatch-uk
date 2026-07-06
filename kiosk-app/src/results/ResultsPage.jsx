@@ -134,7 +134,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         <span style={{ fontSize: F.h1, fontWeight: 800, color: C.accent }}>{displacement}%</span>
       </div>
       <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-        {[["Conservative", 13], ["Expected", 26], ["Optimistic", 50]].map(([lbl, v]) => {
+        {[["Conservative", 13], ["Moderate", 26], ["Optimistic", 50]].map(([lbl, v]) => {
           const on = chosen && displacement === v;
           return <button key={v} onClick={() => setDisplacement(v)} style={{
             flex: 1, padding: "16px 8px", borderRadius: 14, cursor: "pointer", fontFamily: "inherit",
@@ -146,10 +146,10 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
       </div>
       <input type="range" aria-label="Agency work moved to your bank (%)" min={13} max={50} step={1} value={displacement} onChange={e => setDisplacement(Number(e.target.value))} style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: F.tiny, color: C.textMuted, marginTop: 8 }}>
-        <span>13% · conservative</span><span>26% · expected</span><span>50% · optimistic</span>
+        <span>13% · conservative</span><span>26% · moderate</span><span>50% · optimistic</span>
       </div>
       {chosen && <div style={{ marginTop: 16, padding: "16px 20px", background: C.accentSoft, borderRadius: 14, border: `1px solid ${C.accent}30` }}>
-        <div style={{ fontSize: F.body, fontWeight: 800, color: C.accent, marginBottom: 6 }}>{st.key}</div>
+        <div style={{ fontSize: F.body, fontWeight: 800, color: C.accent, marginBottom: 6 }}>{st.key === "Expected" ? "Moderate" : st.key}</div>
         <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6 }}>{st.note}</div>
       </div>}
     </Card>
