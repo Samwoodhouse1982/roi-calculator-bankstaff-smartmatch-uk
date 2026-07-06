@@ -85,8 +85,6 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
   // At a very small bank / low agency reliance the licence fee can exceed the modelled
   // premium, so net saving goes <= 0. Reframe rather than show a negative headline.
   const noNet = r.netSaving <= 0;
-  // Basis note, shown as an info tooltip on the headline (was an inline caption).
-  const basisNote = `This is the agency premium you stop paying by filling more shifts from your own bank instead of agency${r.adminSaving > 0 ? `, plus ${fmtK(r.adminSaving)} of admin time` : ""}, shown as an annual figure after the ${fmt(r.platformCost)}/yr licence fee.`;
 
   return <div style={{ animation: "rfade .5s ease-out" }}>
     <style>{`@keyframes rfade { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
@@ -110,8 +108,8 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         <div style={{ fontSize: F.hero, fontWeight: 800, color: C.accent, lineHeight: 1, letterSpacing: "-3px", animation: "glow 3s ease-in-out infinite" }}>
           <AnimVal value={r.netSaving} format={fmtK} />
         </div>
-        <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14, display: "inline-flex", alignItems: "center", gap: 8 }}>Potential annual cash saving <InfoTip text={basisNote} /></div>
-        <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, lineHeight: 1.5, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>What you could save each year by filling more shifts from your bank instead of agency, the agency premium you stop paying.</div>
+        <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>Potential annual cash saving</div>
+        <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, lineHeight: 1.5, maxWidth: 440, marginLeft: "auto", marginRight: "auto" }}>What you could save each year by filling more shifts from your own bank instead of agency, the agency premium you stop paying{r.adminSaving > 0 ? `, plus ${fmtK(r.adminSaving)} of admin time` : ""}, shown as an annual figure after the {fmt(r.platformCost)}/yr licence fee.</div>
       </div>
       )}
       <div style={{ textAlign: "center", padding: "26px 18px", background: C.surface, borderRadius: 22, border: `1px solid ${C.accent}30` }}>
@@ -255,7 +253,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
 
     {/* Capacity + wider value (merged): explicitly NOT a cash saving */}
     <Card style={{ marginBottom: 28, borderLeft: `3px solid ${C.amber}` }}>
-      <CTitle iconKey="calendar" color={C.amber}>Capacity and wider value: not a cash saving</CTitle>
+      <CTitle iconKey="calendar" color={C.amber}>Capacity and wider value</CTitle>
       <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6, marginBottom: 16 }}>
         Filling more shifts from your own bank is real operational value: steadier rosters, better continuity of care and less last-minute reliance on agency. It is deliberately kept separate from the cash saving above and is never added to it.
       </div>
