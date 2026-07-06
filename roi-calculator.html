@@ -370,9 +370,9 @@ function scaleGroupsTo(groups,key,target){
 }
 
 function stance(d){
-  if (d<=18) return { key:"Conservative", color:C.navy, bg:C.navyLight, note:"Conservative (≈13%): about half the pilot's measured effect. Recommended default for public/self-serve use: defensible without organisation-specific evidence." };
-  if (d<=30) return { key:"Expected", color:C.navyMid, bg:C.navyLight, note:"Expected (≈26%): the effect measured at one community site (agency fill 8.1%→6.0%). Single-site and partly attributable, so best used in a guided commercial conversation." };
-  return { key:"Optimistic", color:C.teal, bg:C.tealLight, note:"Optimistic: above the pilot result — the higher the setting, the bolder the assumption. Use only with strong, organisation-specific evidence." };
+  if (d<=18) return { key:"Conservative", color:C.navy, bg:C.navyLight, note:"Conservative (≈13%): about half the effect measured in a pilot study. Recommended default for public/self-serve use: defensible without organisation-specific evidence." };
+  if (d<=30) return { key:"Moderate", color:C.navyMid, bg:C.navyLight, note:"Moderate (≈26%): the effect measured at one community site (agency fill 8.1%→6.0%). Single-site and partly attributable, so best used in a guided commercial conversation." };
+  return { key:"Optimistic", color:C.teal, bg:C.tealLight, note:"Optimistic: above a pilot study's result — the higher the setting, the bolder the assumption. Use only with strong, organisation-specific evidence." };
 }
 
 /* ===== PURE CALC ENGINE (shared by Quick + Detailed + the kiosk variant) ===== */
@@ -577,7 +577,7 @@ function App(){
         doc.autoTable({ startY:y+2, head:[["Staff group","Agency spend","Duties displaced","Cash saving"]], body:r.rows.map(x=>[x.role,fmt(x.spend),fmtNum(x.displaced),fmt(x.saving)]),
           styles:{fontSize:9}, headStyles:{fillColor:[15,65,70]}, margin:{left:14,right:14} }); y=doc.lastAutoTable.finalY+8; }
       doc.setFontSize(8); doc.setTextColor(120,130,150);
-      doc.text(doc.splitTextToSize("Indicative only. Cash saving = agency premium displaced when improved bank utilisation moves duties off agency; it excludes the cost of the bank shifts themselves (capacity, shown separately). 2026/27 NHS AfC midpoints; conservative, editable assumptions. Pilot figures are from 2 sites in a 4-trust programme, anonymised pending client sign-off, and are not solely attributable to the platform.",182),14,y);
+      doc.text(doc.splitTextToSize("Indicative only. Cash saving = agency premium displaced when improved bank utilisation moves duties off agency; it excludes the cost of the bank shifts themselves (capacity, shown separately). 2026/27 NHS AfC midpoints; conservative, editable assumptions. Pilot-study figures are from 2 sites in a 4-trust programme, anonymised pending client sign-off, and are not solely attributable to the platform.",182),14,y);
       doc.save("smart-match-roi-estimate.pdf");
     } finally { setPdfBusy(false); }
   }
@@ -591,7 +591,7 @@ function App(){
       <header><div className="wrap">
         <div className="logo"><b>RLDatix</b><span className="divider">·</span>Smart Match<span className="divider">·</span>Workforce Intelligence</div>
         <h1>Measure your ROI from<br/><em>Smart Match AI</em></h1>
-        <p>Smart Match helps NHS organisations fill more shifts from their own staff bank and rely less on agency. This tool gives you an indicative overview of two things: the <strong>potential cash savings</strong> from reducing agency reliance, and the <strong>administrative and clinical time</strong> that better bank management could release. The figures draw on real pilot data and are deliberately conservative — a starting point for a conversation, not a fixed quote.</p>
+        <p>Smart Match helps NHS organisations fill more shifts from their own staff bank and rely less on agency. This tool gives you an indicative overview of two things: the <strong>potential cash savings</strong> from reducing agency reliance, and the <strong>administrative and clinical time</strong> that better bank management could release. The figures draw on real data from a pilot study and are deliberately conservative — a starting point for a conversation, not a fixed quote.</p>
       </div></header>
 
       <div className="strategy"><div className="wrap">
@@ -612,7 +612,7 @@ function App(){
             <div className="card">
               <div className="inputs-grid">
                 <Field label="Bank staff pool size" value={simple.bankPool} min="0" onChange={v=>setSimple(s=>({...s,bankPool:num(v)}))} hint="Total people on your bank" info="Total bank workers across all groups; scales for large systems (e.g. Leeds ~5,000, Sussex ~10,000). We apply a conservative 2026/27 AfC band-mix bank rate (~£34k blended, ~£20.84/hr loaded) and ad-hoc shift volume."/>
-                <Field label="Current agency fill rate (%)" value={simple.agencyFillRate} min="0" max="100" step={0.1} onChange={v=>setSimple(s=>({...s,agencyFillRate:num(v)}))} hint="Share of temp duties filled by agency (national avg 8.3%)" info="The % of temporary duties currently filled by agency. Default 8.3% is based on the national average of NHS organisations (RLDatix data); set your own for a tailored figure. The pilot moved from 8.1% to 6.0% at one site."/>
+                <Field label="Current agency fill rate (%)" value={simple.agencyFillRate} min="0" max="100" step={0.1} onChange={v=>setSimple(s=>({...s,agencyFillRate:num(v)}))} hint="Share of temp duties filled by agency (national avg 8.3%)" info="The % of temporary duties currently filled by agency. Default 8.3% is based on the national average of NHS organisations (RLDatix data); set your own for a tailored figure. A pilot study recorded a move from 8.1% to 6.0% at one site."/>
                 <Field label="Temporary staffing team" value={simple.numManagers} min="0" onChange={v=>setSimple(s=>({...s,numManagers:num(v)}))} hint="Bank/temp staffing coordinators & admins" info="The people who do the day-to-day booking, chasing and reconciling of temporary shifts. Drives the time-saved-per-week and admin saving."/>
               </div>
               <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600,color:C.navy,cursor:"pointer",marginTop:14}}>
@@ -622,10 +622,10 @@ function App(){
             </div>
             <div className="params-grid" style={{marginTop:12}}>
               <div className="field">
-                <label>Confidence level: {displacement}% · {st.key} <InfoTip text="Share of current agency usage that improved bank utilisation moves to bank. Driven by the Smart Match pilot: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable, so three stances are offered; public/self-serve defaults to Conservative."/></label>
-                <div className="stance-btns">{[["Conservative",13],["Expected",26],["Optimistic",50]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
+                <label>Confidence level: {displacement}% · {st.key} <InfoTip text="Share of current agency usage that improved bank utilisation moves to bank. Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable, so three stances are offered; public/self-serve defaults to Conservative."/></label>
+                <div className="stance-btns">{[["Conservative",13],["Moderate",26],["Optimistic",50]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
                 <input type="range" min="8" max="50" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Confidence level, percent" aria-valuetext={displacement+"%, "+st.key}/>
-                <div className="slider-ctx"><span>8% conservative</span><span>26% expected</span><span>50% optimistic</span></div>
+                <div className="slider-ctx"><span>8% conservative</span><span>26% moderate</span><span>50% optimistic</span></div>
               </div>
               <div style={{alignSelf:"center"}}><div className="disp-note" style={{marginTop:0,background:st.bg,color:st.color}}>{st.note}</div></div>
             </div>
@@ -643,7 +643,7 @@ function App(){
             <h3>How to use the detailed calculator</h3>
             <div className="inst-steps">
               <div className="inst-step"><div className="inst-num">1</div><p><strong>Pick your organisation type, or build your own.</strong> Set each group's headcount, <strong>annual agency spend</strong> (the anchor for the saving) and pay; add or remove staff groups as needed.</p></div>
-              <div className="inst-step"><div className="inst-num">2</div><p><strong>Set the agency premium</strong> (default 20%, the official average, contested, so use your own; tick to set it <strong>per group</strong>) and pick a <strong>confidence level</strong> (Conservative / Expected / Optimistic). Optionally add admin and recruitment levers.</p></div>
+              <div className="inst-step"><div className="inst-num">2</div><p><strong>Set the agency premium</strong> (default 20%, the official average, contested, so use your own; tick to set it <strong>per group</strong>) and pick a <strong>confidence level</strong> (Conservative / Moderate / Optimistic). Optionally add admin and recruitment levers.</p></div>
               <div className="inst-step"><div className="inst-num">3</div><p><strong>Read the co-headlines:</strong> net annual cash saving and admin time saved per week, with payback. Capacity (temp duties filled) is shown separately and excluded from the saving.</p></div>
             </div>
           </div>
@@ -695,10 +695,10 @@ function App(){
                 <label style={{display:"flex",alignItems:"center",gap:7,fontSize:12,fontWeight:600,color:C.navy,cursor:"pointer",marginTop:8}}><input type="checkbox" checked={perGroupPremium} onChange={e=>setPGP(e.target.checked)}/> Set the agency premium per staff group <InfoTip text="Off by default, one official ~20% premium across all groups (the defensible business-case default). Tick to override the premium per column, e.g. higher for medics, where you have organisation-specific agency rates."/></label>
               </div>
               <div className="field">
-                <label>Confidence level: {displacement}% · {st.key} <InfoTip text="Share of your baseline agency usage that improved bank utilisation moves to bank. Driven by the Smart Match pilot: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; the commercial variant can show the Expected case with a rep to frame the caveats."/></label>
-                <div className="stance-btns">{[["Conservative",13],["Expected",26],["Optimistic",50]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
+                <label>Confidence level: {displacement}% · {st.key} <InfoTip text="Share of your baseline agency usage that improved bank utilisation moves to bank. Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; the commercial variant can show the Moderate case with a rep to frame the caveats."/></label>
+                <div className="stance-btns">{[["Conservative",13],["Moderate",26],["Optimistic",50]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
                 <input type="range" min="8" max="50" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Confidence level, percent" aria-valuetext={displacement+"%, "+st.key}/>
-                <div className="slider-ctx"><span>8% conservative</span><span>26% expected</span><span>50% optimistic</span></div>
+                <div className="slider-ctx"><span>8% conservative</span><span>26% moderate</span><span>50% optimistic</span></div>
               </div>
             </div>
             <div className="disp-note" style={{background:st.bg,color:st.color}}>{st.note}</div>
@@ -896,14 +896,14 @@ function App(){
               <div className="arow"><span>Licence fee (ROI denominator, G-Cloud)</span><span>{fmt(platformCost)}/yr</span></div>
               {r.recruitSaving>0 && <><div className="arow"><span>Recruitment waste recovered (optional)</span><span>{fmt(r.recruitSaving)}</span></div>
               <div className="arow explain"><span className="albl">Source: recruitment <span className="conf low">low</span></span><span className="adesc">under-utilised workers × recruit/onboard cost × recovery share. No strong public benchmark, conservative and clearly optional.</span></div></>}
-              <div className="arow explain"><span className="albl">Strategy &amp; framing</span><span className="adesc">Framed against the NHS 10 Year Plan + Workforce Paper and the Staff Health &amp; Wellbeing CQUIN. Pilot is a small (2-site), vendor-collected sample, encouraging but indicative, not solely attributable to Smart Match, and anonymised pending client sign-off.</span></div>
+              <div className="arow explain"><span className="albl">Strategy &amp; framing</span><span className="adesc">Framed against the NHS 10 Year Plan + Workforce Paper and the Staff Health &amp; Wellbeing CQUIN. A pilot study is a small (2-site), vendor-collected sample, encouraging but indicative, not solely attributable to Smart Match, and anonymised pending client sign-off.</span></div>
             </div>
           </div>
         </div>
         )}
       </main>
 
-      <footer><p>Built by <strong>RLDatix Smart Match</strong> · Cash saving = agency premium displaced (not gross shift value) · 2026/27 NHS AfC pay scales · Figures are <strong>indicative</strong>, conservative and editable · validate with your organisation's own rates ·Pilot = 2-site data within a 4-trust programme, anonymised pending client sign-off; outcomes vary and are not solely attributable to the platform.</p></footer>
+      <footer><p>Built by <strong>RLDatix Smart Match</strong> · Cash saving = agency premium displaced (not gross shift value) · 2026/27 NHS AfC pay scales · Figures are <strong>indicative</strong>, conservative and editable · validate with your organisation's own rates ·Pilot study = 2-site data within a 4-trust programme, anonymised pending client sign-off; outcomes vary and are not solely attributable to the platform.</p></footer>
     </div>
   );
 }
