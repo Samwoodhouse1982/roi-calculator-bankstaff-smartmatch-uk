@@ -109,7 +109,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
           <AnimVal value={r.netSaving} format={fmtK} />
         </div>
         <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>Potential annual cash saving</div>
-        <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, lineHeight: 1.5, maxWidth: 440, marginLeft: "auto", marginRight: "auto" }}>What you could save each year by filling more shifts from your own bank instead of agency, the agency premium you stop paying{r.adminSaving > 0 ? `, plus ${fmtK(r.adminSaving)} of admin time` : ""}, shown as an annual figure after the {fmt(r.platformCost)}/yr licence fee.</div>
+        <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, lineHeight: 1.5, maxWidth: 440, marginLeft: "auto", marginRight: "auto" }}>What you could save each year by filling more shifts from your own bank instead of agency{r.adminSaving > 0 ? `, plus ${fmtK(r.adminSaving)} of admin time` : ""}, shown as an annual figure after the {fmt(r.platformCost)}/yr licence fee.</div>
       </div>
       )}
       <div style={{ textAlign: "center", padding: "26px 18px", background: C.surface, borderRadius: 22, border: `1px solid ${C.accent}30` }}>
