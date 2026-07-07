@@ -63,8 +63,8 @@ turnover** input sets *agency intensity* (agency % of turnover) and tailors the 
 dominates). Treat agency spend as a current, **declining** figure and prefer the trust's own.
 
 **Guardrails:** the cash saving can never exceed total agency spend; the tool
-leads with **net annual saving + payback months** (not a giant ROI %) and flags
-implausibly high ROI.
+leads with **net annual saving + payback** (shown in days, not a giant ROI %)
+and flags implausibly high returns (>40× the licence fee).
 
 ## Files
 
@@ -72,9 +72,18 @@ implausibly high ROI.
 |------|---------|
 | `roi-calculator.html` | **The calculator.** Self-contained; edit this. |
 | `index.html` | Redirect to `roi-calculator.html`. |
-| `vercel.json` | Deploy routing + cache headers. |
-| `embed-snippet.html` | Reference snippet for embedding via iframe (auto-resizes via `postMessage`). |
+| `vercel.json` | Deploy routing + cache/security headers. |
+| `embed-snippet.html` | Reference snippet for embedding via iframe (auto-resize + host-page scrolling via `postMessage`). |
+| `test/engine.web.test.mjs` | Engine regression tests — golden numbers, guardrails, kiosk parity. |
 | `README.md` | This file. |
+
+## Tests
+
+Run `node --test` from the repo root (Node 18+, no dependencies, no
+package.json). The suite extracts the pure calc engine from
+`roi-calculator.html` and pins it to the same golden numbers as the kiosk's
+`test/engine.test.mjs`, so the two builds cannot drift silently. If you
+intentionally change a default or constant, update **both** test files.
 
 ## How it deploys (Vercel)
 
@@ -88,15 +97,20 @@ Static hosting only — no build step.
 
 ## Embedding
 
-Use `embed-snippet.html` as the host-page reference. The iframe auto-resizes via
-`postMessage` (`type: "smartmatch-roi-resize"`). Point `src` at
-`/roi-calculator.html` (not `/`, which redirects) and serve over HTTPS.
+Use `embed-snippet.html` as the host-page reference. The calculator posts three
+`postMessage` types the host snippet handles: `smartmatch-roi-resize`
+(auto-height), `smartmatch-roi-scroll-top` (the "↑ Adjust inputs" button) and
+`smartmatch-roi-scroll` (scrolls the host page to the results after
+"Calculate") — in-iframe scrolling is a no-op once the iframe is full height,
+so the host does it. Point `src` at `/roi-calculator.html` (not `/`, which
+redirects) and serve over HTTPS.
 
 ## Editing notes
 
 - All tuneable assumptions are named constants near the top of the
   `<script type="text/babel">` block (`AFC_DIVISOR`, `BANK_ONCOST_DEFAULT`,
-  `PLATFORM_COST_DEFAULT`, `STAFF_GROUPS`, `PRESETS`, `stance()`).
+  `GCLOUD_LICENCE`, `DISPLACEABLE_SHARE_DEFAULT`, `ORG_TYPES`, `AFC_BANDS`,
+  `stance()`).
 - The pure `calc(input)` function takes inputs and returns all derived values —
   no DOM side-effects (so the same engine can back the kiosk version).
 - Babel is **pinned to 7.26.4** which uses the *classic* JSX runtime
@@ -106,9 +120,10 @@ Use `embed-snippet.html` as the host-page reference. The iframe auto-resizes via
 - After editing, sanity-check the JSX parses before pushing (e.g. transform the
   `text/babel` block with `@babel/standalone` using `presets:[["react",
   {runtime:"classic"}]]`).
-- Evidence framing stays honest: the Smart Match pilot is a small (n=3),
-  vendor-collected sample presented as **indicative**; the 17%/26% figures are
-  engagement/fill measures and are **not** multiplied into the saving.
+- Evidence framing stays honest: the Smart Match pilot is a small,
+  vendor-collected sample (2-site data within a 4-trust programme) presented as
+  **indicative**; the 17%/26% figures are engagement/fill measures and are
+  **not** multiplied into the saving.
 
 ## Open items to confirm (from the research brief)
 

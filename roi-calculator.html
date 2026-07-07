@@ -566,7 +566,7 @@ function App(){
   // and turned a selected "Band 5" into 5 (breaking the band-pill lookup and the PDF).
   const setG=(i,k,v)=>setGroups(gs=>gs.map((g,j)=>j===i?{...g,[k]:(k==="role"||k==="band")?v:num(v)}:g));
   const choosePreset=key=>{ setPreset(key); setGroups(buildOrg(key)); setPcAuto(true); setTurnover(ORG_TYPES[key].turnover); };
-  const addGroup=()=>setGroups(gs=>[...gs,{ id:"g"+Date.now(), role:"New staff group", band:"Band 5", bankPay:34592, headcount:50, agencySpend:500000 }]);
+  const addGroup=()=>setGroups(gs=>[...gs,{ id:"g"+Date.now()+Math.random().toString(36).slice(2,6), role:"New staff group", band:"Band 5", bankPay:34592, headcount:50, agencySpend:500000 }]);
   const removeGroup=i=>setGroups(gs=>gs.length>1?gs.filter((_,j)=>j!==i):gs);
   const st=stance(displacement);
   // At a very small bank / low agency book the licence fee can exceed the modelled
@@ -632,7 +632,7 @@ function App(){
       <header><div className="wrap">
         <div className="logo"><b>RLDatix</b><span className="divider">·</span>Smart Match<span className="divider">·</span>Workforce Intelligence</div>
         <h1>Measure your ROI from<br/><em>Smart Match AI</em></h1>
-        <p>Smart Match helps NHS organisations fill more shifts from their own staff bank and rely less on agency. This tool gives you an indicative overview of two things: the <strong>potential cash savings</strong> from reducing agency reliance, and the <strong>administrative and clinical time</strong> that better bank management could release. The figures draw on real data from a pilot study and are deliberately conservative — a starting point for a conversation, not a fixed quote.</p>
+        <p>Smart Match helps NHS organisations fill more shifts from their own staff bank and rely less on agency. This tool gives you an indicative overview of two things: the <strong>potential cash savings</strong> from reducing agency reliance, and the <strong>administrative time and staffing capacity</strong> that better bank management could release. The figures draw on real data from a pilot study and are deliberately conservative — a starting point for a conversation, not a fixed quote.</p>
       </div></header>
 
       <div className="strategy"><div className="wrap">
@@ -709,7 +709,7 @@ function App(){
                 <SizeField label="Annual turnover (£, optional)" prefix="£" value={turnover} info="Your organisation's annual operating turnover (optional). Used to gauge agency intensity — agency as a % of turnover — which tailors the headline framing. You can also estimate a typical agency spend from it." hint="Sets agency intensity & framing · clear to omit" onCommit={v=>setTurnover(num(v))} allowZero/>
               </div>
               {turnover>0 && (()=>{ const {pct,key}=agencyRegime(totalSpend,turnover); const lbl={low:"low-agency / mature bank",typical:"typical reliance",high:"high reliance"}[key]; return (
-                <div className="disp-note" style={{marginTop:12,background:C.navyLight,color:C.navy}}>Agency is <b>{pct.toFixed(1)}% of turnover</b> — {lbl}. <button type="button" className="linkish" style={{border:"none",background:"none",color:C.teal,fontWeight:700,cursor:"pointer",fontFamily:"inherit",padding:0,textDecoration:"underline"}} onClick={()=>setGroups(scaleGroupsTo(groups,"agencySpend",Math.round(agencySpendFromTurnover(turnover,preset))))}>Estimate agency spend from turnover →</button></div>
+                <div className="disp-note" style={{marginTop:12,background:C.navyLight,color:C.navy}}>Agency is <b>{pct.toFixed(1)}% of turnover</b> — {lbl}. <button type="button" style={{border:"none",background:"none",color:C.teal,fontWeight:700,cursor:"pointer",fontFamily:"inherit",padding:0,textDecoration:"underline"}} onClick={()=>setGroups(scaleGroupsTo(groups,"agencySpend",Math.round(agencySpendFromTurnover(turnover,preset))))}>Estimate agency spend from turnover →</button></div>
               ); })()}
             </div>
             <div className="groups-grid">
@@ -901,7 +901,7 @@ function App(){
             </div>
 
             <div className="callout quote">
-              <p className="quote-txt">"I've just received my first Smart Match duty offer. Clicking the notification took me straight to the shift details and I booked it straight away, so easy. You're not constantly looking on a loop, frightened you'll miss something."</p>
+              <p className="quote-txt">“I’ve just received my first Smart Match duty offer. Clicking the notification took me straight to the shift details and I booked it straight away, so easy. You’re not constantly looking on a loop, frightened you’ll miss something.”</p>
               <p className="quote-by">Bank staff member, a community trust (Smart Match programme; anonymised)</p>
             </div>
 
