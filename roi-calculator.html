@@ -213,6 +213,10 @@
   footer { background:var(--navy-dark); color:rgba(255,255,255,.5); padding:2rem; text-align:center; font-size:12px; }
   footer strong { color:var(--seafoam); }
 
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+  }
   @media (max-width:480px){ header,main,.evidence-inner{ padding-left:1.25rem; padding-right:1.25rem; } .roi-co{ gap:1.5rem; } }
   @media print { .cal-overlay,.actions,.lead,.adv-toggle,.mode-toggle,header p{ display:none !important; } body{ background:#fff; font-size:11pt; } .results-box{ box-shadow:none; } }
 </style>
@@ -439,9 +443,12 @@ function simpleToInput(s, shared){
 }
 
 /* ===== HOOKS + SMALL COMPONENTS ===== */
+/* Respect prefers-reduced-motion: skip count-ups, the calibrating pause and smooth scrolling. */
+const REDUCE_MOTION = typeof window!=="undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 function useCountUp(target, ms=900){
   const [v,setV]=useState(target); const prev=useRef(target); const raf=useRef();
-  useEffect(()=>{ const from=prev.current,to=target,start=performance.now(); cancelAnimationFrame(raf.current);
+  useEffect(()=>{ if(REDUCE_MOTION){ prev.current=target; setV(target); return; }
+    const from=prev.current,to=target,start=performance.now(); cancelAnimationFrame(raf.current);
     const tick=now=>{ const t=Math.min(1,(now-start)/ms),e=1-Math.pow(1-t,3); setV(from+(to-from)*e); if(t<1)raf.current=requestAnimationFrame(tick); else prev.current=to; };
     raf.current=requestAnimationFrame(tick); return ()=>cancelAnimationFrame(raf.current); },[target,ms]);
   return v;
@@ -493,10 +500,10 @@ function Method({formula, your, source, strength}){
   </div></details>);
 }
 function Calibrating(){
-  return (<div className="cal-overlay"><div className="cal-card">
-    <div className="cal-dots"><span></span><span></span><span></span><span></span><span></span></div>
+  return (<div className="cal-overlay"><div className="cal-card" role="status" aria-live="polite">
+    <div className="cal-dots" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
     <h3>Calibrating your model</h3><p>Mapping your bank pool and agency exposure…</p>
-    <div className="cal-bar"><i></i></div></div></div>);
+    <div className="cal-bar" aria-hidden="true"><i></i></div></div></div>);
 }
 
 /* ===== MAIN APP ===== */
@@ -518,7 +525,7 @@ function App(){
   const [admin,setAdmin]=useState({ enabled:false, managers:12, hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY });
   const [recruit,setRecruit]=useState({ enabled:false, workers:50, costPerWorker:RECRUIT_COST_PER_WORKER, recoveryRate:RECRUIT_RECOVERY_RATE });
 
-  function runCalc(){ setCal(true); setTimeout(()=>{ setCal(false); setCalculated(true); requestAnimationFrame(()=>{ const el=document.getElementById("results"); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); }); }, 1600); }
+  function runCalc(){ setCal(true); setTimeout(()=>{ setCal(false); setCalculated(true); requestAnimationFrame(()=>{ const el=document.getElementById("results"); if(el) el.scrollIntoView({behavior:REDUCE_MOTION?"auto":"smooth",block:"start"}); }); }, REDUCE_MOTION?150:1600); }
 
   const shared={ premium, displacement, platformCost, shiftHours, oncost, displaceableShare };
   const r = useMemo(()=>{
@@ -750,6 +757,7 @@ function App(){
         )}
         {calculated && (
         <div className="section" id="results">
+          <p className="sr-only" role="status">Results ready. Your estimated annual impact is shown below and updates live as you adjust inputs.</p>
           <div className="step-label"><div className="step-num">{isQuick?2:3}</div><h2>Your potential impact</h2></div>
           <div className="results-box">
             <div className="roi-header">
