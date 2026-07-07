@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Smart Match: Workforce ROI Calculator | RLDatix</title>
 <meta name="description" content="Estimate the cash your NHS trust could release by improving bank-staff utilisation and displacing agency spend with RLDatix Smart Match. Quick or detailed.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Smart Match: Workforce ROI Calculator | RLDatix">
+<meta property="og:description" content="Estimate the cash your NHS trust could release by improving bank-staff utilisation and displacing agency spend with RLDatix Smart Match.">
+<meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231B2B4B'/%3E%3Cpath d='M18 44V20h12a8 8 0 0 1 2 15.7L34 44h-6l-2-8h-4v8z M24 31h5a3 3 0 0 0 0-6h-5z' fill='%230F766E'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -215,6 +219,7 @@
 </style>
 </head>
 <body>
+<noscript><p style="max-width:640px;margin:3rem auto;padding:0 2rem;font-family:system-ui,sans-serif;color:#0F4146;line-height:1.6">This calculator needs JavaScript to run. If your browser or network policy blocks scripts, please contact your RLDatix representative for a PDF version of the Smart Match ROI model.</p></noscript>
 <div id="root"></div>
 
 <!-- Library loading (audit #10): every library tries cdnjs -> jsDelivr -> unpkg,
@@ -565,10 +570,11 @@ function App(){
   const totalHead=groups.reduce((s,g)=>s+num(g.headcount),0), totalSpend=groups.reduce((s,g)=>s+num(g.agencySpend),0);
   const tswAnim=useCountUp(r.timeSavedWeek);
 
-  useEffect(()=>{ if(window.self===window.top)return;
+  useEffect(()=>{ if(!EMBEDDED)return;
     const post=()=>window.parent.postMessage({type:"smartmatch-roi-resize",height:document.documentElement.scrollHeight},"*");
-    const ro=new ResizeObserver(post); ro.observe(document.documentElement); post(); const iv=setInterval(post,800);
-    return ()=>{ro.disconnect();clearInterval(iv);}; },[]);   // run once: avoid rebuilding the observer + interval every render
+    const ro=new ResizeObserver(post); ro.observe(document.documentElement); post();
+    window.addEventListener("load",post);   // catches late fonts/images; RO covers everything else, so no polling interval
+    return ()=>{ro.disconnect();window.removeEventListener("load",post);}; },[]);   // run once: avoid rebuilding the observer every render
 
   async function submitLead(e){ e.preventDefault();
     if(!lead.consent) return;                                   // GDPR: require explicit consent before sending
