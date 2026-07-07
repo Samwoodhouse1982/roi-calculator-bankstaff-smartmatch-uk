@@ -35,14 +35,22 @@
 <script>
   (function () {
     var iframe = document.getElementById("smartmatch-roi");
+    var motion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
     window.addEventListener("message", function (e) {
       var d = e.data || {};
       // Optional: verify e.origin === "https://YOUR-DOMAIN" before acting.
       if (d.type === "smartmatch-roi-resize" && typeof d.height === "number") {
         iframe.style.height = d.height + "px";
       }
+      // "↑ Adjust inputs": scroll the host page back to the top of the calculator.
       if (d.type === "smartmatch-roi-scroll-top") {
-        iframe.scrollIntoView({ behavior: "smooth", block: "start" });
+        iframe.scrollIntoView({ behavior: motion, block: "start" });
+      }
+      // "Calculate my savings": d.top is the results offset inside the iframe;
+      // add the iframe's own position to scroll the host page to the results.
+      if (d.type === "smartmatch-roi-scroll" && typeof d.top === "number") {
+        var y = iframe.getBoundingClientRect().top + (window.pageYOffset || 0) + d.top - 16;
+        window.scrollTo({ top: Math.max(0, y), behavior: motion });
       }
     });
   })();

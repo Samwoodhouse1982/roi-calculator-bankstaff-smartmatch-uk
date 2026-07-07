@@ -447,6 +447,12 @@ function simpleToInput(s, shared){
 /* ===== HOOKS + SMALL COMPONENTS ===== */
 /* Respect prefers-reduced-motion: skip count-ups, the calibrating pause and smooth scrolling. */
 const REDUCE_MOTION = typeof window!=="undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+/* Embedded (iframe) detection: the auto-resized iframe is always full height, so
+   window.scrollTo / scrollIntoView are no-ops inside it (and cross-origin parents
+   won't scroll for us). Instead we post scroll requests to the host page, which
+   the embed snippet translates into host-page scrolls. */
+const EMBEDDED = typeof window!=="undefined" && window.self!==window.top;
+function hostScroll(top){ window.parent.postMessage(top==null ? {type:"smartmatch-roi-scroll-top"} : {type:"smartmatch-roi-scroll",top}, "*"); }
 function useCountUp(target, ms=900){
   const [v,setV]=useState(target); const prev=useRef(target); const raf=useRef();
   useEffect(()=>{ if(REDUCE_MOTION){ prev.current=target; setV(target); return; }
@@ -529,7 +535,9 @@ function App(){
   const [admin,setAdmin]=useState({ enabled:false, managers:12, hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY });
   const [recruit,setRecruit]=useState({ enabled:false, workers:50, costPerWorker:RECRUIT_COST_PER_WORKER, recoveryRate:RECRUIT_RECOVERY_RATE });
 
-  function runCalc(){ setCal(true); setTimeout(()=>{ setCal(false); setCalculated(true); requestAnimationFrame(()=>{ const el=document.getElementById("results"); if(el) el.scrollIntoView({behavior:REDUCE_MOTION?"auto":"smooth",block:"start"}); }); }, REDUCE_MOTION?150:1600); }
+  function runCalc(){ setCal(true); setTimeout(()=>{ setCal(false); setCalculated(true); requestAnimationFrame(()=>{ const el=document.getElementById("results"); if(!el) return;
+    if(EMBEDDED) hostScroll(el.getBoundingClientRect().top + (window.pageYOffset||0));
+    else el.scrollIntoView({behavior:REDUCE_MOTION?"auto":"smooth",block:"start"}); }); }, REDUCE_MOTION?150:1600); }
 
   const shared={ premium, displacement, platformCost, shiftHours, oncost, displaceableShare };
   const r = useMemo(()=>{
@@ -888,7 +896,7 @@ function App(){
 
             <div className="actions">
               <button className="btn primary" onClick={downloadPDF} disabled={pdfBusy}>{pdfBusy?"Generating…":"⬇ Download PDF estimate"}</button>
-              <button className="btn" onClick={()=>window.scrollTo({top:0,behavior:"smooth"})}>↑ Adjust inputs</button>
+              <button className="btn" onClick={()=>{ if(EMBEDDED) hostScroll(null); else window.scrollTo({top:0,behavior:REDUCE_MOTION?"auto":"smooth"}); }}>↑ Adjust inputs</button>
             </div>
 
             <div className="assumptions">
