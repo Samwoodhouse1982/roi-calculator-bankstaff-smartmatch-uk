@@ -168,7 +168,6 @@
   .arow.explain .adesc { font-size:11px; color:var(--text-light); line-height:1.5; text-align:left; font-weight:400; white-space:normal; }
   .conf { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:1px 6px; border-radius:8px; }
   .conf.high { background:#E6F4EC; color:#166A4D; }
-  .conf.med { background:#FFF4E0; color:#B7791F; }
   .conf.low { background:var(--teal-light); color:var(--teal); }
   details.method { border:1px solid var(--border); border-radius:var(--radius-sm); margin-top:.5rem; }
   details.method > summary { cursor:pointer; padding:8px 12px; font-size:12px; font-weight:600; color:var(--navy-mid); list-style:none; }
@@ -254,7 +253,7 @@ const LOCALE="en-GB", SYMBOL="£";
 const fmt    = n => SYMBOL + Math.round(n||0).toLocaleString(LOCALE);
 const fmtK   = n => { n=n||0; return n>=1e6 ? `${SYMBOL}${(n/1e6).toFixed(2)}m` : n>=1000 ? `${SYMBOL}${Math.round(n/1000).toLocaleString(LOCALE)}k` : fmt(n); };
 const fmtNum = n => Math.round(n||0).toLocaleString(LOCALE);
-const fmtDays = m => m==null ? "n/a" : Math.round(m*365/12).toLocaleString(LOCALE)+" days";
+const fmtDays = m => m==null ? "n/a" : m===0 ? "immediate" : Math.round(m*365/12).toLocaleString(LOCALE)+" days";   // 0 months = no licence fee to pay back
 const fmtMult = m => m==null ? "n/a" : (m>=10 ? Math.round(m) : Math.round(m*10)/10)+"×";
 const pct    = n => `${Math.round(n)}%`;
 const num    = (v,f=0) => { const n=parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isNaN(n)?f:n; };  // strips £, commas, spaces from pasted figures
@@ -296,8 +295,9 @@ const RECRUIT_RECOVERY_RATE = 0.10;       // share recovered by activating idle 
    Displacement is applied to this share only, so the tool never implies 100% of agency is bankable. */
 const DISPLACEABLE_SHARE_DEFAULT = 0.80;
 /* [Benchmark brief §1] Agency spend as a share of turnover, by type — used to estimate a typical
-   agency spend when only turnover is known (acute large/teaching banks ~1%, medium DGH ~3-4%, etc.). */
-const AGENCY_PCT_OF_TURNOVER = { acute:0.035, "acute-large":0.01, mental:0.042, community:0.03, ambulance:0.018, ics:0.03 };
+   agency spend when only turnover is known (medium DGH ~3-4%; large/teaching acutes with
+   mature banks run ~1%, but there is no separate preset for them, so keyed by preset only). */
+const AGENCY_PCT_OF_TURNOVER = { acute:0.035, mental:0.042, community:0.03, ambulance:0.018, ics:0.03 };
 function agencySpendFromTurnover(turnover, type){ return num(turnover) * (AGENCY_PCT_OF_TURNOVER[type]!=null ? AGENCY_PCT_OF_TURNOVER[type] : 0.03); }
 /* [Benchmark brief §5] Agency-intensity regime from agency % of turnover: <1% mature/low, 1-4% typical, >4% high. */
 function agencyRegime(totSpend, turnover){ const t=num(turnover); if(!(t>0)) return { pct:null, key:null }; const pct=(totSpend/t)*100; return { pct, key: pct<1?"low":(pct<=4?"typical":"high") }; }
@@ -350,7 +350,7 @@ const ORG_TYPES = {
     G("doc","Medics (locum / SAS)","SAS / ST3+",60000,200,7000000),
   ]},
 };
-const AFC_BANDS = [["Band 2",25272],["Band 3",26618],["Band 5",34592],["Band 5/6",38400],["Band 6",42170],["Band 2/3",25900],["SAS / ST3+",60000]];
+const AFC_BANDS = [["Band 2",25272],["Band 2/3",25900],["Band 3",26618],["Band 5",34592],["Band 5/6",38400],["Band 6",42170],["SAS / ST3+",60000]];   // ascending pay order for the dropdown
 const buildOrg = key => (ORG_TYPES[key]||ORG_TYPES.acute).groups.map(g=>({ ...g }));
 function scaleGroupsTo(groups,key,target){
   const vals=groups.map(g=>num(g[key])); const cur=vals.reduce((a,b)=>a+b,0);
@@ -691,7 +691,7 @@ function App(){
                 <SizeField label="Total annual agency spend" prefix="£" value={totalSpend} info="Your organisation's total yearly agency spend. This is the anchor for the saving; we rescale each group's spend proportionally, then fine-tune per group below. Prefer your own figure; national agency spend is falling, so use latest-year." hint="The anchor for the saving" onCommit={v=>setGroups(scaleGroupsTo(groups,"agencySpend",v))}/>
                 <SizeField label="Annual turnover (£, optional)" prefix="£" value={turnover} info="Your organisation's annual operating turnover (optional). Used to gauge agency intensity — agency as a % of turnover — which tailors the headline framing. You can also estimate a typical agency spend from it." hint="Sets agency intensity & framing" onCommit={v=>setTurnover(num(v))}/>
               </div>
-              {turnover>0 && (()=>{ const pct=(totalSpend/turnover)*100; const key=pct<1?"low":(pct<=4?"typical":"high"); const lbl={low:"low-agency / mature bank",typical:"typical reliance",high:"high reliance"}[key]; return (
+              {turnover>0 && (()=>{ const {pct,key}=agencyRegime(totalSpend,turnover); const lbl={low:"low-agency / mature bank",typical:"typical reliance",high:"high reliance"}[key]; return (
                 <div className="disp-note" style={{marginTop:12,background:C.navyLight,color:C.navy}}>Agency is <b>{pct.toFixed(1)}% of turnover</b> — {lbl}. <button type="button" className="linkish" style={{border:"none",background:"none",color:C.teal,fontWeight:700,cursor:"pointer",fontFamily:"inherit",padding:0,textDecoration:"underline"}} onClick={()=>setGroups(scaleGroupsTo(groups,"agencySpend",Math.round(agencySpendFromTurnover(turnover,preset))))}>Estimate agency spend from turnover →</button></div>
               ); })()}
             </div>
@@ -815,7 +815,7 @@ function App(){
 
             {/* How the cash saving is worked out — bank vs agency rate vs the premium gap (the defensible basis) */}
             <div className="panel">
-              <div className="panel-title">How the cash saving is worked out</div>
+              <h3 className="panel-title">How the cash saving is worked out</h3>
               <p style={{fontSize:12.5,color:C.textMid,lineHeight:1.6,margin:"0 0 .6rem"}}>We only ever bank the <b>gap</b> between an agency shift and the same shift on your own bank — never the whole agency cost — and only on the shifts you realistically move to bank (the {Math.round(r.displaceableShare*100)}% displaceable share × your confidence level).</p>
               {(()=>{ const hrs=r.shiftHours||8, bankHr=r.bankShiftCost/hrs, agHr=r.agencyShiftCost/hrs, gapS=r.agencyShiftCost-r.bankShiftCost, gapHr=gapS/hrs, m2=v=>"£"+(v||0).toFixed(2);
                 const rate=(s,h)=>(<>{fmt(s)} <small style={{color:C.textLight,fontWeight:400}}>/shift · {m2(h)}/hr</small></>);
@@ -835,24 +835,25 @@ function App(){
 
             {/* Single annual steady-state (Rev D: ramp removed) */}
             <div className="panel">
-              <div className="panel-title">Annual, ongoing saving</div>
+              <h3 className="panel-title">Annual, ongoing saving</h3>
               <p style={{fontSize:12.5,color:C.textMid,lineHeight:1.6,margin:0}}>This is a <b>single annual, steady-state figure</b>, not a multi-year projection. Smart Match savings start once it is live and recur every year it is in use; the licence fee shown is an annual cost, so the net saving repeats each year.</p>
             </div>
 
             {!isQuick && r.regime && <div className="panel">
-              <div className="panel-title">Agency intensity: {r.agencyPctOfTurnover.toFixed(1)}% of turnover</div>
+              <h3 className="panel-title">Agency intensity: {r.agencyPctOfTurnover.toFixed(1)}% of turnover</h3>
               <p style={{fontSize:12.5,color:C.textMid,lineHeight:1.6,margin:0}}>{r.regime==="low" ? <>This is a <b>mature, low-agency</b> model (under 1% of turnover): rate-arbitrage savings are small, so the stronger story is <b>admin time released, fill-rate improvement and bank-rate control</b> rather than the cash premium.</> : r.regime==="high" ? <>This trust is <b>highly agency-reliant</b> (over 4% of turnover): <b>the cash saving from displacing the agency premium dominates</b> — the strongest rate-arbitrage case.</> : <>This is <b>typical</b> agency reliance (1–4% of turnover): <b>the cash saving from the agency premium</b> is the headline, with admin time a secondary benefit.</>} Displacement is applied to the <b>{Math.round(displaceableShare*100)}% displaceable share</b> only.</p>
             </div>}
 
             {!isQuick && <div className="table-wrap"><table>
-              <thead><tr><th>Staff group</th><th className="num">Bank pool</th><th className="num">Agency spend</th>{perGroupPremium && <th className="num">Premium</th>}<th className="num">Duties displaced</th><th className="num">Cash saving</th></tr></thead>
+              <caption className="sr-only">Cash saving by staff group: bank pool, agency spend, duties displaced and cash saving for each group, with totals</caption>
+              <thead><tr><th scope="col">Staff group</th><th scope="col" className="num">Bank pool</th><th scope="col" className="num">Agency spend</th>{perGroupPremium && <th scope="col" className="num">Premium</th>}<th scope="col" className="num">Duties displaced</th><th scope="col" className="num">Cash saving</th></tr></thead>
               <tbody>
                 {r.rows.map(x=>(<tr key={x.id}><td>{x.role}</td><td className="num">{fmtNum(x.head)}</td><td className="num">{fmt(x.spend)}</td>{perGroupPremium && <td className="num">{(x.premium!=null?x.premium:premium)}%</td>}<td className="num">{fmtNum(x.displaced)}</td><td className="num">{fmt(x.saving)}</td></tr>))}
                 <tr className="total-row"><td>Total</td><td className="num">{fmtNum(r.totHead)}</td><td className="num">{fmt(r.totSpend)}</td>{perGroupPremium && <td className="num">n/a</td>}<td className="num">{fmtNum(r.totDisplaced)}</td><td className="num">{fmt(r.totSaving)}</td></tr>
               </tbody></table></div>}
 
             <div className="panel">
-              <div className="panel-title">{isQuick?"Saving by source":"Cash saving by staff group"}</div>
+              <h3 className="panel-title">{isQuick?"Saving by source":"Cash saving by staff group"}</h3>
               {isQuick ? (
                 [["Agency premium displaced",r.totSaving],["Admin time saving",r.adminSaving],["Recruitment waste recovered",r.recruitSaving]]
                   .filter(x=>x[1]>0).map(([lbl,val],i)=>{ const mx=Math.max(r.totSaving,r.adminSaving,r.recruitSaving,1);
@@ -905,7 +906,7 @@ function App(){
             </div>
 
             <div className="assumptions">
-              <div className="panel-title">Assumptions &amp; methodology</div>
+              <h3 className="panel-title">Assumptions &amp; methodology</h3>
               <div className="arow"><span>Saving basis</span><span>Agency premium displaced (cash)</span></div>
               <div className="arow explain"><span className="albl">Why not the full shift value? <span className="conf high">CORE</span></span><span className="adesc">Filling a bank shift is expenditure. A trust only saves when a duty that would have been agency is covered by bank instead: the saving is the <b>difference</b> (the premium), not the whole shift. Gross shift value sits under Capacity.</span></div>
               <Method formula={"bank_shift_cost  = (pay / 1957.5) × hours × (1 + on-cost)\nagency_shift_cost= bank_shift_cost × (1 + premium)\ndisplaced_duties = (agency_spend / agency_shift_cost) × displaceable_share × displacement\nCASH SAVING      = displaced_duties × bank_shift_cost × premium"}
@@ -934,7 +935,7 @@ function App(){
         )}
       </main>
 
-      <footer><p>Built by <strong>RLDatix Smart Match</strong> · Cash saving = agency premium displaced (not gross shift value) · 2026/27 NHS AfC pay scales · Figures are <strong>indicative</strong>, conservative and editable · validate with your organisation's own rates ·Pilot study = 2-site data within a 4-trust programme, anonymised pending client sign-off; outcomes vary and are not solely attributable to the platform.</p></footer>
+      <footer><p>Built by <strong>RLDatix Smart Match</strong> · Cash saving = agency premium displaced (not gross shift value) · 2026/27 NHS AfC pay scales · Figures are <strong>indicative</strong>, conservative and editable · validate with your organisation's own rates · Pilot study = 2-site data within a 4-trust programme, anonymised pending client sign-off; outcomes vary and are not solely attributable to the platform.</p></footer>
     </div>
   );
 }
