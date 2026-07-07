@@ -611,8 +611,11 @@ function App(){
        ["Total agency spend (anchor)",fmt(r.totSpend)],["Premium / confidence level",premium+"% / "+displacement+"% ("+st.key+")"],["Displaceable share of agency",Math.round(r.displaceableShare*100)+"%"],["Licence fee",fmt(platformCost)+"/yr"]
       ].forEach(([k,v])=>{ doc.text(k,14,y); doc.text(String(v),196,y,{align:"right"}); y+=6; });
       if(mode==="detailed" && doc.autoTable){ y+=2; doc.setFont("helvetica","bold"); doc.text("Saving by staff group",14,y);
-        doc.autoTable({ startY:y+2, head:[["Staff group","Agency spend","Duties displaced","Cash saving"]], body:r.rows.map(x=>[x.role,fmt(x.spend),fmtNum(x.displaced),fmt(x.saving)]),
+        doc.autoTable({ startY:y+2,
+          head:[["Staff group","Agency spend",...(perGroupPremium?["Premium"]:[]),"Duties displaced","Cash saving"]],
+          body:r.rows.map(x=>[x.role,fmt(x.spend),...(perGroupPremium?[(x.premium!=null?x.premium:premium)+"%"]:[]),fmtNum(x.displaced),fmt(x.saving)]),
           styles:{fontSize:9}, headStyles:{fillColor:[15,65,70]}, margin:{left:14,right:14} }); y=doc.lastAutoTable.finalY+8; }
+      if(y>265){ doc.addPage(); y=20; }   // autotable paginates itself; keep the disclaimer on the page too
       doc.setFontSize(8); doc.setTextColor(120,130,150);
       doc.text(doc.splitTextToSize("Indicative only. Cash saving = agency premium displaced when improved bank utilisation moves duties off agency; it excludes the cost of the bank shifts themselves (capacity, shown separately). 2026/27 NHS AfC midpoints; conservative, editable assumptions. Pilot-study figures are from 2 sites in a 4-trust programme, anonymised pending client sign-off, and are not solely attributable to the platform.",182),14,y);
       doc.save("smart-match-roi-estimate.pdf");
