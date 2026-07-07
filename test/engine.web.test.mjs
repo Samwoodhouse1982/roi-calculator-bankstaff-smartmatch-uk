@@ -23,7 +23,7 @@ const marker = body.indexOf('/* ===== HOOKS + SMALL COMPONENTS');
 assert.ok(marker > 0, 'could not locate the engine/components boundary in roi-calculator.html');
 const engineJS = body.slice(0, marker).replace(/const\s*\{\s*useState[^;]*\}\s*=\s*React;/, '');
 // eslint-disable-next-line no-new-func
-const E = new Function(engineJS + '\nreturn { calc, simpleToInput, buildOrg, platformCostFor };')();
+const E = new Function(engineJS + '\nreturn { calc, simpleToInput, buildOrg, platformCostFor, num };')();
 
 const SHARED = { premium: 20, displacement: 13, platformCost: 17000, shiftHours: 8, oncost: 20, displaceableShare: 0.80 };
 const ADMIN = { enabled: true, managers: 12, hoursPerDay: 1.0, workingDays: 225, loadedHourly: 18 };
@@ -71,6 +71,15 @@ test('IDENTITY: saving per £ = displaceable 0.8 x 0.13 x 0.20/1.20 (audit #7/#9
     const d = detailed(type);
     assert.ok(Math.abs(d.totSaving / d.totSpend - SAVING_PER_POUND) < 1e-9, `Detailed ${type}`);
   }
+});
+
+test('num() keeps scientific notation intact and still strips pasted currency', () => {
+  assert.equal(E.num('1e6'), 1000000);      // type=number inputs accept this; the old regex stripped the e -> 16
+  assert.equal(E.num('2.5e3'), 2500);
+  assert.equal(E.num('£1,500'), 1500);
+  assert.equal(E.num(' 42 '), 42);
+  assert.equal(E.num('-5'), -5);
+  assert.equal(E.num('', 7), 7);
 });
 
 test('fillAfter applies the displaceable share, matching the modelled shift counts', () => {
