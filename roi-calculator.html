@@ -102,7 +102,7 @@
   .inputs-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
   .field { display:flex; flex-direction:column; gap:5px; }
   .field label { font-size:12px; color:var(--text-light); display:flex; align-items:center; gap:5px; }
-  .flabel { display:flex; align-items:center; gap:5px; } /* label + InfoTip side by side; the tip sits OUTSIDE the label so its text never joins the control's accessible name */
+  .flabel { display:flex; align-items:center; gap:5px; font-size:12px; color:var(--text-light); } /* label + InfoTip side by side; the tip sits OUTSIDE the label so its text never joins the control's accessible name */
   .field input[type=number] { border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 10px; font-family:inherit; font-size:14px; color:var(--navy); background:var(--mid-grey); width:100%; transition:border-color .15s,box-shadow .15s; }
   .field input[type=number]:focus { outline:none; border-color:var(--teal); box-shadow:0 0 0 3px rgba(15,118,110,.12); background:#fff; }
   .hint { font-size:11px; color:var(--text-light); line-height:1.5; }
@@ -667,7 +667,7 @@ function App(){
             </div>
             <div className="params-grid" style={{marginTop:12}}>
               <div className="field">
-                <label>Confidence level: {displacement}% · {st.key} <InfoTip text="Share of current agency usage that improved bank utilisation moves to bank. Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable, so three stances are offered; public/self-serve defaults to Conservative."/></label>
+                <span className="flabel">Confidence level: {displacement}% · {st.key} <InfoTip text="Share of current agency usage that improved bank utilisation moves to bank. Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable, so three stances are offered; public/self-serve defaults to Conservative."/></span>
                 <div className="stance-btns">{[["Conservative",13],["Moderate",26],["Optimistic",50]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
                 <input type="range" min="8" max="50" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Confidence level, percent" aria-valuetext={displacement+"%, "+st.key}/>
                 <div className="slider-ctx"><span>8% conservative</span><span>26% moderate</span><span>50% optimistic</span></div>
@@ -740,7 +740,7 @@ function App(){
                 <div style={{display:"flex",alignItems:"center",gap:7,marginTop:8}}><label style={{display:"flex",alignItems:"center",gap:7,fontSize:12,fontWeight:600,color:C.navy,cursor:"pointer"}}><input type="checkbox" checked={perGroupPremium} onChange={e=>setPGP(e.target.checked)}/> Set the agency premium per staff group</label> <InfoTip text="Off by default, one official ~20% premium across all groups (the defensible business-case default). Tick to override the premium per column, e.g. higher for medics, where you have organisation-specific agency rates."/></div>
               </div>
               <div className="field">
-                <label>Confidence level: {displacement}% · {st.key} <InfoTip text="Share of your baseline agency usage that improved bank utilisation moves to bank. Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; the commercial variant can show the Moderate case with a rep to frame the caveats."/></label>
+                <span className="flabel">Confidence level: {displacement}% · {st.key} <InfoTip text="Share of your baseline agency usage that improved bank utilisation moves to bank. Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; the commercial variant can show the Moderate case with a rep to frame the caveats."/></span>
                 <div className="stance-btns">{[["Conservative",13],["Moderate",26],["Optimistic",50]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
                 <input type="range" min="8" max="50" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Confidence level, percent" aria-valuetext={displacement+"%, "+st.key}/>
                 <div className="slider-ctx"><span>8% conservative</span><span>26% moderate</span><span>50% optimistic</span></div>
