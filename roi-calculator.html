@@ -35,14 +35,6 @@
   header h1 em { color:var(--seafoam); font-style:normal; }
   header p { font-size:16px; opacity:.82; max-width:600px; line-height:1.7; }
 
-  .evidence-strip { background:var(--teal-mid); color:#fff; }
-  .evidence-inner { padding:1rem 2rem; display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); }
-  .ev-stat { padding:.75rem 1.25rem; border-right:1px solid rgba(255,255,255,.25); }
-  .ev-stat:last-child { border-right:none; }
-  .ev-num { font-size:22px; font-weight:700; line-height:1.2; margin-bottom:2px; }
-  .ev-label { font-size:11px; opacity:.9; line-height:1.4; }
-  .ev-source { font-size:10px; opacity:.7; margin-top:3px; font-style:italic; }
-
   .intro-advice { font-size:14.5px; color:var(--text-mid); line-height:1.6; margin-bottom:1.1rem; max-width:640px; }
   .intro-advice strong { color:var(--navy); }
   .strategy { background:var(--navy-light); border-bottom:1px solid var(--border); font-size:12px; color:var(--text-mid); }
@@ -219,7 +211,7 @@
   @media (prefers-reduced-motion: reduce){
     *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
   }
-  @media (max-width:480px){ header,main,.evidence-inner{ padding-left:1.25rem; padding-right:1.25rem; } .roi-co{ gap:1.5rem; } }
+  @media (max-width:480px){ header,main{ padding-left:1.25rem; padding-right:1.25rem; } .roi-co{ gap:1.5rem; } }
   @media print { .cal-overlay,.actions,.lead,.adv-toggle,.mode-toggle,header p{ display:none !important; } body{ background:#fff; font-size:11pt; } .results-box{ box-shadow:none; } }
 </style>
 </head>
