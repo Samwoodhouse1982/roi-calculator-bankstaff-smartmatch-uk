@@ -1,7 +1,7 @@
 import React from 'react';
 import { C, F, fmt, fmtNum } from '../theme';
 import { Card, SectionTitle, TouchSlider, Stepper, InfoTip, ToggleRow } from '../components';
-import { platformCostFor, stance, SIMPLE_BLENDED_BANK_PAY, AFC_DIVISOR, BANK_ONCOST } from '../calc/engine';
+import { platformCostFor, stance, SIMPLE_BLENDED_BANK_PAY, AFC_DIVISOR, BANK_ONCOST, QUICK_SPEND_PER_BANK_WORKER } from '../calc/engine';
 
 /* ────────────────────────────────────────────────────────────────────────
    Smart Match: three simple inputs (plus the modelling-stance slider that
@@ -37,11 +37,14 @@ export function BankStep({ bankPool, setBankPool }) {
       <div style={{ marginTop: 16, padding: "14px 18px", background: C.accentSoft, borderRadius: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.5 }}>
         BankStaff+ licence at this size: <strong style={{ color: C.accent }}>{fmt(platformCostFor(bankPool))}/yr</strong> <span style={{ color: C.textMuted }}>(G-Cloud pricing, ex VAT; your return is measured against this fee)</span>
       </div>
+      <div style={{ marginTop: 10, padding: "14px 18px", background: C.accentSoft, borderRadius: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.5 }}>
+        Estimated annual agency spend: <strong style={{ color: C.accent }}>{fmt(bankPool * QUICK_SPEND_PER_BANK_WORKER)}/yr</strong> <span style={{ color: C.textMuted }}>(~{fmt(QUICK_SPEND_PER_BANK_WORKER)} per bank worker, the anchor for the saving; use the detailed web calculator to enter your real figure)</span>
+      </div>
       <div style={{ marginTop: 10, fontSize: F.tiny, color: C.textMuted, lineHeight: 1.5, display: "flex", alignItems: "flex-start", gap: 8 }}>
         <span>
           Bank shift costs use <strong style={{ color: C.textMid }}>2026/27 NHS Agenda for Change band-mix midpoints</strong> (~£{Math.round(SIMPLE_BLENDED_BANK_PAY / 1000)}k blended). This gives an hourly base rate of £{(SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR).toFixed(2)}, and we add an additional <strong style={{ color: C.textMid }}>{Math.round(BANK_ONCOST * 100)}% employer on-cost</strong> (employer NI, pension etc), bringing the hourly rate to <strong style={{ color: C.textMid }}>£{((SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR) * (1 + BANK_ONCOST)).toFixed(2)} all-in</strong>.
         </span>
-        <InfoTip text={`Employer on-costs are the costs on top of gross pay: employer National Insurance and pension contributions. The bank rate here already includes a ${Math.round(BANK_ONCOST * 100)}% on-cost, so raw Agenda for Change pay of £${(SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR).toFixed(2)}/hr becomes £${((SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR) * (1 + BANK_ONCOST)).toFixed(2)}/hr all-in. Every saving on this calculator is measured against this all-in cost, so on-costs are counted once and never added again.`} />
+        <InfoTip text={`Employer on-costs are the costs on top of gross pay: employer National Insurance and pension contributions. The bank rate here already includes a ${Math.round(BANK_ONCOST * 100)}% on-cost, so raw Agenda for Change pay of £${(SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR).toFixed(2)}/hr becomes £${((SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR) * (1 + BANK_ONCOST)).toFixed(2)}/hr all-in. ${Math.round(BANK_ONCOST * 100)}% sits below the full ~30% NHS employer rate because bank-only workers often opt out of the pension. It changes the modelled shift counts, not the cash saving, and is counted once, never added again.`} />
       </div>
     </Card>
   </div>;
@@ -61,9 +64,9 @@ export function AgencyStep({ agencyFillRate, setAgencyFillRate }) {
         step={0.1}
         onChange={setAgencyFillRate}
         format={v => `${Math.round(v * 10) / 10}%`}
-        tip="The proportion of temporary shifts filled by agency staff. Each agency shift carries a premium over the equivalent bank shift; that premium is what improved bank utilisation displaces. Defaults to 8.3%, the agreed national average drawn from nationally available RLDatix data."
+        tip="The proportion of temporary shifts filled by agency staff. This drives the agency-reliance reduction shown on your results (the cash saving is anchored to your agency spend, premium and confidence level, not to this rate). Defaults to 8.3%, the agreed national average drawn from nationally available RLDatix data."
       />
-      <Helper>Percentage refers to the proportion of staffing requirements fulfilled by agency workers. The default 8.3% is a starting point based on national average of organisations; set your own for a tailored figure.</Helper>
+      <Helper>Percentage refers to the proportion of staffing requirements fulfilled by agency workers. The default 8.3% is a starting point based on national average of organisations; set your own for a tailored figure. It shapes the reliance-reduction story, not the cash headline.</Helper>
     </Card>
   </div>;
 }
@@ -125,7 +128,7 @@ export function StanceStep({ displacement, chosen, setDisplacement }) {
         <span>13% · conservative</span><span>26% · moderate</span><span>50% · optimistic</span>
       </div>
       {chosen && <div style={{ marginTop: 20, padding: "18px 22px", background: C.accentSoft, borderRadius: 14, border: `1px solid ${C.accent}30` }}>
-        <div style={{ fontSize: F.body, fontWeight: 800, color: C.accent, marginBottom: 6 }}>{st.key === "Expected" ? "Moderate" : st.key}</div>
+        <div style={{ fontSize: F.body, fontWeight: 800, color: C.accent, marginBottom: 6 }}>{st.key}</div>
         <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6 }}>{st.note}</div>
       </div>}
     </Card>

@@ -439,7 +439,7 @@ function IdleWarning({ seconds, onStay }) {
   </div>;
 }
 
-// The kiosk lands on the Expected stance (F1) for a stronger first impression.
+// The kiosk lands on the Moderate stance (26%) for a stronger first impression.
 // The engine's DEFAULTS.displacement stays the conservative 13% baseline used by
 // the model and the golden tests; this only sets the UI's starting/reset value.
 const START_DISPLACEMENT = 26;

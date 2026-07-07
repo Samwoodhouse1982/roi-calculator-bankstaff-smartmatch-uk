@@ -20,19 +20,33 @@ import { calc, calcDetailed, buildOrg, DEFAULTS, DETAILED_DEFAULTS, platformCost
 // premium (20%) + displacement (13%): d * p/(1+p) = 0.13 * 0.20/1.20.
 const SAVING_PER_POUND = 0.13 * 0.8 * 0.20 / 1.20; // displaceable share applied (benchmark §4)
 
-// Post-amends defaults: agencyFillRate 8.3% (national average) at the default
-// 17k platform cost; premium 20%, displacement 13%.
-test('Quick default matches the golden headline', () => {
+// Post-M3 defaults: quick mode anchors on agency spend auto-estimated at £7k/bank
+// worker (660 × 7000 = £4.62m), replacing the unsourced 60-shifts-per-worker
+// derivation. Matches the web build's re-pinned quick goldens exactly.
+test('Quick default matches the golden headline (spend-anchored, audit M3)', () => {
   const q = calc({ ...DEFAULTS, includeAdmin: true });
-  assert.equal(Math.round(q.netSaving), 44031);
-  assert.equal(Math.round(q.agencySaving), 12431);
+  assert.equal(Math.round(q.agencySpend), 4620000);           // 660 × £7,000
+  assert.equal(Math.round(q.agencySaving), 80080);            // 4.62m × 0.8 × 0.13 × 0.2/1.2
   assert.equal(Math.round(q.adminSaving), 48600);
-  assert.equal(Math.round(q.grossBenefit), 61031);
-  assert.equal(Math.round(q.roiPct), 259);
-  assert.equal(Math.round(q.roiMultiple * 100) / 100, 2.59);   // net return on the licence fee (net saving ÷ cost)
+  assert.equal(Math.round(q.grossBenefit), 128680);
+  assert.equal(Math.round(q.netSaving), 111680);
+  assert.equal(Math.round(q.roiPct), 657);
+  assert.equal(Math.round(q.roiMultiple * 100) / 100, 6.57);   // net return on the licence fee (net saving ÷ cost)
   assert.equal(q.timeSavedWeek, 60);
-  assert.equal(Math.round(q.agencySpend), 717189);
-  assert.ok(Math.abs(q.paybackMonths - 3.34) < 0.01);
+  assert.ok(Math.abs(q.paybackMonths - 1.585) < 0.01);
+});
+
+test('Quick agency spend: auto-estimate is £7k/bank worker; an explicit figure wins (audit M3)', () => {
+  assert.equal(Math.round(calc({ ...DEFAULTS }).agencySpend), 4620000);
+  const own = calc({ ...DEFAULTS, agencySpend: 15000000 });
+  assert.equal(Math.round(own.agencySpend), 15000000);
+  assert.equal(Math.round(own.agencySaving), 260000);         // same anchor as the acute preset → same saving
+});
+
+test('Quick default start (2,000 bank, Moderate 26%) does NOT trip the >40× warning (audit M3)', () => {
+  const start = calc({ bankPool: 2000, displacement: 26, platformCost: platformCostFor(2000) });
+  assert.ok(start.roiPct > 3000 && start.roiPct < 4000);      // ~31× is legitimate scale, not an input error
+  assert.equal(start.implausibleRoi, false);
 });
 
 const DETAILED_GOLDEN = {
@@ -81,7 +95,8 @@ test('ROI is n/a (null), not 0%, when platform cost is zero (audit #16)', () => 
 test('adminOnly flags an agency-free saving, and is off by default (audit #14)', () => {
   assert.equal(calc({ ...DEFAULTS, includeAdmin: true }).adminOnly, false);
   assert.equal(Math.round(calc({ ...DEFAULTS }).adminSaving), 0); // admin OFF by default (Rev D)
-  const noAgency = calc({ ...DEFAULTS, agencyFillRate: 0, includeAdmin: true });
+  // Post-M3 the fill rate no longer drives spend, so an agency-free case is agencySpend: 0.
+  const noAgency = calc({ ...DEFAULTS, agencySpend: 0, includeAdmin: true });
   assert.equal(noAgency.adminOnly, true);
   assert.equal(Math.round(noAgency.agencySaving), 0);
 });

@@ -29,32 +29,42 @@ export function platformCostFor(totalBankHeadcount) {
 export const ADMIN_HRS_PER_DAY = 1.0;       // conservative (client suggested 2.5 = optimistic)
 export const ADMIN_WORKING_DAYS = 225;
 export const ADMIN_LOADED_HOURLY = 18;
-export const SIMPLE_SHIFTS_PER_WORKER_YR = 60;   // bank work is ad-hoc, not full-time
 export const SIMPLE_BLENDED_BANK_PAY = 34000;    // AfC band-mix weighted midpoint (2026/27, +3.3%)
+/* [Audit M3] Quick-mode agency-spend auto-estimate, per bank worker. The old derivation
+   (60 ad-hoc shifts/worker run through the fill rate) had no source and implied ~£1.1k of
+   agency spend per bank worker — ~6× below the calibrated presets (£6k–£10k/worker) — so
+   Quick understated the saving vs Detailed for the same organisation. £7k sits at the
+   conservative end of the preset range; the fill rate now feeds the reliance narrative only. */
+export const QUICK_SPEND_PER_BANK_WORKER = 7000;
 export const DEFAULTS = { bankPool: 660, agencyFillRate: 8.3, numManagers: 12, premium: 20, displacement: 13 };  // agencyFillRate 8.3% = agreed national average (RLDatix internal data)
 /* [Benchmark §4] Displaceable share of agency that can realistically move to bank (excludes break-glass /
    safety-critical cover and hard-to-fill specialist roles); displacement applies to this share only. */
 export const DISPLACEABLE_SHARE_DEFAULT = 0.80;
 
+/* Stance notes state the EFFECTIVE whole-book rate (stance % × 80% displaceable share),
+   not just the nominal %, so the label matches what the engine actually applies (audit M2).
+   'Moderate' is the customer-facing name (was internally 'Expected'). */
 export function stance(d) {
-  if (d <= 18) return { key: "Conservative", note: `Assumes ${d}% of today's agency shifts move to your own bank, a cautious setting below the 26% measured in a pilot study. It holds up without your own organisation's data.` };
-  if (d <= 30) return { key: "Expected", note: `Assumes ${d}% moves to your own bank, ${d === 26 ? "matching" : "close to"} the 26% reached in a pilot study at a community trust (agency fill fell 8.1%→6.0%).` };
-  return { key: "Optimistic", note: `Assumes ${d}% moves to your own bank, above a pilot study's result, so it is best backed by your own organisation's figures.` };
+  const eff = Math.round(d * DISPLACEABLE_SHARE_DEFAULT);   // effective share of ALL agency
+  if (d <= 18) return { key: "Conservative", note: `Assumes ${d}% of the displaceable agency share moves to your own bank — about ${eff}% of all agency, well below the 26% relative fall seen in a pilot study. It holds up without your own organisation's data.` };
+  if (d <= 30) return { key: "Moderate", note: `Assumes ${d}% of the displaceable agency share moves to your own bank — about ${eff}% of all agency, near the 26% relative fall reached at a community trust (agency fill 8.1%→6.0%). Single-site and partly attributable, so best used in a guided conversation.` };
+  return { key: "Optimistic", note: `Assumes ${d}% of the displaceable agency share moves to your own bank — about ${eff}% of all agency, at or beyond the pilot result, so best backed by your own organisation's figures.` };
 }
 
 export function calc(inp) {
   const { bankPool = 0, agencyFillRate = 0, numManagers = 0,
           premium = 20, displacement = 13, shiftHours = SHIFT_HOURS,
           oncost = BANK_ONCOST * 100, platformCost = PLATFORM_COST, includeAdmin = false, displaceableShare = DISPLACEABLE_SHARE_DEFAULT } = inp;
-  const p = premium / 100, d = displacement / 100, oc = oncost / 100, a = Math.min(0.99, agencyFillRate / 100);
-  const bankShifts = bankPool * SIMPLE_SHIFTS_PER_WORKER_YR;
-  const totalTemp = a < 1 ? bankShifts / (1 - a) : bankShifts;   // bank fills the non-agency share
-  const agencyShifts = totalTemp * a;
+  const p = premium / 100, d = displacement / 100, oc = oncost / 100;
   const bankShiftCost = (SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR) * shiftHours * (1 + oc);
   const agencyShiftCost = bankShiftCost * (1 + p);
-  const agencySpend = agencyShifts * agencyShiftCost;
-  const displaced = agencyShifts * displaceableShare * d;        // displaceable share only (benchmark §4)
-  const agencySaving = displaced * bankShiftCost * p;            // = displaced × (agency-bank); CASH
+  // [Audit M3] Anchor on agency spend (auto-estimated at ~£7k per bank worker, consistent
+  // with the detailed presets), NOT on an unsourced shifts-per-worker count run through the
+  // fill rate. The fill rate now feeds the reliance narrative (fillAfter) only.
+  const agencySpend = inp.agencySpend != null ? Math.max(0, Number(inp.agencySpend) || 0) : bankPool * QUICK_SPEND_PER_BANK_WORKER;
+  const baseline = agencyShiftCost > 0 ? agencySpend / agencyShiftCost : 0;
+  const displaced = baseline * displaceableShare * d;           // duty counts (need a pay rate)
+  const agencySaving = agencySpend * displaceableShare * d * (p / (1 + p));   // CASH: pay-independent identity
   const timeSavedWeek = numManagers * ADMIN_HRS_PER_DAY * 5;     // co-headline (hours/week), always shown
   const adminSaving = includeAdmin ? numManagers * ADMIN_HRS_PER_DAY * ADMIN_WORKING_DAYS * ADMIN_LOADED_HOURLY : 0;
   const grossBenefit = agencySaving + adminSaving;
@@ -63,10 +73,10 @@ export function calc(inp) {
   const roiMultiple = platformCost > 0 ? netSaving / platformCost : null;   // net return on the licence fee (net saving ÷ cost)
   const paybackMonths = grossBenefit > 0 ? platformCost / (grossBenefit / 12) : null;
   const capacityValue = displaced * bankShiftCost;              // gross bank backfill cost (NON-cash)
-  const fillAfter = agencyFillRate * (1 - d);
+  const fillAfter = agencyFillRate * (1 - displaceableShare * d);   // reduction on the displaceable share only, consistent with the modelled counts
   const exceedsSpend = agencySaving > agencySpend && agencySpend > 0;
   const adminOnly = agencySaving <= 0 && adminSaving > 0;       // reachable check: saving is admin time only
-  const implausibleRoi = roiPct != null && roiPct > 3000;
+  const implausibleRoi = roiPct != null && roiPct > 4000;       // >40× (M3: the re-anchored default start ~31× is legitimate scale)
   return { agencySpend, agencySaving, adminSaving, timeSavedWeek, grossBenefit, netSaving, roiPct, roiMultiple,
            paybackMonths, displaced, capacityValue, fillNow: agencyFillRate, fillAfter,
            exceedsSpend, adminOnly, implausibleRoi, premium, displacement, platformCost,
@@ -206,7 +216,7 @@ export function calcDetailed(input) {
     rows, totSpend, totSaving, totDisplaced, totHead, totCapacityValue,
     adminSaving, recruitSaving, timeSavedWeek, grossBenefit, netSaving, roiPct, roiMultiple, paybackMonths,
     exceedsSpend: totSaving > totSpend && totSpend > 0, adminOnly: totSaving <= 0 && (adminSaving > 0 || recruitSaving > 0),
-    implausibleRoi: roiPct != null && roiPct > 3000,
+    implausibleRoi: roiPct != null && roiPct > 4000,   // >40× (M3 parity: ICS preset ~32× is legitimate scale)
     fillNow, fillAfter, premium, displacement, perGroupPremium, platformCost: num(platformCost), bankShiftCost, agencyShiftCost, shiftHours,
     displaceableShare, turnover: num(turnover), agencyPctOfTurnover: reg.pct, regime: reg.key,
     // aliases so the shared ResultsPage can render either model unchanged:
