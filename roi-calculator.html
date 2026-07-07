@@ -618,7 +618,7 @@ function App(){
       doc.setTextColor(15,65,70); doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.text("Headline",14,y); y+=6; doc.setFont("helvetica","normal"); doc.setFontSize(10);
       [["Net annual cash saving",noNet?"None at these inputs (licence fee exceeds the modelled premium)":fmt(r.netSaving)],["Admin time saved / week",Math.round(r.timeSavedWeek).toLocaleString(LOCALE)+" hours"],
        ["Gross annual benefit",fmt(r.grossBenefit)],["Payback (licence / gross)",noNet?"n/a":fmtDays(r.paybackMonths)],["Return (net / licence fee)",noNet?"n/a":fmtMult(r.roiMultiple)],
-       ["Agency premium avoided (gross)",fmt(r.totSaving)],["Admin saving",fmt(r.adminSaving)],["Recruitment waste recovered",fmt(r.recruitSaving)],
+       ["Agency premium avoided (gross)",fmt(r.totSaving)],["Admin saving",fmt(r.adminSaving)],["Re-recruitment cost avoided",fmt(r.recruitSaving)],
        ["Total agency spend (anchor)",fmt(r.totSpend)],["Premium / confidence level",premium+"% / "+displacement+"% ("+st.key+")"],["Displaceable share of agency",Math.round(r.displaceableShare*100)+"%"],["Licence fee",fmt(platformCost)+"/yr"]
       ].forEach(([k,v])=>{ doc.text(k,14,y); doc.text(String(v),196,y,{align:"right"}); y+=6; });
       if(mode==="detailed" && doc.autoTable){ y+=2; doc.setFont("helvetica","bold"); doc.text("Saving by staff group",14,y);
@@ -785,14 +785,14 @@ function App(){
             <div className="card" style={{marginTop:12}}>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
                 <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600,color:C.navy,cursor:"pointer"}}>
-                  <input type="checkbox" checked={recruit.enabled} onChange={e=>setRecruit(a=>({...a,enabled:e.target.checked}))}/> Include recovered recruitment / onboarding waste (optional)
+                  <input type="checkbox" checked={recruit.enabled} onChange={e=>setRecruit(a=>({...a,enabled:e.target.checked}))}/> Include avoided re-recruitment cost (optional)
                 </label>
-                <InfoTip text="Cost of recruiting and onboarding bank workers who then go under-utilised. Smart Match recovers some of it by activating idle capacity. Conservative and off by default."/>
+                <InfoTip text="Under-utilised bank workers lapse and must be replaced. Activating idle capacity avoids part of that future re-recruitment and onboarding cost (already-spent recruitment cost is sunk and is not counted). Conservative and off by default."/>
               </div>
               {recruit.enabled && <div className="inputs-grid" style={{marginTop:12}}>
                 <Field label="Under-utilised bank workers" value={recruit.workers} min="0" onChange={v=>setRecruit(a=>({...a,workers:num(v)}))}/>
                 <Field label="Recruit + onboard cost each (£)" prefix="£" value={recruit.costPerWorker} min="0" step={100} onChange={v=>setRecruit(a=>({...a,costPerWorker:num(v)}))}/>
-                <Field label="Share recovered" value={recruit.recoveryRate} min="0" max="1" step={0.05} onChange={v=>setRecruit(a=>({...a,recoveryRate:num(v)}))} info="Fraction of that waste Smart Match recovers (e.g. 0.10 = 10%). Keep conservative."/>
+                <Field label="Share avoided" value={recruit.recoveryRate} min="0" max="1" step={0.05} onChange={v=>setRecruit(a=>({...a,recoveryRate:num(v)}))} info="Fraction of that future re-recruitment cost avoided (e.g. 0.10 = 10%). Keep conservative."/>
               </div>}
             </div>
           </div>
@@ -838,7 +838,7 @@ function App(){
             </div>
 
             {!noNet && <p style={{padding:"0 1.5rem",margin:"1rem 0 0",fontSize:12,color:C.textLight,lineHeight:1.6}}>
-              This is the agency premium you stop paying by filling more shifts from your own bank instead of agency{r.adminSaving>0?<>, plus <b style={{color:C.textMid}}>{fmtK(r.adminSaving)}</b> of admin time</>:""}{r.recruitSaving>0?<> and <b style={{color:C.textMid}}>{fmtK(r.recruitSaving)}</b> of recruitment waste recovered</>:""}, shown as an annual figure after the <b style={{color:C.textMid}}>{fmt(platformCost)}/yr</b> licence fee.
+              This is the agency premium you stop paying by filling more shifts from your own bank instead of agency{r.adminSaving>0?<>, plus <b style={{color:C.textMid}}>{fmtK(r.adminSaving)}</b> of admin time</>:""}{r.recruitSaving>0?<> and <b style={{color:C.textMid}}>{fmtK(r.recruitSaving)}</b> of re-recruitment cost avoided</>:""}, shown as an annual figure after the <b style={{color:C.textMid}}>{fmt(platformCost)}/yr</b> licence fee.
             </p>}
 
             {r.exceedsSpend && <div className="callout navy"><p className="title">⚠ Check your inputs</p><p>The modelled saving exceeds total agency spend, which isn't possible. Lower the premium or displacement, or check the agency-spend figures.</p></div>}
@@ -888,7 +888,7 @@ function App(){
             <div className="panel">
               <h3 className="panel-title">{isQuick?"Saving by source":"Cash saving by staff group"}</h3>
               {isQuick ? (
-                [["Agency premium displaced",r.totSaving],["Admin time saving",r.adminSaving],["Recruitment waste recovered",r.recruitSaving]]
+                [["Agency premium displaced",r.totSaving],["Admin time saving",r.adminSaving],["Re-recruitment cost avoided",r.recruitSaving]]
                   .filter(x=>x[1]>0).map(([lbl,val],i)=>{ const mx=Math.max(r.totSaving,r.adminSaving,r.recruitSaving,1);
                   return (<div className="bar-row" key={lbl}><div className="blbl">{lbl}</div><div className="btrack"><div className="bfill" style={{width:Math.round((val/mx)*100)+"%",background:RAMP[i%RAMP.length]}}></div></div><div className="bval">{fmt(val)}</div></div>); })
               ) : (
@@ -961,8 +961,8 @@ function App(){
               <div className="arow explain"><span className="albl">What pay, hours &amp; on-cost do <span className="conf high">CORE</span></span><span className="adesc">They calibrate <b>duty counts and the capacity value only</b>. The cash saving is agency_spend × displaceable_share × displacement × premium/(1+premium) — it does not change with pay, shift length or on-cost. The 20% on-cost default sits below the full ~30% NHS employer rate (NI + pension) because bank-only workers often opt out of the pension; set your local loaded rate.</span></div>
               <div className="arow"><span>Licence fee (ROI denominator, G-Cloud)</span><span>{fmt(platformCost)}/yr</span></div>
               <div className="arow explain"><span className="albl">Return &amp; payback basis</span><span className="adesc">Return = net annual saving ÷ licence fee (a net multiple, not a benefit–cost ratio). Payback = licence fee ÷ gross annual benefit, shown in days. The denominator is the G-Cloud licence only (ex VAT) — implementation, integration and change costs are not included; add them for a full business case.</span></div>
-              {r.recruitSaving>0 && <><div className="arow"><span>Recruitment waste recovered (optional)</span><span>{fmt(r.recruitSaving)}</span></div>
-              <div className="arow explain"><span className="albl">Source: recruitment <span className="conf low">low</span></span><span className="adesc">under-utilised workers × recruit/onboard cost × recovery share. No strong public benchmark, conservative and clearly optional.</span></div></>}
+              {r.recruitSaving>0 && <><div className="arow"><span>Re-recruitment cost avoided (optional)</span><span>{fmt(r.recruitSaving)}</span></div>
+              <div className="arow explain"><span className="albl">Source: re-recruitment <span className="conf low">low</span></span><span className="adesc">under-utilised workers × recruit/onboard cost × share avoided. Counts future replacement cost avoided by activating idle workers — sunk recruitment spend is not counted. No strong public benchmark, conservative and clearly optional.</span></div></>}
               <div className="arow explain"><span className="albl">Strategy &amp; framing</span><span className="adesc">Framed against the NHS 10 Year Plan + Workforce Paper and the Staff Health &amp; Wellbeing CQUIN. A pilot study is a small (2-site), vendor-collected sample, encouraging but indicative, not solely attributable to Smart Match, and anonymised pending client sign-off.</span></div>
             </div>
           </div>
