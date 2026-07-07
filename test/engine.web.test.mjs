@@ -73,6 +73,15 @@ test('IDENTITY: saving per £ = displaceable 0.8 x 0.13 x 0.20/1.20 (audit #7/#9
   }
 });
 
+test('Zero bank pay cannot delete a group\'s cash saving (pay cancels out of the identity)', () => {
+  const gs = E.buildOrg('acute'); gs[0].bankPay = 0;   // RNs: £6.5m agency spend, no pay rate
+  const d = E.calc({ groups: gs, ...SHARED, admin: ADMIN, recruit: { enabled: false }, fillRateNow: 8, perGroupPremium: false });
+  assert.equal(Math.round(d.totSaving), 260000);       // unchanged from the acute golden
+  assert.equal(d.rows[0].displaced, 0);                // but duty counts need a real pay rate
+  assert.equal(d.zeroPay, true);
+  assert.equal(detailed('acute').zeroPay, false);
+});
+
 test('num() keeps scientific notation intact and still strips pasted currency', () => {
   assert.equal(E.num('1e6'), 1000000);      // type=number inputs accept this; the old regex stripped the e -> 16
   assert.equal(E.num('2.5e3'), 2500);
