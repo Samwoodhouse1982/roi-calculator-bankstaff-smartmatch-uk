@@ -377,10 +377,12 @@ function scaleGroupsTo(groups,key,target){
   return groups.map((g,i)=>({...g,[key]:fl[i]*unit}));
 }
 
+/* Stance notes state the EFFECTIVE whole-book rate (stance % × 80% displaceable share),
+   not just the nominal %, so the labels match what the engine actually applies (M2). */
 function stance(d){
-  if (d<=18) return { key:"Conservative", color:C.navy, bg:C.navyLight, note:"Conservative (≈13%): about half the effect measured in a pilot study. Recommended default for public/self-serve use: defensible without organisation-specific evidence." };
-  if (d<=30) return { key:"Moderate", color:C.navyMid, bg:C.navyLight, note:"Moderate (≈26%): the effect measured at one community site (agency fill 8.1%→6.0%). Single-site and partly attributable, so best used in a guided commercial conversation." };
-  return { key:"Optimistic", color:C.teal, bg:C.tealLight, note:"Optimistic: above a pilot study's result — the higher the setting, the bolder the assumption. Use only with strong, organisation-specific evidence." };
+  if (d<=18) return { key:"Conservative", color:C.navy, bg:C.navyLight, note:"Conservative: 13% of the displaceable share ≈ 10% of all agency — well under half the pilot effect. Recommended default for public/self-serve use: defensible without organisation-specific evidence." };
+  if (d<=30) return { key:"Moderate", color:C.navyMid, bg:C.navyLight, note:"Moderate: 26% of the displaceable share ≈ 21% of all agency — just under the effect measured at one community site (agency fill 8.1%→6.0%, a 26% relative fall). Single-site and partly attributable, so best used in a guided commercial conversation." };
+  return { key:"Optimistic", color:C.teal, bg:C.tealLight, note:"Optimistic: at or beyond the pilot effect once applied to the displaceable share — the higher the setting, the bolder the assumption. Use only with strong, organisation-specific evidence." };
 }
 
 /* ===== PURE CALC ENGINE (shared by Quick + Detailed + the kiosk variant) ===== */
@@ -615,7 +617,7 @@ function App(){
       doc.text("RLDatix · indicative · "+new Date().toLocaleDateString(LOCALE)+" · "+(mode==="quick"?"Quick estimate":"Detailed"),14,23); y=40;
       doc.setTextColor(15,65,70); doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.text("Headline",14,y); y+=6; doc.setFont("helvetica","normal"); doc.setFontSize(10);
       [["Net annual cash saving",noNet?"None at these inputs (licence fee exceeds the modelled premium)":fmt(r.netSaving)],["Admin time saved / week",Math.round(r.timeSavedWeek).toLocaleString(LOCALE)+" hours"],
-       ["Gross annual benefit",fmt(r.grossBenefit)],["Payback",noNet?"n/a":fmtDays(r.paybackMonths)],["Return",noNet?"n/a":fmtMult(r.roiMultiple)],
+       ["Gross annual benefit",fmt(r.grossBenefit)],["Payback (licence / gross)",noNet?"n/a":fmtDays(r.paybackMonths)],["Return (net / licence fee)",noNet?"n/a":fmtMult(r.roiMultiple)],
        ["Agency premium avoided (gross)",fmt(r.totSaving)],["Admin saving",fmt(r.adminSaving)],["Recruitment waste recovered",fmt(r.recruitSaving)],
        ["Total agency spend (anchor)",fmt(r.totSpend)],["Premium / confidence level",premium+"% / "+displacement+"% ("+st.key+")"],["Displaceable share of agency",Math.round(r.displaceableShare*100)+"%"],["Licence fee",fmt(platformCost)+"/yr"]
       ].forEach(([k,v])=>{ doc.text(k,14,y); doc.text(String(v),196,y,{align:"right"}); y+=6; });
@@ -676,7 +678,7 @@ function App(){
             </div>
             <div className="params-grid" style={{marginTop:12}}>
               <div className="field">
-                <span className="flabel">Confidence level: {displacement}% · {st.key} <InfoTip text="Share of current agency usage that improved bank utilisation moves to bank. Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable, so three stances are offered; public/self-serve defaults to Conservative."/></span>
+                <span className="flabel">Confidence level: {displacement}% · {st.key} <InfoTip text="Share of current agency usage that improved bank utilisation moves to bank, applied to the 80% displaceable share (so Moderate 26% ≈ 21% of all agency). Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; public/self-serve defaults to Conservative."/></span>
                 <div className="stance-btns">{[["Conservative",13],["Moderate",26],["Optimistic",50]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
                 <input type="range" min="8" max="50" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Confidence level, percent" aria-valuetext={displacement+"%, "+st.key}/>
                 <div className="slider-ctx"><span>8% conservative</span><span>26% moderate</span><span>50% optimistic</span></div>
@@ -686,9 +688,9 @@ function App(){
             <button className="adv-toggle" onClick={()=>setAdv(a=>!a)}>{showAdv?"Hide":"Show"} advanced defaults (premium, licence fee, shift length)</button>
             {showAdv && <div className="params-grid" style={{marginTop:10}}>
               <Field label="Agency premium over bank (%)" value={premium} min="0" max="150" step={1} onChange={v=>setPremium(num(v))} info="Default 20% (HoC Library average); contested at shift level, use your own rate." />
-              <Field label="BankStaff+ licence fee (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v)); setPcAuto(false); }} info="Auto-set from your bank size using G-Cloud pricing (ex VAT); fully editable. This is the ROI denominator."/>
+              <Field label="BankStaff+ licence fee (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v)); setPcAuto(false); }} info="Auto-set from your bank size using G-Cloud pricing (ex VAT); fully editable. This is the ROI denominator — licence only (ex VAT); add implementation and change costs if material for your business case."/>
               <Field label="Shift length (hours)" value={shiftHours} min="1" step={0.5} onChange={v=>setSH(num(v))}/>
-              <Field label="Bank on-cost (%)" value={oncost} min="0" step={1} onChange={v=>setOncost(num(v))} info="Employer NI + pension on bank pay, already included in the bank rate (default 20%). It sets the all-in bank shift cost the saving is measured against, so on-costs are counted once, never added on top."/>
+              <Field label="Bank on-cost (%)" value={oncost} min="0" step={1} onChange={v=>setOncost(num(v))} info="Employer NI + pension on bank pay, already included in the bank rate (default 20% — below the full ~30% NHS employer rate because bank-only workers often opt out of the pension; set your local loaded rate). It changes duty counts, not the cash saving, and is counted once, never added on top."/>
             </div>}
           </div>
         ) : (
@@ -732,7 +734,7 @@ function App(){
                 <div className="inputs-grid">
                   <Field label="Bank headcount" value={g.headcount} min="0" onChange={v=>setG(i,"headcount",v)}/>
                   <Field label="Annual agency spend" prefix="£" value={g.agencySpend} min="0" step={50000} onChange={v=>setG(i,"agencySpend",v)} info="Yearly agency spend for this group, the anchor for the saving." hint="The anchor for the saving"/>
-                  <Field label="Bank pay (£/yr)" value={g.bankPay} min="0" step={500} onChange={v=>setG(i,"bankPay",v)} info="Actual bank rate preferred; or pick an AfC band below (2026/27 midpoints). Different pay per group is what makes each column's saving differ."/>
+                  <Field label="Bank pay (£/yr)" value={g.bankPay} min="0" step={500} onChange={v=>setG(i,"bankPay",v)} info="Actual bank rate preferred; or pick an AfC band below (2026/27 midpoints). Pay sets this group's duty counts and capacity value — the cash saving is anchored to agency spend and premium, so it does not change with pay."/>
                   <div className="field"><label>AfC band: auto-fills pay</label><select className="grp-band" aria-label="AfC band (auto-fills pay)" value={AFC_BANDS.some(x=>x[1]===g.bankPay)?g.bankPay:""} onChange={e=>{const val=e.target.value; if(val){const bd=AFC_BANDS.find(x=>String(x[1])===val); setG(i,"bankPay",num(val)); if(bd) setG(i,"band",bd[0]);}}}><option value="">Custom / typed</option>{AFC_BANDS.map(([lbl,val])=>(<option key={lbl} value={val}>{lbl} · £{val.toLocaleString("en-GB")}</option>))}</select></div>
                   {perGroupPremium && <Field label="Agency premium (%)" value={g.premium!=null?g.premium:premium} min="0" max="150" step={1} onChange={v=>setG(i,"premium",v)} info="This group's agency-over-bank premium. Defaults to the global premium; raise it for hard-to-fill groups (e.g. medics) where you have organisation-specific evidence."/>}
                 </div>
@@ -749,7 +751,7 @@ function App(){
                 <div style={{display:"flex",alignItems:"center",gap:7,marginTop:8}}><label style={{display:"flex",alignItems:"center",gap:7,fontSize:12,fontWeight:600,color:C.navy,cursor:"pointer"}}><input type="checkbox" checked={perGroupPremium} onChange={e=>setPGP(e.target.checked)}/> Set the agency premium per staff group</label> <InfoTip text="Off by default, one official ~20% premium across all groups (the defensible business-case default). Tick to override the premium per column, e.g. higher for medics, where you have organisation-specific agency rates."/></div>
               </div>
               <div className="field">
-                <span className="flabel">Confidence level: {displacement}% · {st.key} <InfoTip text="Share of your baseline agency usage that improved bank utilisation moves to bank. Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; the commercial variant can show the Moderate case with a rep to frame the caveats."/></span>
+                <span className="flabel">Confidence level: {displacement}% · {st.key} <InfoTip text="Share of your baseline agency usage that improved bank utilisation moves to bank, applied to the displaceable share only (default 80% — so Moderate 26% ≈ 21% of all agency). Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; the commercial variant can show the Moderate case with a rep to frame the caveats."/></span>
                 <div className="stance-btns">{[["Conservative",13],["Moderate",26],["Optimistic",50]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
                 <input type="range" min="8" max="50" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Confidence level, percent" aria-valuetext={displacement+"%, "+st.key}/>
                 <div className="slider-ctx"><span>8% conservative</span><span>26% moderate</span><span>50% optimistic</span></div>
@@ -757,11 +759,11 @@ function App(){
             </div>
             <div className="disp-note" style={{background:st.bg,color:st.color}}>{st.note}</div>
             <div className="params-grid" style={{marginTop:12}}>
-              <Field label="BankStaff+ licence fee (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v)); setPcAuto(false); }} info="Auto-set from your bank size using G-Cloud pricing (ex VAT); fully editable. This is the ROI denominator." hint={pcAuto?"Auto-scaled to your size · editable":"Used for ROI & payback"}/>
+              <Field label="BankStaff+ licence fee (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v)); setPcAuto(false); }} info="Auto-set from your bank size using G-Cloud pricing (ex VAT); fully editable. This is the ROI denominator — licence only (ex VAT); add implementation and change costs if material for your business case." hint={pcAuto?"Auto-scaled to your size · editable":"Used for ROI & payback"}/>
               <Field label="Current agency fill rate (%)" value={fillRateNow} min="0" max="100" step={0.5} onChange={v=>setFill(num(v))} info="Used for the capacity narrative (agency reliance reduced)."/>
               <Field label="Displaceable share of agency (%)" value={Math.round(displaceableShare*100)} min="0" max="100" step={5} onChange={v=>setDS(Math.min(1,Math.max(0,num(v)/100)))} info="Only part of agency spend can realistically move to bank — excludes break-glass / safety-critical cover and hard-to-fill specialist roles bank can't cover. Displacement is applied to this share only (benchmark default 80%), so the tool never implies 100% of agency is bankable." hint="Benchmark default 80% · editable"/>
               {showAdv && <Field label="Shift length (hours)" value={shiftHours} min="1" step={0.5} onChange={v=>setSH(num(v))}/>}
-              {showAdv && <Field label="Bank on-cost (%)" value={oncost} min="0" step={1} onChange={v=>setOncost(num(v))} info="Already included in the bank rate (default 20%, employer NI + pension). In the detailed model it changes modelled duty counts, not the cash headline."/>}
+              {showAdv && <Field label="Bank on-cost (%)" value={oncost} min="0" step={1} onChange={v=>setOncost(num(v))} info="Already included in the bank rate (default 20%, employer NI + pension — below the full ~30% NHS employer rate because bank-only workers often opt out of the pension; set your local loaded rate). It changes modelled duty counts, not the cash headline."/>}
             </div>
             <button className="adv-toggle" onClick={()=>setAdv(a=>!a)}>{showAdv?"Hide":"Show"} advanced inputs (on-costs, shift length)</button>
 
@@ -822,7 +824,7 @@ function App(){
               <div className="roi-sub">
                 <span>Payback <b>{noNet?"n/a":fmtDays(r.paybackMonths)}</b></span>
                 <span>Gross benefit <b>{fmtK(r.grossBenefit)}</b></span>
-                <span>Return <b>{noNet?"n/a":<>{r.implausibleRoi?"⚠ ":""}{fmtMult(r.roiMultiple)}</>}</b></span>
+                <span>Return (net ÷ fee) <b>{noNet?"n/a":<>{r.implausibleRoi?"⚠ ":""}{fmtMult(r.roiMultiple)}</>}</b></span>
                 <span>Agency premium avoided <b>{fmtK(r.totSaving)}</b></span>
               </div>
             </div>
@@ -950,13 +952,15 @@ function App(){
               <div className="arow"><span>Displaceable share of agency</span><span>{Math.round(r.displaceableShare*100)}%</span></div>
               <div className="arow explain"><span className="albl">Source: displaceable share</span><span className="adesc">Only part of agency spend can realistically move to bank — excludes break-glass / safety-critical cover and specialist roles bank can't fill. Displacement applies to this share only (benchmark default 80%, editable in Detailed).</span></div>
               <div className="arow"><span>Confidence level</span><span>{displacement}%, {st.key}</span></div>
-              <div className="arow explain"><span className="albl">Source: displacement <span className="conf low">low</span></span><span className="adesc">Conservative by default. The programme saw agency fill fall 8.1%→6.0% at one community site (26% relative), the observed upper end, single-site, partly attributable to wider scheduling/engagement changes. Health-economist validation pending.</span></div>
+              <div className="arow explain"><span className="albl">Source: displacement <span className="conf low">low</span></span><span className="adesc">Conservative by default. The stance % applies to the displaceable share only, so the effective whole-book rate is lower (e.g. Moderate 26% × 80% ≈ 21% of all agency). The programme saw agency fill fall 8.1%→6.0% at one community site (26% relative), the observed upper end, single-site, partly attributable to wider scheduling/engagement changes. Health-economist validation pending.</span></div>
               <div className="arow"><span>Bank-utilisation programme signal</span><span>+17% (one site)</span></div>
               <div className="arow explain"><span className="albl">Source: programme (4 trusts; 2-site data) <span className="conf low">low–mod</span></span><span className="adesc">Utilisation +17% at one community site (170→199 workers); the other reporting site was ~+1.75% (a "13%" figure in the client doc is a known error). Temp duties filled +17% (351→411) / +16%. Self-booking +26% / +15%. Engagement/coverage measures, not payroll uplift; they inform the stance, not the saving. Anonymised pending client sign-off.</span></div>
               <div className="arow"><span>Pay scale</span><span>2026/27 NHS AfC midpoints <span className="conf high">high</span></span></div>
-              <div className="arow explain"><span className="albl">Source: pay</span><span className="adesc">NHS Employers 2026/27 (+3.3% confirmed from 1 Apr 2026): Band 2 ~£25,272; Band 3 ~£26,618; Band 5 mid ~£34,592; Band 6 mid ~£42,170. Medics use the SAS / specialty-doctor scale (~£52.5k–£67.5k, 2026/27); medical T&amp;Cs, not AfC. Add London HCAS (Inner 20% / Outer 15% / Fringe 5%) where relevant. Band 2/3 may rise further via the pending Staff Council structure reform.</span></div>
+              <div className="arow explain"><span className="albl">Source: pay</span><span className="adesc">NHS Employers 2026/27 (+3.3% confirmed from 1 Apr 2026): Band 2 ~£25,272; Band 3 ~£26,618; Band 5 mid ~£34,592; Band 6 mid ~£42,170. Medics use the SAS / specialty-doctor scale (~£52.5k–£67.5k, 2026/27); medical T&amp;Cs, not AfC — medical contracts are 40 h/week and locum supply is priced hourly, so medic duty counts are approximate (their cash saving is unaffected, being anchored to spend). Add London HCAS (Inner 20% / Outer 15% / Fringe 5%) where relevant. Band 2/3 may rise further via the pending Staff Council structure reform.</span></div>
               <div className="arow"><span>Hourly divisor / shift length</span><span>1,957.5 h/yr · {shiftHours} h</span></div>
+              <div className="arow explain"><span className="albl">What pay, hours &amp; on-cost do <span className="conf high">CORE</span></span><span className="adesc">They calibrate <b>duty counts and the capacity value only</b>. The cash saving is agency_spend × displaceable_share × displacement × premium/(1+premium) — it does not change with pay, shift length or on-cost. The 20% on-cost default sits below the full ~30% NHS employer rate (NI + pension) because bank-only workers often opt out of the pension; set your local loaded rate.</span></div>
               <div className="arow"><span>Licence fee (ROI denominator, G-Cloud)</span><span>{fmt(platformCost)}/yr</span></div>
+              <div className="arow explain"><span className="albl">Return &amp; payback basis</span><span className="adesc">Return = net annual saving ÷ licence fee (a net multiple, not a benefit–cost ratio). Payback = licence fee ÷ gross annual benefit, shown in days. The denominator is the G-Cloud licence only (ex VAT) — implementation, integration and change costs are not included; add them for a full business case.</span></div>
               {r.recruitSaving>0 && <><div className="arow"><span>Recruitment waste recovered (optional)</span><span>{fmt(r.recruitSaving)}</span></div>
               <div className="arow explain"><span className="albl">Source: recruitment <span className="conf low">low</span></span><span className="adesc">under-utilised workers × recruit/onboard cost × recovery share. No strong public benchmark, conservative and clearly optional.</span></div></>}
               <div className="arow explain"><span className="albl">Strategy &amp; framing</span><span className="adesc">Framed against the NHS 10 Year Plan + Workforce Paper and the Staff Health &amp; Wellbeing CQUIN. A pilot study is a small (2-site), vendor-collected sample, encouraging but indicative, not solely attributable to Smart Match, and anonymised pending client sign-off.</span></div>
