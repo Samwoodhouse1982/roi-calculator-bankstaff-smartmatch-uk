@@ -21,7 +21,7 @@ function Lead({ children }) {
 export function BankStep({ bankPool, setBankPool }) {
   return <div>
     <SectionTitle number={1}>Your bank staff pool</SectionTitle>
-    <Lead>How many people sit on your staff bank (that use Optima), the workers you can call on to fill temporary shifts before you reach for an agency?</Lead>
+    <Lead>How many workers make up your staff bank in Optima? (These are the people you can offer temporary shifts to before turning to an agency)</Lead>
     <Card>
       <TouchSlider
         label="Bank staff pool size"
