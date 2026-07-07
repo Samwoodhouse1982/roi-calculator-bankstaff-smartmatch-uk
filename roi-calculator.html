@@ -83,7 +83,9 @@
   .groups-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   @media (max-width:760px){ .groups-grid{ grid-template-columns:1fr; } }
   .grp-name { font-size:14px; font-weight:600; color:var(--navy); border:none; background:transparent; font-family:inherit; padding:2px 0; width:100%; min-width:0; border-bottom:1px dashed transparent; }
-  .grp-name:hover, .grp-name:focus { outline:none; border-bottom-color:var(--border); }
+  .grp-name:hover { border-bottom-color:var(--border); }
+  .grp-name:focus { outline:none; border-bottom-color:var(--teal-mid); }
+  .grp-name:focus-visible { outline:2px solid var(--teal-mid); outline-offset:2px; } /* keyboard users get a real focus ring */
   .grp-remove { border:none; background:none; color:var(--text-light); font-size:20px; line-height:1; cursor:pointer; padding:0 4px; border-radius:6px; flex-shrink:0; }
   .grp-remove:hover:not(:disabled) { color:var(--teal-mid); background:var(--navy-light); }
   .grp-remove:disabled { opacity:.3; cursor:not-allowed; }
@@ -458,10 +460,12 @@ const AnimNum   = ({v}) => fmtNum(useCountUp(v));
 
 function InfoTip({text}){
   const [open,setOpen]=useState(false);
+  const tipId="tip_"+useId();
   return (<span style={{position:"relative",display:"inline-flex"}}>
-    <button type="button" aria-label={"More info: "+text} onClick={()=>setOpen(o=>!o)} onBlur={()=>setOpen(false)}
+    <button type="button" aria-label={"More info: "+text} aria-expanded={open} aria-describedby={open?tipId:undefined}
+      onClick={()=>setOpen(o=>!o)} onBlur={()=>setOpen(false)} onKeyDown={e=>{ if(e.key==="Escape") setOpen(false); }}
       style={{width:16,height:16,borderRadius:"50%",border:"1px solid "+C.border,background:"#fff",color:C.textLight,fontSize:10,fontWeight:700,cursor:"pointer",lineHeight:1,padding:0}}>i</button>
-    {open && <span role="tooltip" style={{position:"absolute",bottom:"130%",left:"50%",transform:"translateX(-50%)",background:C.navy,color:"#fff",fontSize:11,fontWeight:400,lineHeight:1.5,padding:"8px 10px",borderRadius:8,width:230,boxShadow:"0 8px 24px rgba(0,0,0,.25)",zIndex:50}}>{text}</span>}
+    {open && <span role="tooltip" id={tipId} style={{position:"absolute",bottom:"130%",left:"50%",transform:"translateX(-50%)",background:C.navy,color:"#fff",fontSize:11,fontWeight:400,lineHeight:1.5,padding:"8px 10px",borderRadius:8,width:"min(230px, calc(100vw - 32px))",boxShadow:"0 8px 24px rgba(0,0,0,.25)",zIndex:50}}>{text}</span>}
   </span>);
 }
 function Field({label, value, onChange, min, max, step=1, prefix, info, hint}){
@@ -609,9 +613,11 @@ function App(){
 
       <main className="wrap">
         <p className="intro-advice"><strong>Enter your own figures for the most credible result.</strong> Choose a Quick estimate or the Detailed commercial model to begin.</p>
-        <div className="mode-toggle" role="tablist" aria-label="Calculator mode">
-          <button role="tab" aria-selected={isQuick} className={isQuick?"active":""} onClick={()=>{ setSimple(s=>({...s,numManagers:num(admin.managers),includeAdmin:admin.enabled})); setMode("quick"); }}>Quick estimate<small>For operational managers</small></button>
-          <button role="tab" aria-selected={!isQuick} className={!isQuick?"active":""} onClick={()=>{ setAdmin(a=>({...a,managers:num(simple.numManagers),enabled:simple.includeAdmin!==false})); setMode("detailed"); }}>Detailed (commercial)<small>For Finance leads &amp; Workforce Directors</small></button>
+        {/* Toggle buttons, not tabs: a real tabs pattern needs tabpanel roles + arrow-key
+            focus management; aria-pressed states the on/off honestly with none of that. */}
+        <div className="mode-toggle" role="group" aria-label="Calculator mode">
+          <button type="button" aria-pressed={isQuick} className={isQuick?"active":""} onClick={()=>{ setSimple(s=>({...s,numManagers:num(admin.managers),includeAdmin:admin.enabled})); setMode("quick"); }}>Quick estimate<small>For operational managers</small></button>
+          <button type="button" aria-pressed={!isQuick} className={!isQuick?"active":""} onClick={()=>{ setAdmin(a=>({...a,managers:num(simple.numManagers),enabled:simple.includeAdmin!==false})); setMode("detailed"); }}>Detailed (commercial)<small>For Finance leads &amp; Workforce Directors</small></button>
         </div>
 
         {isQuick ? (
