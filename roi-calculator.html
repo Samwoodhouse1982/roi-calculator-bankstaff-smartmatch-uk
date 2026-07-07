@@ -102,6 +102,7 @@
   .inputs-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
   .field { display:flex; flex-direction:column; gap:5px; }
   .field label { font-size:12px; color:var(--text-light); display:flex; align-items:center; gap:5px; }
+  .flabel { display:flex; align-items:center; gap:5px; } /* label + InfoTip side by side; the tip sits OUTSIDE the label so its text never joins the control's accessible name */
   .field input[type=number] { border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 10px; font-family:inherit; font-size:14px; color:var(--navy); background:var(--mid-grey); width:100%; transition:border-color .15s,box-shadow .15s; }
   .field input[type=number]:focus { outline:none; border-color:var(--teal); box-shadow:0 0 0 3px rgba(15,118,110,.12); background:#fff; }
   .hint { font-size:11px; color:var(--text-light); line-height:1.5; }
@@ -486,7 +487,7 @@ function Field({label, value, onChange, min, max, step=1, prefix, info, hint}){
     if(min!=null&&min!=="") n=Math.max(Number(min),n); if(max!=null&&max!=="") n=Math.min(Number(max),n);
     setTxt(String(n)); onChange(String(n)); };
   return (<div className="field">
-    <label htmlFor={id}>{label}{info && <InfoTip text={info}/>}</label>
+    <span className="flabel"><label htmlFor={id}>{label}</label>{info && <InfoTip text={info}/>}</span>
     <div style={{position:"relative",display:"flex",alignItems:"center"}}>
       {prefix && <span style={{position:"absolute",left:10,color:C.textLight,fontSize:14}}>{prefix}</span>}
       <input id={id} type="number" value={txt} min={min} max={max} step={step} style={prefix?{paddingLeft:22}:null}
@@ -508,7 +509,7 @@ function SizeField({label, value, prefix, hint, info, onCommit, allowZero}){
     if(n>0 || (allowZero && n===0)){ onCommit(n); setTxt(show(n)); } else setTxt(show(value)); };
   const id="sf_"+useId();
   return (<div className="field">
-    <label htmlFor={id}>{label}{info && <InfoTip text={info}/>}</label>
+    <span className="flabel"><label htmlFor={id}>{label}</label>{info && <InfoTip text={info}/>}</span>
     <div style={{position:"relative",display:"flex",alignItems:"center"}}>
       {prefix && <span style={{position:"absolute",left:10,color:C.textLight,fontSize:14}}>{prefix}</span>}
       <input id={id} type="number" value={txt} min="0" style={prefix?{paddingLeft:22}:null}
@@ -657,10 +658,12 @@ function App(){
                 <Field label="Current agency fill rate (%)" value={simple.agencyFillRate} min="0" max="100" step={0.1} onChange={v=>setSimple(s=>({...s,agencyFillRate:num(v)}))} hint="Share of temp duties filled by agency (national avg 8.3%)" info="The % of temporary duties currently filled by agency. Default 8.3% is based on the national average of NHS organisations (RLDatix data); set your own for a tailored figure. A pilot study recorded a move from 8.1% to 6.0% at one site."/>
                 <Field label="Temporary staffing team" value={simple.numManagers} min="0" onChange={v=>setSimple(s=>({...s,numManagers:num(v)}))} hint="Bank/temp staffing coordinators & admins" info="The people who do the day-to-day booking, chasing and reconciling of temporary shifts. Drives the time-saved-per-week and admin saving."/>
               </div>
-              <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600,color:C.navy,cursor:"pointer",marginTop:14}}>
-                <input type="checkbox" checked={simple.includeAdmin!==false} onChange={e=>setSimple(s=>({...s,includeAdmin:e.target.checked}))}/> Include admin time saving in the cash total (off by default)
+              <div style={{display:"flex",alignItems:"center",gap:8,marginTop:14}}>
+                <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600,color:C.navy,cursor:"pointer"}}>
+                  <input type="checkbox" checked={simple.includeAdmin!==false} onChange={e=>setSimple(s=>({...s,includeAdmin:e.target.checked}))}/> Include admin time saving in the cash total (off by default)
+                </label>
                 <InfoTip text="Off by default, treated as a secondary recommendation. The hours released are always shown as a per-week figure; tick this to also add their cash value (a conservative 1.0 h/day at a loaded £18/h) to the headline."/>
-              </label>
+              </div>
             </div>
             <div className="params-grid" style={{marginTop:12}}>
               <div className="field">
@@ -734,7 +737,7 @@ function App(){
             <div className="params-grid">
               <div>
                 <Field label={perGroupPremium?"Default agency premium (%)":"Agency premium over bank (%)"} value={premium} min="0" max="150" step={1} onChange={v=>setPremium(num(v))} info="A single agency-over-bank premium (House of Commons Library ~20% average). Contested at shift level; REC data show NHS bank can cost more than capped agency in hard-to-fill roles. Use your organisation's actual rate where possible; applies across all groups unless you override per group." hint={perGroupPremium?"Default for any group you don't override below":"Default 20% · official average · editable · contested"}/>
-                <label style={{display:"flex",alignItems:"center",gap:7,fontSize:12,fontWeight:600,color:C.navy,cursor:"pointer",marginTop:8}}><input type="checkbox" checked={perGroupPremium} onChange={e=>setPGP(e.target.checked)}/> Set the agency premium per staff group <InfoTip text="Off by default, one official ~20% premium across all groups (the defensible business-case default). Tick to override the premium per column, e.g. higher for medics, where you have organisation-specific agency rates."/></label>
+                <div style={{display:"flex",alignItems:"center",gap:7,marginTop:8}}><label style={{display:"flex",alignItems:"center",gap:7,fontSize:12,fontWeight:600,color:C.navy,cursor:"pointer"}}><input type="checkbox" checked={perGroupPremium} onChange={e=>setPGP(e.target.checked)}/> Set the agency premium per staff group</label> <InfoTip text="Off by default, one official ~20% premium across all groups (the defensible business-case default). Tick to override the premium per column, e.g. higher for medics, where you have organisation-specific agency rates."/></div>
               </div>
               <div className="field">
                 <label>Confidence level: {displacement}% · {st.key} <InfoTip text="Share of your baseline agency usage that improved bank utilisation moves to bank. Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; the commercial variant can show the Moderate case with a rep to frame the caveats."/></label>
@@ -754,10 +757,12 @@ function App(){
             <button className="adv-toggle" onClick={()=>setAdv(a=>!a)}>{showAdv?"Hide":"Show"} advanced inputs (on-costs, shift length)</button>
 
             <div className="card" style={{marginTop:12}}>
-              <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600,color:C.navy,cursor:"pointer"}}>
-                <input type="checkbox" checked={admin.enabled} onChange={e=>setAdmin(a=>({...a,enabled:e.target.checked}))}/> Include admin time saving in cash (off by default)
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600,color:C.navy,cursor:"pointer"}}>
+                  <input type="checkbox" checked={admin.enabled} onChange={e=>setAdmin(a=>({...a,enabled:e.target.checked}))}/> Include admin time saving in cash (off by default)
+                </label>
                 <InfoTip text="Off by default, treated as a secondary recommendation. Time released for your temporary staffing team — bank/temp coordinators, officers and administrators — via self-booking automation. Time-saved-per-week is always shown; tick to add its cash value to the saving total."/>
-              </label>
+              </div>
               <div className="inputs-grid" style={{marginTop:12}}>
                 <Field label="Temporary staffing team" value={admin.managers} min="0" onChange={v=>setAdmin(a=>({...a,managers:num(v)}))} info="Your temporary staffing team — bank/temp coordinators, officers and administrators."/>
                 <Field label="Hours saved / day each" value={admin.hoursPerDay} min="0" step={0.25} onChange={v=>setAdmin(a=>({...a,hoursPerDay:num(v)}))} info="Some teams report up to 2.5 h/day — that's optimistic (a third of every day). Default is a conservative 1.0; validate locally."/>
@@ -767,10 +772,12 @@ function App(){
             </div>
 
             <div className="card" style={{marginTop:12}}>
-              <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600,color:C.navy,cursor:"pointer"}}>
-                <input type="checkbox" checked={recruit.enabled} onChange={e=>setRecruit(a=>({...a,enabled:e.target.checked}))}/> Include recovered recruitment / onboarding waste (optional)
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600,color:C.navy,cursor:"pointer"}}>
+                  <input type="checkbox" checked={recruit.enabled} onChange={e=>setRecruit(a=>({...a,enabled:e.target.checked}))}/> Include recovered recruitment / onboarding waste (optional)
+                </label>
                 <InfoTip text="Cost of recruiting and onboarding bank workers who then go under-utilised. Smart Match recovers some of it by activating idle capacity. Conservative and off by default."/>
-              </label>
+              </div>
               {recruit.enabled && <div className="inputs-grid" style={{marginTop:12}}>
                 <Field label="Under-utilised bank workers" value={recruit.workers} min="0" onChange={v=>setRecruit(a=>({...a,workers:num(v)}))}/>
                 <Field label="Recruit + onboard cost each (£)" prefix="£" value={recruit.costPerWorker} min="0" step={100} onChange={v=>setRecruit(a=>({...a,costPerWorker:num(v)}))}/>
