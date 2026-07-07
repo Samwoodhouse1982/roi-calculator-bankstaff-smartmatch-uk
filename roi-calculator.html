@@ -245,7 +245,7 @@
 </script>
 
 <script type="text/babel" data-presets="react">
-const { useState, useMemo, useEffect, useRef } = React;
+const { useState, useMemo, useEffect, useRef, useId } = React;
 
 /* ===== THEME: RLDatix Galen suite (deep teal + seafoam) ===== */
 const C = { navy:"#0F4146", navyMid:"#1A5459", navyLight:"#E8FAF6", teal:"#0F4146", tealMid:"#1A8A7A", tealLight:"#D6F7EE", seafoam:"#34DEC2", border:"#D4E0DD", text:"#0F4146", textMid:"#3D5A5E", textLight:"#5F787C", rose:"#B25B76" };  // textLight darkened to ~4.7:1 on white (WCAG AA)
@@ -458,7 +458,7 @@ function InfoTip({text}){
   </span>);
 }
 function Field({label, value, onChange, min, max, step=1, prefix, info, hint}){
-  const id="f_"+label.replace(/\W/g,"");
+  const id="f_"+useId();   // labels repeat across staff-group cards, so a label-derived id duplicated
   return (<div className="field">
     <label htmlFor={id}>{label}{info && <InfoTip text={info}/>}</label>
     <div style={{position:"relative",display:"flex",alignItems:"center"}}>
@@ -474,7 +474,7 @@ function SizeField({label, value, prefix, hint, info, onCommit}){
   const [txt,setTxt]=useState(String(value));
   useEffect(()=>{ setTxt(String(value)); },[value]);
   const commit=()=>{ const n=num(txt); if(n>0) onCommit(n); else setTxt(String(value)); };
-  const id="sf_"+label.replace(/\W/g,"");
+  const id="sf_"+useId();
   return (<div className="field">
     <label htmlFor={id}>{label}{info && <InfoTip text={info}/>}</label>
     <div style={{position:"relative",display:"flex",alignItems:"center"}}>
@@ -861,9 +861,9 @@ function App(){
               <p className="sub">Optional: the calculator and PDF are open to everyone. Leave your details and a Smart Match specialist can validate the figures against your organisation's own bank and agency rates.</p>
               {lead.sent ? <p style={{color:C.navy,fontWeight:600,fontSize:14}}>Thanks, we'll be in touch. 👋</p> :
               <form onSubmit={submitLead}><div className="lead-grid">
-                <input placeholder="Name" value={lead.name} onChange={e=>setLead(l=>({...l,name:e.target.value}))}/>
-                <input type="email" required placeholder="Work email" value={lead.email} onChange={e=>setLead(l=>({...l,email:e.target.value}))}/>
-                <input placeholder="Trust / organisation" value={lead.org} onChange={e=>setLead(l=>({...l,org:e.target.value}))}/>
+                <input aria-label="Name" autoComplete="name" placeholder="Name" value={lead.name} onChange={e=>setLead(l=>({...l,name:e.target.value}))}/>
+                <input type="email" required aria-label="Work email" autoComplete="email" placeholder="Work email" value={lead.email} onChange={e=>setLead(l=>({...l,email:e.target.value}))}/>
+                <input aria-label="Trust or organisation" autoComplete="organization" placeholder="Trust / organisation" value={lead.org} onChange={e=>setLead(l=>({...l,org:e.target.value}))}/>
                 <button className="btn primary" type="submit" disabled={!lead.consent||lead.busy}>{lead.busy?"Sending…":"Send to a specialist"}</button>
               </div>
               <label className="consent" style={{display:"flex",alignItems:"flex-start",gap:8,cursor:"pointer",marginTop:".6rem"}}><input type="checkbox" required checked={!!lead.consent} onChange={e=>setLead(l=>({...l,consent:e.target.checked}))} style={{marginTop:3}}/><span>I agree RLDatix may contact me about Smart Match and process these details in line with the RLDatix privacy notice.</span></label>
