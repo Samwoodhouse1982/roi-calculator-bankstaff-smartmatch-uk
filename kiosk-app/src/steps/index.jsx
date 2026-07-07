@@ -21,7 +21,7 @@ function Lead({ children }) {
 export function BankStep({ bankPool, setBankPool }) {
   return <div>
     <SectionTitle number={1}>Your bank staff pool</SectionTitle>
-    <Lead>How many people sit on your staff bank, the workers you can call on to fill temporary shifts before you reach for an agency?</Lead>
+    <Lead>How many people sit on your staff bank (that use Optima), the workers you can call on to fill temporary shifts before you reach for an agency?</Lead>
     <Card>
       <TouchSlider
         label="Bank staff pool size"
@@ -33,7 +33,7 @@ export function BankStep({ bankPool, setBankPool }) {
         format={fmtNum}
         tip="The total number of registered workers on your staff bank, substantive staff doing extra shifts plus dedicated bank-only workers. A rough figure is fine; you can adjust it later."
       />
-      <Helper>Drag to set the size of your bank. Better utilisation of this pool is the mechanism that displaces expensive agency spend.</Helper>
+      <Helper>Drag to set the size of your bank who use Optima. Better utilisation of this pool is the mechanism that displaces expensive agency spend.</Helper>
       <div style={{ marginTop: 16, padding: "14px 18px", background: C.accentSoft, borderRadius: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.5 }}>
         BankStaff+ licence at this size: <strong style={{ color: C.accent }}>{fmt(platformCostFor(bankPool))}/yr</strong> <span style={{ color: C.textMuted }}>(G-Cloud pricing, ex VAT; your return is measured against this fee)</span>
       </div>
