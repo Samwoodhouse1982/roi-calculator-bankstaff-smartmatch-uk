@@ -73,6 +73,13 @@ test('IDENTITY: saving per £ = displaceable 0.8 x 0.13 x 0.20/1.20 (audit #7/#9
   }
 });
 
+test('fillAfter applies the displaceable share, matching the modelled shift counts', () => {
+  const q = quick();   // fill rate 8.3%, ds 0.80, displacement 13%
+  assert.ok(Math.abs(q.fillAfter - 8.3 * (1 - 0.80 * 0.13)) < 1e-9);
+  const d = detailed('acute');   // fillRateNow 8
+  assert.ok(Math.abs(d.fillAfter - 8 * (1 - 0.80 * 0.13)) < 1e-9);
+});
+
 test('Displaceable share scales the agency saving (benchmark §4)', () => {
   const full = detailed('acute', { displaceableShare: 1 });
   assert.equal(Math.round(full.totSaving), 325000);          // 80% of this = 260000 (the default)
