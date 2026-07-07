@@ -147,14 +147,14 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         <span>13% · conservative</span><span>26% · moderate</span><span>50% · optimistic</span>
       </div>
       {chosen && <div style={{ marginTop: 16, padding: "16px 20px", background: C.accentSoft, borderRadius: 14, border: `1px solid ${C.accent}30` }}>
-        <div style={{ fontSize: F.body, fontWeight: 800, color: C.accent, marginBottom: 6 }}>{st.key === "Expected" ? "Moderate" : st.key}</div>
+        <div style={{ fontSize: F.body, fontWeight: 800, color: C.accent, marginBottom: 6 }}>{st.key}</div>
         <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6 }}>{st.note}</div>
       </div>}
     </Card>
 
     {/* Guardrail */}
     {r.exceedsSpend && <div style={{ marginBottom: 14, padding: "14px 20px", background: C.accentSoft, border: `1px solid ${C.accent}`, borderRadius: 14, fontSize: F.small, color: C.text, lineHeight: 1.5 }}>
-      <strong>Check your inputs.</strong> The modelled saving exceeds your estimated agency spend. Try a lower displacement or a lower agency fill rate.
+      <strong>Check your inputs.</strong> The modelled saving exceeds your estimated agency spend. Try a lower premium or a lower confidence level.
     </div>}
     {r.adminOnly && !noNet && <div style={{ marginBottom: 14, padding: "14px 20px", background: C.accentSoft, border: `1px solid ${C.accent}`, borderRadius: 14, fontSize: F.small, color: C.text, lineHeight: 1.5 }}>
       <strong>Admin time only.</strong> No agency premium saving is modelled (agency spend is zero), so this figure is the admin-time value on its own.
@@ -180,9 +180,9 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
       </div>;
     })()}
 
-    {/* Explains the ⚠ shown on the Return tile when the multiple is implausibly high (>30x). */}
+    {/* Explains the ⚠ shown on the Return tile when the multiple is implausibly high (>40×). */}
     {r.implausibleRoi && !noNet && <div style={{ marginBottom: 14, padding: "14px 20px", background: C.surface, border: `1px solid ${C.amber}66`, borderRadius: 14, fontSize: F.small, color: C.text, lineHeight: 1.5 }}>
-      <strong style={{ color: C.amber }}>⚠ Unusually high return.</strong> At these inputs the modelled saving is more than 30 times the licence fee, which usually reflects a very large bank with high agency fill. Sense-check against your organisation's real agency spend before quoting it.
+      <strong style={{ color: C.amber }}>⚠ Unusually high return.</strong> At these inputs the modelled saving is more than 40 times the licence fee, which usually reflects a very large bank or agency book. Sense-check against your organisation's real agency spend before quoting it.
     </div>}
 
     {/* Annual-figures clarifier: these are steady-state, per-year numbers, not one-offs. */}
@@ -205,7 +205,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         const grossR = Math.round(r.agencySaving), adminR = Math.round(r.adminSaving || 0), licR = Math.round(r.platformCost), netR = grossR + adminR - licR;
         const rate = (shift, hr) => <>{fmt(shift)}<span style={{ fontSize: F.tiny, color: C.textMuted, fontWeight: 400 }}> /shift · {money2(hr)}/hr</span></>;
         return <>
-          <Row label={<span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Your own bank (blended rate, all-in) <InfoTip text={`Already includes a ${Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension) on top of raw Agenda for Change pay. This is the true cost of a bank shift; the saving is the gap between it and the agency rate, so on-costs are counted once, never twice.`} /></span>} value={rate(r.bankShiftCost, bankHr)} />
+          <Row label={<span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Your own bank (blended rate, all-in) <InfoTip text={`Already includes a ${Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension) on top of raw Agenda for Change pay — below the full ~30% NHS rate because bank-only workers often opt out of the pension. This is the true cost of a bank shift; the saving is the gap between it and the agency rate, so on-costs are counted once, never twice.`} /></span>} value={rate(r.bankShiftCost, bankHr)} />
           <Row label={r.perGroupPremium ? "Agency, same shift (your per-group premiums)" : `Agency, same shift (at ${r.premium}% premium)`} value={rate(r.agencyShiftCost, agencyHr)} />
           <Row label="Premium displaced = the saving" value={rate(gapShift, gapHr)} accent />
           <div style={{ marginTop: 14, fontSize: F.small, color: C.textMid, lineHeight: 1.6 }}>
@@ -217,7 +217,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         </>;
       })()}
       <div style={{ marginTop: 14, fontSize: F.tiny, color: C.textMuted, fontStyle: "italic", lineHeight: 1.6 }}>
-        Bank rate = 2026/27 AfC blended midpoint, already including a {Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension), so on-costs are counted once and never added on top. Premium defaults to the official ~20% House of Commons Library average, deliberately conservative and contested at shift level (nursing ~35–50%, medics ~80–120%).{r.agencySpend != null ? <> Your agency spend is modelled from your bank pool and fill rate ({fmtK(r.agencySpend)}); for a figure built on your real spend, use the detailed web calculator.</> : ""}
+        Bank rate = 2026/27 AfC blended midpoint, already including a {Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension — below the full ~30% NHS rate because bank-only workers often opt out of the pension), so on-costs are counted once and never added on top. Premium defaults to the official ~20% House of Commons Library average, deliberately conservative and contested at shift level (nursing ~35–50%, medics ~80–120%).{r.agencySpend != null ? <> Your agency spend is estimated at ~{fmt(7000)} per bank worker ({fmtK(r.agencySpend)}); for a figure built on your real spend, use the detailed web calculator.</> : ""}
       </div>
     </Card>
 
@@ -296,7 +296,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
             <strong style={{ color: C.text }}>Admin time saving</strong> uses a per-person model: each member of the temporary staffing team recovers a conservative <strong style={{ color: C.text }}>1 hour/day</strong> across 225 working days, valued at a loaded £18/hour (some teams report up to 2.5 hours/day; we deliberately use 1). The same hours feed the "time saved per week" co-headline.
           </p>
           <p>
-            Pay assumptions use <strong style={{ color: C.text }}>2026/27 NHS Agenda for Change midpoints</strong> (+3.3%; {r.rows ? "per staff group" : "a band-mix weighted blended bank pay"}), 1,957.5 AfC hours/year, 8-hour shifts and a <strong style={{ color: C.text }}>{Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension)</strong>, already included in the modelled bank shift costs and never added on top. The modelled agency spend assumes each bank worker covers about 60 ad-hoc shifts a year. Defaults are deliberately conservative.
+            Pay assumptions use <strong style={{ color: C.text }}>2026/27 NHS Agenda for Change midpoints</strong> (+3.3%; {r.rows ? "per staff group" : "a band-mix weighted blended bank pay"}), 1,957.5 AfC hours/year, 8-hour shifts and a <strong style={{ color: C.text }}>{Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension)</strong>, already included in the modelled bank shift costs and never added on top. Pay, hours and on-cost set the modelled shift counts, not the cash saving, which is anchored to agency spend, premium and confidence level.{r.rows ? "" : " Quick-mode agency spend is estimated at ~£7,000 per bank worker."} Defaults are deliberately conservative.
           </p>
           <p style={{ marginBottom: 0 }}>
             Outputs are <strong style={{ color: C.text }}>indicative</strong> and are recomputed live as you adjust the confidence level above.
