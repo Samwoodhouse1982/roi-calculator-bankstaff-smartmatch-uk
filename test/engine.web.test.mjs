@@ -86,6 +86,11 @@ test('Displaceable share scales the agency saving (benchmark §4)', () => {
   assert.ok(Math.abs(detailed('acute').totSaving - full.totSaving * 0.8) < 1);
 });
 
+test('implausibleRoi (>40x) does not trip on the ICS default, only on genuine outliers', () => {
+  assert.equal(detailed('ics').implausibleRoi, false);          // ~32x at defaults: legitimate scale
+  assert.equal(detailed('acute', { platformCost: 1000 }).implausibleRoi, true);   // ~300x: input error
+});
+
 test('ROI is n/a (null), not 0%, when platform cost is zero (audit #16)', () => {
   const zero = E.calc(E.simpleToInput({ bankPool: 660, agencyFillRate: 8.3, numManagers: 12, includeAdmin: true }, { ...SHARED, platformCost: 0 }));
   assert.equal(zero.roiPct, null);

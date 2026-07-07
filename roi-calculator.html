@@ -407,7 +407,7 @@ function calc(input){
   const paybackMonths = grossBenefit>0 ? platformCost/(grossBenefit/12) : null;
   const exceedsSpend = totSaving>totSpend && totSpend>0;
   const adminOnly = totSaving<=0 && (adminSaving>0 || recruitSaving>0);   // reachable sanity check: saving is admin time only
-  const implausibleRoi = roiPct!=null && roiPct>3000;
+  const implausibleRoi = roiPct!=null && roiPct>4000;   // >40x: the ICS default (~32x) is legitimate scale, not an input error
   const fillNow=num(fillRateNow), fillAfter=fillNow*(1-ds*d);   // reduction on the displaceable share only, consistent with the modelled shift counts
   const reg = agencyRegime(totSpend, input.turnover);
   return { rows, totSpend, totSaving, totDisplaced, totBaseline, totHead, totCapacityValue,
@@ -811,7 +811,7 @@ function App(){
 
             {r.exceedsSpend && <div className="callout navy"><p className="title">⚠ Check your inputs</p><p>The modelled saving exceeds total agency spend, which isn't possible. Lower the premium or displacement, or check the agency-spend figures.</p></div>}
             {r.adminOnly && !noNet && <div className="callout navy"><p className="title">Admin time only</p><p>No agency premium saving is modelled (agency spend is zero). This figure is the admin-time value on its own. {isQuick?"Set an agency fill rate above 0":"Add your agency spend"} to model the agency-displacement saving.</p></div>}
-            {r.implausibleRoi && !noNet && <div className="callout navy"><p className="title">⚠ Unusually high return</p><p>At these inputs the modelled saving is more than 30 times the licence fee, which usually reflects a very large bank or agency book. Sense-check against your organisation's real agency spend before quoting it.</p></div>}
+            {r.implausibleRoi && !noNet && <div className="callout navy"><p className="title">⚠ Unusually high return</p><p>At these inputs the modelled saving is more than 40 times the licence fee, which usually reflects a very large bank or agency book. Sense-check against your organisation's real agency spend before quoting it.</p></div>}
 
             {/* How the cash saving is worked out — bank vs agency rate vs the premium gap (the defensible basis) */}
             <div className="panel">
