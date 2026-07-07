@@ -32,17 +32,25 @@ const SAVING_PER_POUND = 0.13 * 0.80 * 0.20 / 1.20;   // displaceable share appl
 const quick = () => E.calc(E.simpleToInput({ bankPool: 660, agencyFillRate: 8.3, numManagers: 12, includeAdmin: true }, SHARED));
 const detailed = (type, over = {}) => E.calc({ groups: E.buildOrg(type), ...SHARED, admin: ADMIN, recruit: { enabled: false }, fillRateNow: 8, perGroupPremium: false, ...over });
 
-// Post-amends default: agencyFillRate 8.3% (national average) at the SHARED 17k platform cost.
-test('Quick default matches the golden headline (parity with kiosk)', () => {
+// Post-M3 default: quick mode anchors on agency spend auto-estimated at £7k/bank worker
+// (660 x 7000 = £4.62m), replacing the unsourced 60-shifts-per-worker derivation.
+test('Quick default matches the golden headline (spend-anchored, audit M3)', () => {
   const q = quick();
-  assert.equal(Math.round(q.netSaving), 44031);
+  assert.equal(Math.round(q.totSpend), 4620000);               // 660 x £7,000
+  assert.equal(Math.round(q.totSaving), 80080);                // 4.62m x 0.8 x 0.13 x 0.2/1.2
   assert.equal(Math.round(q.adminSaving), 48600);
-  assert.equal(Math.round(q.grossBenefit), 61031);
-  assert.equal(Math.round(q.roiPct), 259);
-  assert.equal(Math.round(q.roiMultiple * 100) / 100, 2.59);   // net return on the licence fee (net saving ÷ cost)
+  assert.equal(Math.round(q.grossBenefit), 128680);
+  assert.equal(Math.round(q.netSaving), 111680);
+  assert.equal(Math.round(q.roiPct), 657);
+  assert.equal(Math.round(q.roiMultiple * 100) / 100, 6.57);   // net return on the licence fee (net saving ÷ cost)
   assert.equal(q.timeSavedWeek, 60);
-  assert.equal(Math.round(q.totSpend), 717189);   // derived agency spend
-  assert.ok(Math.abs(q.paybackMonths - 3.34) < 0.01);
+  assert.ok(Math.abs(q.paybackMonths - 17000 * 12 / 128680) < 1e-9);
+});
+
+test('Quick agency spend: auto-estimate is £7k/bank worker; an explicit figure wins', () => {
+  const own = E.calc(E.simpleToInput({ bankPool: 660, agencySpend: 15000000, agencyFillRate: 8.3, numManagers: 12, includeAdmin: false }, SHARED));
+  assert.equal(Math.round(own.totSpend), 15000000);
+  assert.equal(Math.round(own.totSaving), 260000);   // same anchor as the acute preset -> same saving
 });
 
 const DETAILED_GOLDEN = {
@@ -118,7 +126,7 @@ test('ROI is n/a (null), not 0%, when platform cost is zero (audit #16)', () => 
 
 test('adminOnly flags an agency-free saving, and is off by default (audit #14)', () => {
   assert.equal(quick().adminOnly, false);
-  const noAgency = E.calc(E.simpleToInput({ bankPool: 660, agencyFillRate: 0, numManagers: 12, includeAdmin: true }, SHARED));
+  const noAgency = E.calc(E.simpleToInput({ bankPool: 660, agencySpend: 0, agencyFillRate: 8.3, numManagers: 12, includeAdmin: true }, SHARED));
   assert.equal(noAgency.adminOnly, true);
 });
 
