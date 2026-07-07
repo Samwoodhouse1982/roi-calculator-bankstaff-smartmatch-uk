@@ -14,7 +14,7 @@
   :root {
     --navy:#0F4146; --navy-dark:#0A2F31; --navy-mid:#1A5459; --navy-light:#E8FAF6;
     --teal:#0F4146; --teal-light:#D6F7EE; --teal-mid:#1A8A7A; --seafoam:#34DEC2;
-    --mid-grey:#EEF6F4; --border:#D4E0DD; --text:#0F4146; --text-mid:#3D5A5E; --text-light:#6E8A8E;
+    --mid-grey:#EEF6F4; --border:#D4E0DD; --text:#0F4146; --text-mid:#3D5A5E; --text-light:#5F787C; /* 4.7:1 on white (WCAG AA), matches JS C.textLight */
     --white:#fff; --radius:14px; --radius-sm:8px; --shadow:0 1px 3px rgba(15,65,70,.07),0 8px 28px rgba(15,65,70,.06);
   }
   html { -webkit-text-size-adjust:100%; }
@@ -60,7 +60,7 @@
   .mode-toggle { display:inline-flex; background:var(--navy-light); border:1px solid var(--border); border-radius:999px; padding:4px; margin-bottom:1.5rem; }
   .mode-toggle button { font-family:inherit; font-size:13px; font-weight:600; border:none; background:none; color:var(--text-mid); padding:8px 18px; border-radius:999px; cursor:pointer; transition:.15s; display:flex; flex-direction:column; align-items:center; gap:2px; line-height:1.25; }
   .mode-toggle button.active { background:var(--teal); color:#fff; }
-  .mode-toggle button small { font-size:10px; font-weight:500; opacity:.65; }
+  .mode-toggle button small { font-size:10px; font-weight:500; opacity:.9; } /* .65 fell to ~3:1 on the pill background */
   .mode-toggle button.active small { opacity:.85; }
 
   .instructions { background:var(--navy-light); border:1px solid #C8D0E0; border-radius:var(--radius); padding:1.5rem; margin-bottom:2rem; }
@@ -92,7 +92,7 @@
   .add-group:hover { background:var(--teal-light); }
   .stance-btns { display:flex; gap:6px; margin:2px 0 10px; }
   .stance-btn { flex:1; border:1px solid var(--border); background:#fff; border-radius:8px; padding:7px 6px; font-family:inherit; font-size:12px; font-weight:700; color:var(--text-mid); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:1px; transition:.15s; }
-  .stance-btn small { font-weight:600; font-size:10px; opacity:.7; }
+  .stance-btn small { font-weight:600; font-size:10px; opacity:.9; } /* .7 fell to ~3.5:1 on white */
   .stance-btn:hover { border-color:var(--teal-mid); }
   .stance-btn.active { background:var(--navy); border-color:var(--navy); color:#fff; }
   .staff-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:8px; }
@@ -173,7 +173,7 @@
   .arow.explain .albl { font-weight:600; color:var(--navy); font-size:12px; display:flex; align-items:center; gap:6px; }
   .arow.explain .adesc { font-size:11px; color:var(--text-light); line-height:1.5; text-align:left; font-weight:400; white-space:normal; }
   .conf { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:1px 6px; border-radius:8px; }
-  .conf.high { background:#E6F4EC; color:#1B7F5C; }
+  .conf.high { background:#E6F4EC; color:#166A4D; }
   .conf.med { background:#FFF4E0; color:#B7791F; }
   .conf.low { background:var(--teal-light); color:var(--teal); }
   details.method { border:1px solid var(--border); border-radius:var(--radius-sm); margin-top:.5rem; }
@@ -248,7 +248,7 @@
 const { useState, useMemo, useEffect, useRef, useId } = React;
 
 /* ===== THEME: RLDatix Galen suite (deep teal + seafoam) ===== */
-const C = { navy:"#0F4146", navyMid:"#1A5459", navyLight:"#E8FAF6", teal:"#0F4146", tealMid:"#1A8A7A", tealLight:"#D6F7EE", seafoam:"#34DEC2", border:"#D4E0DD", text:"#0F4146", textMid:"#3D5A5E", textLight:"#5F787C", rose:"#B25B76" };  // textLight darkened to ~4.7:1 on white (WCAG AA)
+const C = { navy:"#0F4146", navyMid:"#1A5459", navyLight:"#E8FAF6", teal:"#0F4146", tealMid:"#1A8A7A", tealLight:"#D6F7EE", seafoam:"#34DEC2", border:"#D4E0DD", text:"#0F4146", textMid:"#3D5A5E", textLight:"#5F787C", rose:"#93405A" };  // textLight + rose darkened to >=4.5:1 on white (WCAG AA)
 const RAMP = ["#0F4146","#1A8A7A","#34DEC2","#73D2E1","#8FB3AE"];
 
 /* ===== FORMATTERS: en-GB / £ (AU-ready: swap LOCALE + SYMBOL) ===== */
@@ -756,7 +756,7 @@ function App(){
               <div className="roi-eyebrow">Estimated annual impact (indicative)</div>
               <div className="roi-co">
                 {noNet ? (
-                <div><div className="roi-hero" style={{fontSize:"1.7rem",lineHeight:1.15,color:"#B8860B"}}>No net cash saving at this scale</div><div className="roi-desc" style={{marginTop:8}}>The {fmt(platformCost)}/yr licence fee is larger than the {fmtK(r.totSaving)} agency premium you'd displace at these inputs. The value here is the released capacity and time; the cash case grows with a larger bank or more agency spend moved to bank.</div></div>
+                <div><div className="roi-hero" style={{fontSize:"1.7rem",lineHeight:1.15,color:"#E9B949"}}>No net cash saving at this scale</div><div className="roi-desc" style={{marginTop:8}}>The {fmt(platformCost)}/yr licence fee is larger than the {fmtK(r.totSaving)} agency premium you'd displace at these inputs. The value here is the released capacity and time; the cash case grows with a larger bank or more agency spend moved to bank.</div></div>
                 ) : (
                 <div><div className="roi-hero"><AnimMoney v={r.netSaving}/></div><div className="roi-cap">Potential annual cash saving</div><div className="roi-desc">What you could save each year by filling more shifts from your bank instead of agency — the agency premium you stop paying.</div></div>
                 )}
@@ -800,7 +800,7 @@ function App(){
                   <div className="arow"><span style={{fontWeight:700,color:C.navy}}>Premium displaced = the saving</span><span>{rate(gapS,gapHr)}</span></div>
                   <p style={{fontSize:12.5,color:C.textMid,lineHeight:1.6,margin:".6rem 0 0"}}><b style={{color:C.navy}}>{m2(gapHr)}/hr</b> on each of <b style={{color:C.navy}}>{fmtNum(r.totDisplaced)}</b> shifts moved to bank = <b style={{color:C.navy}}>{fmt(r.totSaving)}</b> gross a year.</p>
                   <p style={{fontSize:12.5,lineHeight:1.7,margin:".6rem 0 0",padding:"10px 14px",background:netR>0?"#EFF9F6":"#FBF6EC",border:"1px solid "+(netR>0?"#BFE5DB":"#E8D9B8"),borderRadius:8,color:C.textMid}}>
-                    <b style={{color:C.navy}}>{fmt(grossR)}</b> premium{adminR>0?<> + <b style={{color:C.navy}}>{fmt(adminR)}</b> admin time</>:""}{recR>0?<> + <b style={{color:C.navy}}>{fmt(recR)}</b> recruitment</>:""} − <b style={{color:C.navy}}>{fmt(licR)}</b> licence fee = <b style={{color:netR>0?C.teal:"#B8860B"}}>{netR>=0?fmt(netR):"−"+fmt(-netR)}</b> net{netR>0?", the headline saving shown at the top.":", so the licence fee is larger than the premium at these inputs."}
+                    <b style={{color:C.navy}}>{fmt(grossR)}</b> premium{adminR>0?<> + <b style={{color:C.navy}}>{fmt(adminR)}</b> admin time</>:""}{recR>0?<> + <b style={{color:C.navy}}>{fmt(recR)}</b> recruitment</>:""} − <b style={{color:C.navy}}>{fmt(licR)}</b> licence fee = <b style={{color:netR>0?C.teal:"#8A6508"}}>{netR>=0?fmt(netR):"−"+fmt(-netR)}</b> net{netR>0?", the headline saving shown at the top.":", so the licence fee is larger than the premium at these inputs."}
                   </p>
                 </>; })()}
               <p style={{fontSize:11.5,color:C.textLight,marginTop:".6rem",lineHeight:1.6}}>Bank rate = 2026/27 AfC blended midpoint, already including the employer on-cost (default 20%, employer NI + pension), so on-costs are counted once, not added on top. Premium defaults to the official ~20% House of Commons Library average — deliberately conservative and contested at shift level (nursing ~35–50%, medics ~80–120%). Set your own premium and every figure updates.{isQuick?<> Your agency spend is modelled from your bank pool and fill rate ({fmtK(r.totSpend)}), assuming ~60 ad-hoc shifts per bank worker a year — for a figure built on your real spend, switch to Detailed.</>:""}</p>
@@ -867,8 +867,8 @@ function App(){
                 <button className="btn primary" type="submit" disabled={!lead.consent||lead.busy}>{lead.busy?"Sending…":"Send to a specialist"}</button>
               </div>
               <label className="consent" style={{display:"flex",alignItems:"flex-start",gap:8,cursor:"pointer",marginTop:".6rem"}}><input type="checkbox" required checked={!!lead.consent} onChange={e=>setLead(l=>({...l,consent:e.target.checked}))} style={{marginTop:3}}/><span>I agree RLDatix may contact me about Smart Match and process these details in line with the RLDatix privacy notice.</span></label>
-              {lead.err==="failed" && <p className="consent" style={{color:"#b25b76"}}>Sorry, that didn't send. Please try again, or contact your RLDatix representative.</p>}
-              {lead.err==="unconfigured" && <p className="consent" style={{color:"#b25b76"}}>Lead capture isn't switched on yet. Your RLDatix contact can enable it (HubSpot portal + form ID).</p>}
+              {lead.err==="failed" && <p className="consent" style={{color:C.rose}}>Sorry, that didn't send. Please try again, or contact your RLDatix representative.</p>}
+              {lead.err==="unconfigured" && <p className="consent" style={{color:C.rose}}>Lead capture isn't switched on yet. Your RLDatix contact can enable it (HubSpot portal + form ID).</p>}
               </form>}
             </div>
 
