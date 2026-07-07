@@ -496,18 +496,23 @@ function Field({label, value, onChange, min, max, step=1, prefix, info, hint}){
   </div>);
 }
 /* Size headline input: commits on blur / Enter (not per keystroke) so typing a
-   new total does not progressively rescale and collapse the staff-group mix. */
-function SizeField({label, value, prefix, hint, info, onCommit}){
-  const [txt,setTxt]=useState(String(value));
-  useEffect(()=>{ setTxt(String(value)); },[value]);
-  const commit=()=>{ const n=num(txt); if(n>0) onCommit(n); else setTxt(String(value)); };
+   new total does not progressively rescale and collapse the staff-group mix.
+   allowZero: optional totals (turnover) can be cleared back to 0 to opt out;
+   a zero displays as an empty field. Headcount/spend keep the >0 guard. */
+function SizeField({label, value, prefix, hint, info, onCommit, allowZero}){
+  const show=v=>(allowZero && !(num(v)>0)) ? "" : String(v);
+  const [txt,setTxt]=useState(show(value));
+  const focused=useRef(false);
+  useEffect(()=>{ if(!focused.current) setTxt(show(value)); },[value]);
+  const commit=()=>{ focused.current=false; const n=num(txt);
+    if(n>0 || (allowZero && n===0)){ onCommit(n); setTxt(show(n)); } else setTxt(show(value)); };
   const id="sf_"+useId();
   return (<div className="field">
     <label htmlFor={id}>{label}{info && <InfoTip text={info}/>}</label>
     <div style={{position:"relative",display:"flex",alignItems:"center"}}>
       {prefix && <span style={{position:"absolute",left:10,color:C.textLight,fontSize:14}}>{prefix}</span>}
       <input id={id} type="number" value={txt} min="0" style={prefix?{paddingLeft:22}:null}
-        onChange={e=>setTxt(e.target.value)} onBlur={commit} onKeyDown={e=>{ if(e.key==="Enter") e.target.blur(); }} />
+        onFocus={()=>{focused.current=true;}} onChange={e=>setTxt(e.target.value)} onBlur={commit} onKeyDown={e=>{ if(e.key==="Enter") e.target.blur(); }} />
     </div>
     {hint && <span className="hint">{hint}</span>}
   </div>);
@@ -695,7 +700,7 @@ function App(){
               <div className="inputs-grid">
                 <SizeField label="Total bank headcount" value={totalHead} hint="Across all staff groups; rescales the mix" onCommit={v=>setGroups(scaleGroupsTo(groups,"headcount",v))}/>
                 <SizeField label="Total annual agency spend" prefix="£" value={totalSpend} info="Your organisation's total yearly agency spend. This is the anchor for the saving; we rescale each group's spend proportionally, then fine-tune per group below. Prefer your own figure; national agency spend is falling, so use latest-year." hint="The anchor for the saving" onCommit={v=>setGroups(scaleGroupsTo(groups,"agencySpend",v))}/>
-                <SizeField label="Annual turnover (£, optional)" prefix="£" value={turnover} info="Your organisation's annual operating turnover (optional). Used to gauge agency intensity — agency as a % of turnover — which tailors the headline framing. You can also estimate a typical agency spend from it." hint="Sets agency intensity & framing" onCommit={v=>setTurnover(num(v))}/>
+                <SizeField label="Annual turnover (£, optional)" prefix="£" value={turnover} info="Your organisation's annual operating turnover (optional). Used to gauge agency intensity — agency as a % of turnover — which tailors the headline framing. You can also estimate a typical agency spend from it." hint="Sets agency intensity & framing · clear to omit" onCommit={v=>setTurnover(num(v))} allowZero/>
               </div>
               {turnover>0 && (()=>{ const {pct,key}=agencyRegime(totalSpend,turnover); const lbl={low:"low-agency / mature bank",typical:"typical reliance",high:"high reliance"}[key]; return (
                 <div className="disp-note" style={{marginTop:12,background:C.navyLight,color:C.navy}}>Agency is <b>{pct.toFixed(1)}% of turnover</b> — {lbl}. <button type="button" className="linkish" style={{border:"none",background:"none",color:C.teal,fontWeight:700,cursor:"pointer",fontFamily:"inherit",padding:0,textDecoration:"underline"}} onClick={()=>setGroups(scaleGroupsTo(groups,"agencySpend",Math.round(agencySpendFromTurnover(turnover,preset))))}>Estimate agency spend from turnover →</button></div>
