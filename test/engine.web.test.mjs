@@ -104,6 +104,34 @@ test('adminOnly flags an agency-free saving, and is off by default (audit #14)',
   assert.equal(noAgency.adminOnly, true);
 });
 
+test('per-group premium override reprices only that group (perGroupPremium on)', () => {
+  const groups = E.buildOrg('acute');
+  groups[0].premium = 50;   // registered nurses, £6.5m agency spend
+  const d = E.calc({ groups, ...SHARED, admin: ADMIN, recruit: { enabled: false }, fillRateNow: 8, perGroupPremium: true });
+  const base = detailed('acute');
+  // overridden group: spend x ds x displacement x p/(1+p) at 50%
+  assert.ok(Math.abs(d.rows[0].saving - 6500000 * 0.80 * 0.13 * (0.50 / 1.50)) < 1e-6);
+  // untouched groups keep the global 20% premium
+  assert.ok(Math.abs(d.rows[1].saving - base.rows[1].saving) < 1e-9);
+  // ...and the override is ignored while perGroupPremium is off
+  const off = E.calc({ groups, ...SHARED, admin: ADMIN, recruit: { enabled: false }, fillRateNow: 8, perGroupPremium: false });
+  assert.ok(Math.abs(off.totSaving - base.totSaving) < 1e-9);
+});
+
+test('negative net saving survives the engine for the UI noNet guard', () => {
+  const d = detailed('ambulance', { platformCost: 200000 });   // fee > gross benefit
+  assert.ok(d.netSaving < 0);
+  assert.ok(d.roiPct < 0);
+  assert.ok(d.paybackMonths > 12);   // gross still positive, so payback is finite but long
+});
+
+test('disabling admin removes its cash but keeps the time-saved co-headline', () => {
+  const d = detailed('acute', { admin: { ...ADMIN, enabled: false } });
+  assert.equal(d.adminSaving, 0);
+  assert.equal(d.timeSavedWeek, 60);                       // 12 people x 1 h/day x 5 days
+  assert.equal(Math.round(d.netSaving), 260000 - 17000);   // premium minus licence only
+});
+
 test('platformCostFor follows the G-Cloud licence bands (rounds a gap size UP to the covering tier; parity with kiosk)', () => {
   assert.equal(E.platformCostFor(300), 9486.54);
   assert.equal(E.platformCostFor(600), 9486.54);    // upper edge of band 1
