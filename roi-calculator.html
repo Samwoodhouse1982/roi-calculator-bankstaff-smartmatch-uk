@@ -527,7 +527,9 @@ function App(){
   },[mode,simple,groups,premium,displacement,platformCost,shiftHours,oncost,admin,recruit,fillRateNow,perGroupPremium,displaceableShare,turnover]);
 
   useEffect(()=>{ if(!pcAuto) return; const h = mode==="quick" ? num(simple.bankPool) : groups.reduce((a,g)=>a+num(g.headcount),0); setPC(platformCostFor(h)); },[mode,simple.bankPool,groups,pcAuto]);
-  const setG=(i,k,v)=>setGroups(gs=>gs.map((g,j)=>j===i?{...g,[k]:num(v)}:g));
+  // role + band are strings; coercing them through num() wiped a typed group name to "0"
+  // and turned a selected "Band 5" into 5 (breaking the band-pill lookup and the PDF).
+  const setG=(i,k,v)=>setGroups(gs=>gs.map((g,j)=>j===i?{...g,[k]:(k==="role"||k==="band")?v:num(v)}:g));
   const choosePreset=key=>{ setPreset(key); setGroups(buildOrg(key)); setPcAuto(true); setTurnover(ORG_TYPES[key].turnover); };
   const addGroup=()=>setGroups(gs=>[...gs,{ id:"g"+Date.now(), role:"New staff group", band:"Band 5", bankPay:34592, headcount:50, agencySpend:500000 }]);
   const removeGroup=i=>setGroups(gs=>gs.length>1?gs.filter((_,j)=>j!==i):gs);
