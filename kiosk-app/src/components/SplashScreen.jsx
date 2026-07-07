@@ -229,7 +229,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
         <div style={{
           fontSize: 20, fontWeight: 600, letterSpacing: 10, textTransform: 'uppercase',
           color: C.accent, marginBottom: 50, opacity: 0.95,
-        }}>RLDatix · Smart Match</div>
+        }}>RLDatix | BankStaff+</div>
 
         <h1 style={{
           fontSize: 76, fontWeight: 800, lineHeight: 1.12, color: '#fff',
@@ -249,7 +249,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
           fontSize: 26, fontWeight: 400, color: 'rgba(255,255,255,0.80)',
           lineHeight: 1.55, margin: '0 auto 60px', maxWidth: 820,
         }}>
-          Smart Match automatically connects your bank workforce with vacant shifts through Loop, to improve fill rates, lower agency usage, and reduce the administrative burden.<br/><br/><span style={{ color: '#fff', fontWeight: 500 }}>See how much your organisation could save with Smart Match.</span>
+          Smart Match, a new BankStaff+ feature, automatically connects your bank workforce with vacant shifts through Loop, to improve fill rates, lower agency usage, and reduce the administrative burden.<br/><br/><span style={{ color: '#fff', fontWeight: 500 }}>See how much your organisation could save with Smart Match.</span>
         </p>
 
         <button ref={buttonRef} onClick={handleStart} style={{
