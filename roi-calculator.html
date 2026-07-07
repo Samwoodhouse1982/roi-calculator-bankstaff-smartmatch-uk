@@ -665,7 +665,7 @@ function App(){
             </div>
             <button className="adv-toggle" onClick={()=>setAdv(a=>!a)}>{showAdv?"Hide":"Show"} advanced defaults (premium, licence fee, shift length)</button>
             {showAdv && <div className="params-grid" style={{marginTop:10}}>
-              <Field label="Agency premium over bank (%)" value={premium} min="0" max="150" step={5} onChange={v=>setPremium(num(v))} info="Default 20% (HoC Library average); contested at shift level, use your own rate." />
+              <Field label="Agency premium over bank (%)" value={premium} min="0" max="150" step={1} onChange={v=>setPremium(num(v))} info="Default 20% (HoC Library average); contested at shift level, use your own rate." />
               <Field label="BankStaff+ licence fee (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v)); setPcAuto(false); }} info="Auto-set from your bank size using G-Cloud pricing (ex VAT); fully editable. This is the ROI denominator."/>
               <Field label="Shift length (hours)" value={shiftHours} min="1" step={0.5} onChange={v=>setSH(num(v))}/>
               <Field label="Bank on-cost (%)" value={oncost} min="0" step={1} onChange={v=>setOncost(num(v))} info="Employer NI + pension on bank pay, already included in the bank rate (default 20%). It sets the all-in bank shift cost the saving is measured against, so on-costs are counted once, never added on top."/>
@@ -714,7 +714,7 @@ function App(){
                   <Field label="Annual agency spend" prefix="£" value={g.agencySpend} min="0" step={50000} onChange={v=>setG(i,"agencySpend",v)} info="Yearly agency spend for this group, the anchor for the saving." hint="The anchor for the saving"/>
                   <Field label="Bank pay (£/yr)" value={g.bankPay} min="0" step={500} onChange={v=>setG(i,"bankPay",v)} info="Actual bank rate preferred; or pick an AfC band below (2026/27 midpoints). Different pay per group is what makes each column's saving differ."/>
                   <div className="field"><label>AfC band: auto-fills pay</label><select className="grp-band" aria-label="AfC band (auto-fills pay)" value={AFC_BANDS.some(x=>x[1]===g.bankPay)?g.bankPay:""} onChange={e=>{const val=e.target.value; if(val){const bd=AFC_BANDS.find(x=>String(x[1])===val); setG(i,"bankPay",num(val)); if(bd) setG(i,"band",bd[0]);}}}><option value="">Custom / typed</option>{AFC_BANDS.map(([lbl,val])=>(<option key={lbl} value={val}>{lbl} · £{val.toLocaleString("en-GB")}</option>))}</select></div>
-                  {perGroupPremium && <Field label="Agency premium (%)" value={g.premium!=null?g.premium:premium} min="0" max="60" step={1} onChange={v=>setG(i,"premium",v)} info="This group's agency-over-bank premium. Defaults to the global premium; raise it for hard-to-fill groups (e.g. medics) where you have organisation-specific evidence."/>}
+                  {perGroupPremium && <Field label="Agency premium (%)" value={g.premium!=null?g.premium:premium} min="0" max="150" step={1} onChange={v=>setG(i,"premium",v)} info="This group's agency-over-bank premium. Defaults to the global premium; raise it for hard-to-fill groups (e.g. medics) where you have organisation-specific evidence."/>}
                 </div>
               </div>
             ))}
@@ -725,7 +725,7 @@ function App(){
             <div className="step-label"><div className="step-num">2</div><h2>Agency parameters</h2></div>
             <div className="params-grid">
               <div>
-                <Field label={perGroupPremium?"Default agency premium (%)":"Agency premium over bank (%)"} value={premium} min="0" max="60" step={1} onChange={v=>setPremium(num(v))} info="A single agency-over-bank premium (House of Commons Library ~20% average). Contested at shift level; REC data show NHS bank can cost more than capped agency in hard-to-fill roles. Use your organisation's actual rate where possible; applies across all groups unless you override per group." hint={perGroupPremium?"Default for any group you don't override below":"Default 20% · official average · editable · contested"}/>
+                <Field label={perGroupPremium?"Default agency premium (%)":"Agency premium over bank (%)"} value={premium} min="0" max="150" step={1} onChange={v=>setPremium(num(v))} info="A single agency-over-bank premium (House of Commons Library ~20% average). Contested at shift level; REC data show NHS bank can cost more than capped agency in hard-to-fill roles. Use your organisation's actual rate where possible; applies across all groups unless you override per group." hint={perGroupPremium?"Default for any group you don't override below":"Default 20% · official average · editable · contested"}/>
                 <label style={{display:"flex",alignItems:"center",gap:7,fontSize:12,fontWeight:600,color:C.navy,cursor:"pointer",marginTop:8}}><input type="checkbox" checked={perGroupPremium} onChange={e=>setPGP(e.target.checked)}/> Set the agency premium per staff group <InfoTip text="Off by default, one official ~20% premium across all groups (the defensible business-case default). Tick to override the premium per column, e.g. higher for medics, where you have organisation-specific agency rates."/></label>
               </div>
               <div className="field">
