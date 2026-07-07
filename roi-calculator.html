@@ -270,7 +270,6 @@ const num    = (v,f=0) => { const n=parseFloat(String(v).replace(/[^0-9.\-]/g,""
 const AFC_DIVISOR = 1957.5;
 const SHIFT_HOURS_DEFAULT = 8;
 const BANK_ONCOST_DEFAULT = 0.20;     // affects shift counts only, not the cash headline
-const PLATFORM_COST_DEFAULT = 17000;
 /* [G-Cloud] Annual BankStaff+ licence fee (ex VAT) by number of Licensed Users
    (≈ bank-staff size). The published G-Cloud bands are quoted as ranges with gaps
    (1,401–1,500 then 2,001–2,200, …); a bank whose size lands in a gap licences the
@@ -466,13 +465,27 @@ function InfoTip({text}){
     {open && <span role="tooltip" id={tipId} style={{position:"absolute",bottom:"130%",left:"50%",transform:"translateX(-50%)",background:C.navy,color:"#fff",fontSize:11,fontWeight:400,lineHeight:1.5,padding:"8px 10px",borderRadius:8,width:"min(230px, calc(100vw - 32px))",boxShadow:"0 8px 24px rgba(0,0,0,.25)",zIndex:50}}>{text}</span>}
   </span>);
 }
+/* Numeric input. Live-updates the model on every parseable keystroke, but keeps its
+   own text while focused so a cleared or part-typed field ("", "12.") no longer
+   snaps to 0 or a fallback mid-edit; blur clamps to min/max and restores the last
+   good value if left empty. External changes (presets, band auto-fill, mode sync)
+   resync the text whenever the field isn't focused. */
 function Field({label, value, onChange, min, max, step=1, prefix, info, hint}){
   const id="f_"+useId();   // labels repeat across staff-group cards, so a label-derived id duplicated
+  const [txt,setTxt]=useState(String(value));
+  const focused=useRef(false);
+  useEffect(()=>{ if(!focused.current) setTxt(String(value)); },[value]);
+  const change=t=>{ setTxt(t); if(t.trim()!=="" && !isNaN(parseFloat(t))) onChange(t); };
+  const blur=()=>{ focused.current=false;
+    let n = (txt.trim()===""||isNaN(parseFloat(txt))) ? num(value) : num(txt);
+    if(min!=null&&min!=="") n=Math.max(Number(min),n); if(max!=null&&max!=="") n=Math.min(Number(max),n);
+    setTxt(String(n)); onChange(String(n)); };
   return (<div className="field">
     <label htmlFor={id}>{label}{info && <InfoTip text={info}/>}</label>
     <div style={{position:"relative",display:"flex",alignItems:"center"}}>
       {prefix && <span style={{position:"absolute",left:10,color:C.textLight,fontSize:14}}>{prefix}</span>}
-      <input id={id} type="number" value={value} min={min} max={max} step={step} style={prefix?{paddingLeft:22}:null} onChange={e=>onChange(e.target.value)} onBlur={e=>{ let n=num(e.target.value); if(min!=null&&min!=="") n=Math.max(Number(min),n); if(max!=null&&max!=="") n=Math.min(Number(max),n); onChange(String(n)); }} />
+      <input id={id} type="number" value={txt} min={min} max={max} step={step} style={prefix?{paddingLeft:22}:null}
+        onFocus={()=>{focused.current=true;}} onChange={e=>change(e.target.value)} onBlur={blur} />
     </div>
     {hint && <span className="hint">{hint}</span>}
   </div>);
@@ -646,9 +659,9 @@ function App(){
             </div>
             <button className="adv-toggle" onClick={()=>setAdv(a=>!a)}>{showAdv?"Hide":"Show"} advanced defaults (premium, licence fee, shift length)</button>
             {showAdv && <div className="params-grid" style={{marginTop:10}}>
-              <Field label="Agency premium over bank (%)" value={premium} min="0" max="150" step={5} onChange={v=>setPremium(num(v,20))} info="Default 20% (HoC Library average); contested at shift level, use your own rate." />
-              <Field label="BankStaff+ licence fee (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v,14000)); setPcAuto(false); }} info="Auto-set from your bank size using G-Cloud pricing (ex VAT); fully editable. This is the ROI denominator."/>
-              <Field label="Shift length (hours)" value={shiftHours} min="1" step={0.5} onChange={v=>setSH(num(v,8))}/>
+              <Field label="Agency premium over bank (%)" value={premium} min="0" max="150" step={5} onChange={v=>setPremium(num(v))} info="Default 20% (HoC Library average); contested at shift level, use your own rate." />
+              <Field label="BankStaff+ licence fee (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v)); setPcAuto(false); }} info="Auto-set from your bank size using G-Cloud pricing (ex VAT); fully editable. This is the ROI denominator."/>
+              <Field label="Shift length (hours)" value={shiftHours} min="1" step={0.5} onChange={v=>setSH(num(v))}/>
               <Field label="Bank on-cost (%)" value={oncost} min="0" step={1} onChange={v=>setOncost(num(v))} info="Employer NI + pension on bank pay, already included in the bank rate (default 20%). It sets the all-in bank shift cost the saving is measured against, so on-costs are counted once, never added on top."/>
             </div>}
           </div>
@@ -706,7 +719,7 @@ function App(){
             <div className="step-label"><div className="step-num">2</div><h2>Agency parameters</h2></div>
             <div className="params-grid">
               <div>
-                <Field label={perGroupPremium?"Default agency premium (%)":"Agency premium over bank (%)"} value={premium} min="0" max="60" step={1} onChange={v=>setPremium(num(v,20))} info="A single agency-over-bank premium (House of Commons Library ~20% average). Contested at shift level; REC data show NHS bank can cost more than capped agency in hard-to-fill roles. Use your organisation's actual rate where possible; applies across all groups unless you override per group." hint={perGroupPremium?"Default for any group you don't override below":"Default 20% · official average · editable · contested"}/>
+                <Field label={perGroupPremium?"Default agency premium (%)":"Agency premium over bank (%)"} value={premium} min="0" max="60" step={1} onChange={v=>setPremium(num(v))} info="A single agency-over-bank premium (House of Commons Library ~20% average). Contested at shift level; REC data show NHS bank can cost more than capped agency in hard-to-fill roles. Use your organisation's actual rate where possible; applies across all groups unless you override per group." hint={perGroupPremium?"Default for any group you don't override below":"Default 20% · official average · editable · contested"}/>
                 <label style={{display:"flex",alignItems:"center",gap:7,fontSize:12,fontWeight:600,color:C.navy,cursor:"pointer",marginTop:8}}><input type="checkbox" checked={perGroupPremium} onChange={e=>setPGP(e.target.checked)}/> Set the agency premium per staff group <InfoTip text="Off by default, one official ~20% premium across all groups (the defensible business-case default). Tick to override the premium per column, e.g. higher for medics, where you have organisation-specific agency rates."/></label>
               </div>
               <div className="field">
@@ -718,10 +731,10 @@ function App(){
             </div>
             <div className="disp-note" style={{background:st.bg,color:st.color}}>{st.note}</div>
             <div className="params-grid" style={{marginTop:12}}>
-              <Field label="BankStaff+ licence fee (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v,14000)); setPcAuto(false); }} info="Auto-set from your bank size using G-Cloud pricing (ex VAT); fully editable. This is the ROI denominator." hint={pcAuto?"Auto-scaled to your size · editable":"Used for ROI & payback"}/>
-              <Field label="Current agency fill rate (%)" value={fillRateNow} min="0" max="100" step={0.5} onChange={v=>setFill(num(v,8))} info="Used for the capacity narrative (agency reliance reduced)."/>
-              <Field label="Displaceable share of agency (%)" value={Math.round(displaceableShare*100)} min="0" max="100" step={5} onChange={v=>setDS(Math.min(1,Math.max(0,num(v,80)/100)))} info="Only part of agency spend can realistically move to bank — excludes break-glass / safety-critical cover and hard-to-fill specialist roles bank can't cover. Displacement is applied to this share only (benchmark default 80%), so the tool never implies 100% of agency is bankable." hint="Benchmark default 80% · editable"/>
-              {showAdv && <Field label="Shift length (hours)" value={shiftHours} min="1" step={0.5} onChange={v=>setSH(num(v,8))}/>}
+              <Field label="BankStaff+ licence fee (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v)); setPcAuto(false); }} info="Auto-set from your bank size using G-Cloud pricing (ex VAT); fully editable. This is the ROI denominator." hint={pcAuto?"Auto-scaled to your size · editable":"Used for ROI & payback"}/>
+              <Field label="Current agency fill rate (%)" value={fillRateNow} min="0" max="100" step={0.5} onChange={v=>setFill(num(v))} info="Used for the capacity narrative (agency reliance reduced)."/>
+              <Field label="Displaceable share of agency (%)" value={Math.round(displaceableShare*100)} min="0" max="100" step={5} onChange={v=>setDS(Math.min(1,Math.max(0,num(v)/100)))} info="Only part of agency spend can realistically move to bank — excludes break-glass / safety-critical cover and hard-to-fill specialist roles bank can't cover. Displacement is applied to this share only (benchmark default 80%), so the tool never implies 100% of agency is bankable." hint="Benchmark default 80% · editable"/>
+              {showAdv && <Field label="Shift length (hours)" value={shiftHours} min="1" step={0.5} onChange={v=>setSH(num(v))}/>}
               {showAdv && <Field label="Bank on-cost (%)" value={oncost} min="0" step={1} onChange={v=>setOncost(num(v))} info="Already included in the bank rate (default 20%, employer NI + pension). In the detailed model it changes modelled duty counts, not the cash headline."/>}
             </div>
             <button className="adv-toggle" onClick={()=>setAdv(a=>!a)}>{showAdv?"Hide":"Show"} advanced inputs (on-costs, shift length)</button>
