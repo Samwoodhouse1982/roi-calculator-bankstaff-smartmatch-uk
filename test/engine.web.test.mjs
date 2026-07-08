@@ -32,22 +32,24 @@ const SAVING_PER_POUND = 0.13 * 0.80 * 0.20 / 1.20;   // displaceable share appl
 const quick = () => E.calc(E.simpleToInput({ bankPool: 660, agencyFillRate: 8.3, numManagers: 12, includeAdmin: true }, SHARED));
 const detailed = (type, over = {}) => E.calc({ groups: E.buildOrg(type), ...SHARED, admin: ADMIN, recruit: { enabled: false }, fillRateNow: 8, perGroupPremium: false, ...over });
 
-// Post-M3 default: quick mode anchors on agency spend auto-estimated at £7k/bank worker
-// (660 x 7000 = £4.62m), replacing the unsourced 60-shifts-per-worker derivation.
-test('Quick default matches the golden headline (spend-anchored, audit M3)', () => {
+// Quick mode anchors on agency spend auto-estimated at £2,700 per registered bank worker
+// (FY2025/26 basis: £1.2bn national agency spend ÷ ~400-500k registered bank workers).
+// 660 x 2700 = £1.782m.
+test('Quick default matches the golden headline (spend-anchored)', () => {
   const q = quick();
-  assert.equal(Math.round(q.totSpend), 4620000);               // 660 x £7,000
-  assert.equal(Math.round(q.totSaving), 80080);                // 4.62m x 0.8 x 0.13 x 0.2/1.2
+  assert.equal(Math.round(q.totSpend), 1782000);               // 660 x £2,700
+  assert.equal(Math.round(q.totSaving), 30888);                // 1.782m x 0.8 x 0.13 x 0.2/1.2
   assert.equal(Math.round(q.adminSaving), 48600);
-  assert.equal(Math.round(q.grossBenefit), 128680);
-  assert.equal(Math.round(q.netSaving), 111680);
-  assert.equal(Math.round(q.roiPct), 657);
-  assert.equal(Math.round(q.roiMultiple * 100) / 100, 6.57);   // net return on the licence fee (net saving ÷ cost)
+  assert.equal(Math.round(q.grossBenefit), 79488);
+  assert.equal(Math.round(q.netSaving), 62488);
+  assert.equal(Math.round(q.roiPct), 368);
+  assert.equal(Math.round(q.roiMultiple * 100) / 100, 3.68);   // net return on the licence fee (net saving ÷ cost)
   assert.equal(q.timeSavedWeek, 60);
-  assert.ok(Math.abs(q.paybackMonths - 17000 * 12 / 128680) < 1e-9);
+  assert.ok(Math.abs(q.paybackMonths - 17000 * 12 / 79488) < 1e-9);
 });
 
-test('Quick agency spend: auto-estimate is £7k/bank worker; an explicit figure wins', () => {
+test('Quick agency spend: auto-estimate is £2,700/registered bank worker; an explicit figure wins', () => {
+  assert.equal(Math.round(E.calc(E.simpleToInput({ bankPool: 660, agencyFillRate: 8.3, numManagers: 12, includeAdmin: false }, SHARED)).totSpend), 1782000);
   const own = E.calc(E.simpleToInput({ bankPool: 660, agencySpend: 15000000, agencyFillRate: 8.3, numManagers: 12, includeAdmin: false }, SHARED));
   assert.equal(Math.round(own.totSpend), 15000000);
   assert.equal(Math.round(own.totSaving), 260000);   // same anchor as the acute preset -> same saving
