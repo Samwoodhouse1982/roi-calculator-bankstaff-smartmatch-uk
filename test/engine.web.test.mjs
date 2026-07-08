@@ -55,6 +55,17 @@ test('Quick agency spend: auto-estimate is £2,700/registered bank worker; an ex
   assert.equal(Math.round(own.totSaving), 260000);   // same anchor as the acute preset -> same saving
 });
 
+test('Quick fill rate scales the auto-estimate linearly around the 8.3% national average', () => {
+  const at = f => Math.round(E.calc(E.simpleToInput({ bankPool: 1000, agencyFillRate: f, numManagers: 12, includeAdmin: false }, SHARED)).totSpend);
+  assert.equal(at(8.3), 2700000);                    // national average = £2,700/worker exactly
+  assert.equal(at(16.6), 5400000);                   // double the fill => double the estimate
+  assert.equal(at(5), Math.round(1000 * 2700 * (5 / 8.3) / 1000) * 1000);   // scaled, rounded to clean £1,000s
+  // but an explicit agency spend ignores the fill rate for the cash figure
+  const a = E.calc(E.simpleToInput({ bankPool: 1000, agencySpend: 5000000, agencyFillRate: 5, numManagers: 12 }, SHARED));
+  const b = E.calc(E.simpleToInput({ bankPool: 1000, agencySpend: 5000000, agencyFillRate: 30, numManagers: 12 }, SHARED));
+  assert.equal(Math.round(a.totSaving), Math.round(b.totSaving));
+});
+
 const DETAILED_GOLDEN = {
   acute:     { net: 291600, premium: 260000, totSpend: 15000000, totHead: 2200, roi: 1715 },
   community: { net: 152933, premium: 121333, totSpend: 7000000,  totHead: 700,  roi: 900 },
