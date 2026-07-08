@@ -337,42 +337,42 @@ const G = (id,role,band,bankPay,headcount,agencySpend) => ({ id, role, band, ban
    scaleGroupsTo(). */
 const ORG_TYPES = {
   acute: { label:"Acute trust (district general)", desc:"~2,200 bank · ~£15m agency", turnover:430000000, groups:[
-    G("rn","Registered nurses","Band 5",34592,900,6500000),
-    G("sn","Senior nurses","Band 6",42170,350,2500000),
-    G("ahp","AHPs (physio / OT)","Band 5/6",38400,300,1500000),
+    G("rn","Registered nurses","Band 5",35558,900,6500000),
+    G("sn","Senior nurses","Band 6",44038,350,2500000),
+    G("ahp","AHPs (physio / OT)","Band 5/6",39798,300,1500000),
     G("hca","Healthcare assistants","Band 2/3",25900,550,500000),
     G("doc","Medics (locum / SAS)","SAS / ST3+",60000,100,4000000),
   ]},
   community: { label:"Community / specialist", desc:"~700 bank · ~£7m agency", turnover:235000000, groups:[
-    G("cn","Community / district nurses","Band 6",42170,200,2500000),
-    G("rn","Registered nurses","Band 5",34592,180,1800000),
-    G("ahp","AHPs (physio / OT / SLT)","Band 5/6",38400,200,2000000),
+    G("cn","Community / district nurses","Band 6",44038,200,2500000),
+    G("rn","Registered nurses","Band 5",35558,180,1800000),
+    G("ahp","AHPs (physio / OT / SLT)","Band 5/6",39798,200,2000000),
     G("hca","Healthcare assistants","Band 2/3",25900,100,400000),
     G("doc","Medics (locum / SAS)","SAS / ST3+",60000,20,300000),
   ]},
   mental: { label:"Mental health trust", desc:"~1,000 bank · ~£10m agency", turnover:235000000, groups:[
-    G("rmn","Mental health nurses (RMN)","Band 5",34592,450,4500000),
-    G("sn","Senior nurses","Band 6",42170,150,2000000),
+    G("rmn","Mental health nurses (RMN)","Band 5",35558,450,4500000),
+    G("sn","Senior nurses","Band 6",44038,150,2000000),
     G("hca","Healthcare assistants","Band 2/3",25900,300,1500000),
-    G("ahp","AHPs (OT / psychology)","Band 5/6",38400,50,500000),
+    G("ahp","AHPs (OT / psychology)","Band 5/6",39798,50,500000),
     G("doc","Medics (locum psych)","SAS / ST3+",60000,50,1500000),
   ]},
   ambulance: { label:"Ambulance trust", desc:"~400 bank · ~£4m agency", turnover:220000000, groups:[
-    G("para","Paramedics","Band 6",42170,180,2200000),
+    G("para","Paramedics","Band 6",44038,180,2200000),
     G("emt","EMTs / care assistants","Band 3",26618,100,700000),
-    G("rn","Nurses (111 / UCC)","Band 5",34592,60,600000),
+    G("rn","Nurses (111 / UCC)","Band 5",35558,60,600000),
     G("call","Call handlers / dispatch","Band 3",26618,50,300000),
     G("doc","Medics (locum)","SAS / ST3+",60000,10,200000),
   ]},
   ics: { label:"ICS / provider collaborative", desc:"~5,000 bank · ~£30m agency", turnover:1000000000, groups:[
-    G("rn","Registered nurses","Band 5",34592,1900,12000000),
-    G("sn","Senior nurses","Band 6",42170,900,5000000),
-    G("ahp","AHPs","Band 5/6",38400,800,4000000),
+    G("rn","Registered nurses","Band 5",35558,1900,12000000),
+    G("sn","Senior nurses","Band 6",44038,900,5000000),
+    G("ahp","AHPs","Band 5/6",39798,800,4000000),
     G("hca","Healthcare assistants","Band 2/3",25900,1200,2000000),
     G("doc","Medics (locum / SAS)","SAS / ST3+",60000,200,7000000),
   ]},
 };
-const AFC_BANDS = [["Band 2",25272],["Band 2/3",25900],["Band 3",26618],["Band 5",34592],["Band 5/6",38400],["Band 6",42170],["SAS / ST3+",60000]];   // ascending pay order for the dropdown
+const AFC_BANDS = [["Band 2",25272],["Band 2/3",25900],["Band 3",26618],["Band 5",35558],["Band 5/6",39798],["Band 6",44038],["SAS / ST3+",60000]];   // ascending pay order for the dropdown
 const buildOrg = key => (ORG_TYPES[key]||ORG_TYPES.acute).groups.map(g=>({ ...g }));
 function scaleGroupsTo(groups,key,target){
   const vals=groups.map(g=>num(g[key])); const cur=vals.reduce((a,b)=>a+b,0);
@@ -593,7 +593,7 @@ function App(){
   // and turned a selected "Band 5" into 5 (breaking the band-pill lookup and the PDF).
   const setG=(i,k,v)=>setGroups(gs=>gs.map((g,j)=>j===i?{...g,[k]:(k==="role"||k==="band")?v:num(v)}:g));
   const choosePreset=key=>{ setPreset(key); setGroups(buildOrg(key)); setPcAuto(true); setTurnover(ORG_TYPES[key].turnover); };
-  const addGroup=()=>setGroups(gs=>[...gs,{ id:"g"+Date.now()+Math.random().toString(36).slice(2,6), role:"New staff group", band:"Band 5", bankPay:34592, headcount:50, agencySpend:500000 }]);
+  const addGroup=()=>setGroups(gs=>[...gs,{ id:"g"+Date.now()+Math.random().toString(36).slice(2,6), role:"New staff group", band:"Band 5", bankPay:35558, headcount:50, agencySpend:500000 }]);
   const removeGroup=i=>setGroups(gs=>gs.length>1?gs.filter((_,j)=>j!==i):gs);
   const st=stance(displacement);
   // At a very small bank / low agency book the licence fee can exceed the modelled
@@ -974,7 +974,7 @@ function App(){
               <div className="arow"><span>Bank-utilisation programme signal</span><span>+17% (one site)</span></div>
               <div className="arow explain"><span className="albl">Source: programme (4 trusts; 2-site data) <span className="conf low">low–mod</span></span><span className="adesc">Utilisation +17% at one community site (170→199 workers); the other reporting site was ~+1.75% (a "13%" figure in the client doc is a known error). Temp duties filled +17% (351→411) / +16%. Self-booking +26% / +15%. Engagement/coverage measures, not payroll uplift; they inform the stance, not the saving. Anonymised pending client sign-off.</span></div>
               <div className="arow"><span>Pay scale</span><span>2026/27 NHS AfC midpoints <span className="conf high">high</span></span></div>
-              <div className="arow explain"><span className="albl">Source: pay</span><span className="adesc">NHS Employers 2026/27 (+3.3% confirmed from 1 Apr 2026): Band 2 ~£25,272; Band 3 ~£26,618; Band 5 mid ~£34,592; Band 6 mid ~£42,170. Medics use the SAS / specialty-doctor scale (~£52.5k–£67.5k, 2026/27); medical T&amp;Cs, not AfC — medical contracts are 40 h/week and locum supply is priced hourly, so medic duty counts are approximate (their cash saving is unaffected, being anchored to spend). Add London HCAS (Inner 20% / Outer 15% / Fringe 5%) where relevant. Band 2/3 may rise further via the pending Staff Council structure reform.</span></div>
+              <div className="arow explain"><span className="albl">Source: pay</span><span className="adesc">NHS Employers 2026/27 (+3.3% confirmed from 1 Apr 2026), band midpoints: Band 2 ~£25,272; Band 3 ~£26,618; Band 5 ~£35,558 (£32,073–£39,043); Band 6 ~£44,038 (£39,959–£48,117). Medics use the SAS / specialty-doctor scale (~£52.5k–£67.5k, 2026/27); medical T&amp;Cs, not AfC — medical contracts are 40 h/week and locum supply is priced hourly, so medic duty counts are approximate (their cash saving is unaffected, being anchored to spend). Add London HCAS (Inner 20% / Outer 15% / Fringe 5%) where relevant. Band 2/3 may rise further via the pending Staff Council structure reform.</span></div>
               <div className="arow"><span>Hourly divisor / shift length</span><span>1,957.5 h/yr · {shiftHours} h</span></div>
               <div className="arow explain"><span className="albl">What pay, hours &amp; on-cost do <span className="conf high">CORE</span></span><span className="adesc">They calibrate <b>duty counts and the capacity value only</b>. The cash saving is agency_spend × displaceable_share × displacement × premium/(1+premium) — it does not change with pay, shift length or on-cost. The 20% on-cost default sits below the full ~30% NHS employer rate (NI + pension) because bank-only workers often opt out of the pension; set your local loaded rate.</span></div>
               <div className="arow"><span>Licence fee (ROI denominator, G-Cloud)</span><span>{fmt(platformCost)}/yr</span></div>
