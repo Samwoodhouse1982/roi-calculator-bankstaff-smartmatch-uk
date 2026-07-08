@@ -20,32 +20,32 @@ import { calc, calcDetailed, buildOrg, DEFAULTS, DETAILED_DEFAULTS, platformCost
 // premium (20%) + displacement (13%): d * p/(1+p) = 0.13 * 0.20/1.20.
 const SAVING_PER_POUND = 0.13 * 0.8 * 0.20 / 1.20; // displaceable share applied (benchmark §4)
 
-// Post-M3 defaults: quick mode anchors on agency spend auto-estimated at £7k/bank
-// worker (660 × 7000 = £4.62m), replacing the unsourced 60-shifts-per-worker
-// derivation. Matches the web build's re-pinned quick goldens exactly.
-test('Quick default matches the golden headline (spend-anchored, audit M3)', () => {
+// Quick mode anchors on agency spend, auto-estimated at £2,700 per registered bank
+// worker (FY2025/26: £1.2bn national agency spend ÷ ~400-500k registered bank workers).
+// 660 × 2700 = £1.782m. Matches the web build's re-pinned quick goldens exactly.
+test('Quick default matches the golden headline (spend-anchored)', () => {
   const q = calc({ ...DEFAULTS, includeAdmin: true });
-  assert.equal(Math.round(q.agencySpend), 4620000);           // 660 × £7,000
-  assert.equal(Math.round(q.agencySaving), 80080);            // 4.62m × 0.8 × 0.13 × 0.2/1.2
+  assert.equal(Math.round(q.agencySpend), 1782000);           // 660 × £2,700
+  assert.equal(Math.round(q.agencySaving), 30888);            // 1.782m × 0.8 × 0.13 × 0.2/1.2
   assert.equal(Math.round(q.adminSaving), 48600);
-  assert.equal(Math.round(q.grossBenefit), 128680);
-  assert.equal(Math.round(q.netSaving), 111680);
-  assert.equal(Math.round(q.roiPct), 657);
-  assert.equal(Math.round(q.roiMultiple * 100) / 100, 6.57);   // net return on the licence fee (net saving ÷ cost)
+  assert.equal(Math.round(q.grossBenefit), 79488);
+  assert.equal(Math.round(q.netSaving), 62488);
+  assert.equal(Math.round(q.roiPct), 368);
+  assert.equal(Math.round(q.roiMultiple * 100) / 100, 3.68);   // net return on the licence fee (net saving ÷ cost)
   assert.equal(q.timeSavedWeek, 60);
-  assert.ok(Math.abs(q.paybackMonths - 1.585) < 0.01);
+  assert.ok(Math.abs(q.paybackMonths - 17000 * 12 / 79488) < 1e-9);
 });
 
-test('Quick agency spend: auto-estimate is £7k/bank worker; an explicit figure wins (audit M3)', () => {
-  assert.equal(Math.round(calc({ ...DEFAULTS }).agencySpend), 4620000);
+test('Quick agency spend: auto-estimate is £2,700/registered bank worker; an explicit figure wins', () => {
+  assert.equal(Math.round(calc({ ...DEFAULTS }).agencySpend), 1782000);
   const own = calc({ ...DEFAULTS, agencySpend: 15000000 });
   assert.equal(Math.round(own.agencySpend), 15000000);
   assert.equal(Math.round(own.agencySaving), 260000);         // same anchor as the acute preset → same saving
 });
 
-test('Quick default start (2,000 bank, Moderate 26%) does NOT trip the >40× warning (audit M3)', () => {
+test('Quick default start (2,000 bank, Moderate 26%) sits well below the >40× warning', () => {
   const start = calc({ bankPool: 2000, displacement: 26, platformCost: platformCostFor(2000) });
-  assert.ok(start.roiPct > 3000 && start.roiPct < 4000);      // ~31× is legitimate scale, not an input error
+  assert.ok(start.roiPct > 1000 && start.roiPct < 1300);     // ~11× at £2,700/worker: legitimate scale
   assert.equal(start.implausibleRoi, false);
 });
 
