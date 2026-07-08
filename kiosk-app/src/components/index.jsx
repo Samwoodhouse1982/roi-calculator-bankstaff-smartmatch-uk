@@ -130,10 +130,12 @@ export function InfoTip({ text }) {
     setPos({ top, left, placeAbove });
   }, [show]);
 
-  return <span ref={iconRef} style={{ position: "relative", display: "inline-flex" }}>
-    <span onClick={() => setShow(!show)} style={{ width: 40, height: 40, borderRadius: "50%", background: C.border, color: C.textMid, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: F.body, fontWeight: 700, cursor: "pointer" }}>i</span>
+  // stopPropagation so interacting with the tooltip (icon, dismiss backdrop, bubble) never
+  // reaches a clickable parent — e.g. a ToggleRow it sits inside would otherwise flip.
+  return <span ref={iconRef} onClick={e => e.stopPropagation()} style={{ position: "relative", display: "inline-flex" }}>
+    <span onClick={e => { e.stopPropagation(); setShow(!show); }} style={{ width: 40, height: 40, borderRadius: "50%", background: C.border, color: C.textMid, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: F.body, fontWeight: 700, cursor: "pointer" }}>i</span>
     {show && <>
-      <div onClick={() => setShow(false)} style={{ position: "fixed", inset: 0, zIndex: 99996 }} />
+      <div onClick={e => { e.stopPropagation(); setShow(false); }} style={{ position: "fixed", inset: 0, zIndex: 99996 }} />
       <span style={{
         position: "fixed",
         top: pos.top, left: pos.left,
