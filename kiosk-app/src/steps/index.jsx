@@ -33,7 +33,7 @@ export function BankStep({ bankPool, setBankPool }) {
         format={fmtNum}
         tip="Everyone on your bank register — INCLUDING substantive staff who also pick up bank shifts, not just dedicated bank-only workers. Counting only bank-only workers would understate the opportunity. A rough figure is fine."
       />
-      <Helper>Everyone on your bank register, including substantive staff who also do extra shifts. Better utilisation of this pool is the mechanism that displaces expensive agency spend, and the size of the opportunity scales with it.</Helper>
+      <Helper>Slide to adjust your number of bank staff who use Optima. Better utilisation of this pool is the mechanism that displaces expensive agency spend.</Helper>
       <div style={{ marginTop: 16, padding: "14px 18px", background: C.accentSoft, borderRadius: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.5 }}>
         BankStaff+ licence at this size: <strong style={{ color: C.accent }}>{fmt(platformCostFor(bankPool))}/yr</strong> <span style={{ color: C.textMuted }}>(G-Cloud pricing, ex VAT; your return is measured against this fee)</span>
       </div>
