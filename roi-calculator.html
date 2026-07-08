@@ -304,6 +304,12 @@ const SIMPLE_BLENDED_BANK_PAY = 34000;    // AfC 2026/27 band-mix weighted midpo
    −25% in 2027/28, and zero agency spend by 2029/30. It is only the fallback used when a
    user gives bank size alone; a user-entered actual agency spend always takes precedence. */
 const AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP = 2700;   // FY2025-26 basis, review annually
+/* National average agency fill rate the £2,700/worker figure is calibrated at (RLDatix data).
+   The quick auto-estimate scales linearly around it — a trust filling twice the national
+   average carries ~twice the agency exposure per bank worker — so the fill-rate slider
+   drives the estimate (bounded, not the old hyperbolic 1/(1-fill)). A user-entered actual
+   agency spend still overrides it entirely. */
+const NATIONAL_AVG_FILL_PCT = 8.3;
 const RECRUIT_COST_PER_WORKER = 1000;     // recruit + onboard a bank worker
 const RECRUIT_RECOVERY_RATE = 0.10;       // share recovered by activating idle capacity
 /* [Benchmark brief §4] Displaceable share: only part of agency spend can realistically move to bank
@@ -437,13 +443,18 @@ function calc(input){
     displaceableShare:ds, turnover:num(input.turnover), agencyPctOfTurnover:reg.pct, regime:reg.key };
 }
 
-/* Build the engine input for the QUICK variant: anchored directly on agency spend
-   (user-set, or auto-estimated at ~£2,700 per registered bank worker, FY2025/26 basis).
-   The fill rate feeds the reliance narrative only - deriving spend from it via an
-   unsourced shifts-per-worker assumption understated spend ~6x vs the presets (M3),
-   and made the estimate hyperbolic as the fill rate approached 100%. */
+/* Build the engine input for the QUICK variant: anchored on agency spend — the user's own
+   figure when given, else auto-estimated from bank size AND fill rate. The estimate is
+   ~£2,700 per registered bank worker at the 8.3% national average, scaled linearly by the
+   trust's fill rate (fill/8.3), so more agency reliance means a proportionally larger
+   estimate. Linear + bounded, unlike the old hyperbolic shifts-per-worker derivation. */
+function estimateAgencySpend(bankPool, agencyFillRate){
+  const fillFactor = NATIONAL_AVG_FILL_PCT>0 ? num(agencyFillRate)/NATIONAL_AVG_FILL_PCT : 1;
+  const raw = num(bankPool)*AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP*fillFactor;
+  return Math.round(raw/1000)*1000;   // clean thousands — it's an estimate, not false precision
+}
 function simpleToInput(s, shared){
-  const agencySpend = s.agencySpend!=null ? num(s.agencySpend) : num(s.bankPool)*AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP;
+  const agencySpend = s.agencySpend!=null ? num(s.agencySpend) : estimateAgencySpend(s.bankPool, s.agencyFillRate);
   return {
     groups:[{ id:"all", role:"Whole bank pool", bankPay:SIMPLE_BLENDED_BANK_PAY, headcount:num(s.bankPool), agencySpend }],
     premium:shared.premium, displacement:shared.displacement, shiftHours:shared.shiftHours, oncost:shared.oncost,
@@ -557,10 +568,11 @@ function App(){
   const [showAdv,setAdv]=useState(false), [calibrating,setCal]=useState(false);
   const [calculated,setCalculated]=useState(false);
   const [lead,setLead]=useState({name:"",email:"",org:"",consent:false,sent:false,busy:false,err:null}), [pdfBusy,setPdfBusy]=useState(false);
-  // simple state (agencySpend auto-tracks bankPool at ~£7k/worker until the user edits it)
-  const [simple,setSimple]=useState({ bankPool:660, agencySpend:660*AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP, agencyFillRate:8.3, numManagers:12, includeAdmin:false });
+  // simple state: agencySpend auto-tracks bank size AND fill rate (via estimateAgencySpend)
+  // until the user types their own figure, at which point it's pinned.
+  const [simple,setSimple]=useState({ bankPool:660, agencySpend:estimateAgencySpend(660,8.3), agencyFillRate:8.3, numManagers:12, includeAdmin:false });
   const [spendAuto,setSpendAuto]=useState(true);
-  useEffect(()=>{ if(spendAuto) setSimple(s=>({...s,agencySpend:num(s.bankPool)*AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP})); },[simple.bankPool,spendAuto]);
+  useEffect(()=>{ if(spendAuto) setSimple(s=>({...s,agencySpend:estimateAgencySpend(s.bankPool,s.agencyFillRate)})); },[simple.bankPool,simple.agencyFillRate,spendAuto]);
   // detailed state
   const [groups,setGroups]=useState(()=>buildOrg("acute")); const [preset,setPreset]=useState("acute"); const [fillRateNow,setFill]=useState(8);
   const [admin,setAdmin]=useState({ enabled:false, managers:12, hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY });
@@ -651,7 +663,7 @@ function App(){
       </div></header>
 
       <div className="strategy"><div className="wrap">
-        <strong>Strategic context:</strong> reducing agency reliance and releasing workforce-management time supports the <strong>NHS 10 Year Plan</strong> and its Workforce Paper, and the staff time released aligns with the <strong>Staff Health &amp; Wellbeing CQUIN</strong>. Staff-experience benefits are a separate qualitative story, kept out of the financial figures below.
+        <strong>Strategic context:</strong> NHS England has <strong>mandated agency reductions</strong> — roughly −30% in 2026/27, −25% in 2027/28, heading toward near-zero by 2029/30. The question is no longer <em>whether</em> to cut agency but <em>how</em> to do it without losing shifts: Smart Match is the mechanism — moving temporary work onto your own bank so you hit the target while keeping wards covered. This also supports the <strong>NHS 10 Year Plan</strong> and its Workforce Paper, and the staff time released aligns with the <strong>Staff Health &amp; Wellbeing CQUIN</strong>. Staff-experience benefits are a separate qualitative story, kept out of the financial figures below.
       </div></div>
 
       <main className="wrap">
@@ -669,9 +681,9 @@ function App(){
             <p className="step-sub">A fast, conservative estimate for events and web. Switch to <b>Detailed</b> to model your agency spend by staff group.</p>
             <div className="card">
               <div className="inputs-grid">
-                <Field label="Registered bank workers" value={simple.bankPool} min="0" onChange={v=>setSimple(s=>({...s,bankPool:num(v)}))} hint="Everyone on your bank register (incl. substantive staff who do extra shifts)" info="Everyone on your bank register — including substantive staff who also pick up bank shifts, not just bank-only workers. This wider count is what the ~£2,700/worker agency-spend estimate is calibrated to (per bank-only it would be ~£8k). Scales for large systems (e.g. Leeds ~5,000, Sussex ~10,000); sets the estimated agency spend, licence tier and duty-count narrative (2026/27 AfC band-mix rate, ~£34k blended)."/>
+                <Field label="Registered bank workers" value={simple.bankPool} min="0" onChange={v=>setSimple(s=>({...s,bankPool:num(v)}))} hint="Your whole bank register — not just bank-only staff (see i)" info="Count EVERYONE on your bank register, including substantive staff who also pick up bank shifts — not just dedicated bank-only workers. Worked example: a trust with 150 bank-only workers plus 350 substantive staff who occasionally do bank shifts has 500 registered bank workers, not 150. This wider count is what the ~£2,700/worker agency-spend estimate is calibrated to (using bank-only would understate it ~3×). Scales for large systems (e.g. Leeds ~5,000, Sussex ~10,000); sets the estimated agency spend, licence tier and duty-count narrative (2026/27 AfC band-mix rate, ~£34k blended)."/>
                 <Field label="Annual agency spend (£)" prefix="£" value={simple.agencySpend} min="0" step={100000} onChange={v=>{ setSimple(s=>({...s,agencySpend:num(v)})); setSpendAuto(false); }} hint={spendAuto?"Estimated from your bank size · enter your actual spend":"Your figure · the anchor for the saving"} info="Your organisation's total annual agency spend (all staff groups — medical, nursing, AHP, admin) — the anchor for the saving, and a board-reported figure your finance team will know. Estimated from your bank size using FY2025/26 national averages (~£2,700 per registered bank worker) until you enter your actual spend, which makes the result far more credible. National agency spend is falling fast (£3bn→£1.2bn since 2023/24), so prefer your latest figure."/>
-                <Field label="Current agency fill rate (%)" value={simple.agencyFillRate} min="0" max="100" step={0.1} onChange={v=>setSimple(s=>({...s,agencyFillRate:num(v)}))} hint="Share of temp duties filled by agency (national avg 8.3%)" info="The % of temporary duties currently filled by agency (national average 8.3%, RLDatix data). Used for the agency-reliance reduction narrative. A pilot study recorded a move from 8.1% to 6.0% at one site."/>
+                <Field label="Current agency fill rate (%)" value={simple.agencyFillRate} min="0" max="100" step={0.1} onChange={v=>setSimple(s=>({...s,agencyFillRate:num(v)}))} hint={spendAuto?"Share of temp duties on agency (avg 8.3%) — scales the estimate above":"Share of temp duties on agency (national avg 8.3%)"} info="The % of temporary duties currently filled by agency (national average 8.3%, RLDatix data). While agency spend is estimated, a higher fill rate scales that estimate up proportionally (twice the national average ≈ twice the agency exposure per bank worker). Once you enter your actual agency spend, this drives the agency-reliance reduction story only. A pilot study recorded a move from 8.1% to 6.0% at one site."/>
                 <Field label="Temporary staffing team" value={simple.numManagers} min="0" onChange={v=>setSimple(s=>({...s,numManagers:num(v)}))} hint="Bank/temp staffing coordinators & admins" info="The people who do the day-to-day booking, chasing and reconciling of temporary shifts. Drives the time-saved-per-week and admin saving."/>
               </div>
               <div style={{display:"flex",alignItems:"center",gap:8,marginTop:14}}>
@@ -820,7 +832,7 @@ function App(){
               <div className="roi-eyebrow">Estimated annual impact (indicative)</div>
               <div className="roi-co">
                 {noNet ? (
-                <div><div className="roi-hero" style={{fontSize:"1.7rem",lineHeight:1.15,color:"#E9B949"}}>No net cash saving at this scale</div><div className="roi-desc" style={{marginTop:8}}>The {fmt(platformCost)}/yr licence fee is larger than the {fmtK(r.totSaving)} agency premium you'd displace at these inputs. The value here is the released capacity and time; the cash case grows with a larger bank or more agency spend moved to bank.</div></div>
+                <div><div className="roi-hero"><AnimNum v={r.totDisplaced}/><small> shifts</small></div><div className="roi-cap">Shifts you could move off agency each year</div><div className="roi-desc" style={{marginTop:6}}>At this size the value is <b>released capacity and staff time</b> rather than net cash: the {fmtK(r.totSaving)} agency premium you'd displace is below the {fmt(platformCost)}/yr licence. The cash case builds as your bank grows, at higher agency reliance, or once you enter your trust's actual agency spend.</div></div>
                 ) : (
                 <div><div className="roi-hero"><AnimMoney v={r.netSaving}/></div><div className="roi-cap">Potential annual cash saving</div><div className="roi-desc">What you could save each year by filling more shifts from your bank instead of agency — the agency premium you stop paying.</div></div>
                 )}
@@ -829,9 +841,10 @@ function App(){
               <div className="roi-sub">
                 <span>Payback <b>{noNet?"n/a":fmtDays(r.paybackMonths)}</b></span>
                 <span>Gross benefit <b>{fmtK(r.grossBenefit)}</b></span>
-                <span>Return (net ÷ fee) <b>{noNet?"n/a":<>{r.implausibleRoi?"⚠ ":""}{fmtMult(r.roiMultiple)}</>}</b></span>
+                <span>Return on licence fee <b>{noNet?"n/a":<>{r.implausibleRoi?"⚠ ":""}{fmtMult(r.roiMultiple)}</>}</b></span>
                 <span>Agency premium avoided <b>{fmtK(r.totSaving)}</b></span>
               </div>
+              {!noNet && r.roiMultiple>=5 && <p style={{fontSize:11,opacity:.7,marginTop:".6rem",lineHeight:1.5,maxWidth:560}}>The return multiple is measured against the {fmt(platformCost)}/yr licence fee alone — a small figure next to your agency book — so it reads large. <b>Payback ({fmtDays(r.paybackMonths)}) is the more grounded number</b>, and the licence is the only cost in it; add implementation/change costs for a full business case.</p>}
             </div>
 
             <div className="summary-grid">
