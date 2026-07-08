@@ -3,7 +3,7 @@ import { C } from '../theme';
 import rldatixLogo from '../assets/rldatix-logo.png';
 
 // Build version shown in the splash footer. Bump this on each release.
-const APP_VERSION = 'v1.5 July26';
+const APP_VERSION = 'v1.5.0 July26';
 
 // Timings (ms) for the launch animation. Tune here.
 const CONVERGE_MS = 700;       // particles fly toward the button
