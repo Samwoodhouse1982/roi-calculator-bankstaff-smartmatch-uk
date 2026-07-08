@@ -1,7 +1,7 @@
 import React from 'react';
-import { C, F, fmt, fmtK, fmtNum } from '../theme';
+import { C, F, fmt, fmtNum } from '../theme';
 import { Card, SectionTitle, TouchSlider, Stepper, InfoTip, ToggleRow } from '../components';
-import { platformCostFor, stance, SIMPLE_BLENDED_BANK_PAY, AFC_DIVISOR, BANK_ONCOST, AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP } from '../calc/engine';
+import { platformCostFor, stance, SIMPLE_BLENDED_BANK_PAY, AFC_DIVISOR, BANK_ONCOST } from '../calc/engine';
 
 /* ────────────────────────────────────────────────────────────────────────
    Smart Match: three simple inputs (plus the modelling-stance slider that
@@ -17,11 +17,11 @@ function Lead({ children }) {
   return <div style={{ fontSize: F.body, color: C.textMid, lineHeight: 1.6, marginBottom: 28, maxWidth: 760 }}>{children}</div>;
 }
 
-// STEP 0. Your bank register + annual agency spend (the saving's anchor).
-export function BankStep({ bankPool, setBankPool, agencySpend, setAgencySpend, spendAuto }) {
+// STEP 0. Your bank register — the single input; agency spend and everything else scale from it.
+export function BankStep({ bankPool, setBankPool }) {
   return <div>
-    <SectionTitle number={1}>Your bank &amp; agency spend</SectionTitle>
-    <Lead>How many workers are on your bank register in Optima (the people you can offer temporary shifts before turning to an agency), and how much do you spend on agency each year?</Lead>
+    <SectionTitle number={1}>Your bank register</SectionTitle>
+    <Lead>How many workers are on your bank register in Optima? These are the people you can offer temporary shifts to before turning to an agency.</Lead>
     <Card>
       <TouchSlider
         label="Registered bank workers"
@@ -31,23 +31,9 @@ export function BankStep({ bankPool, setBankPool, agencySpend, setAgencySpend, s
         step={10}
         onChange={setBankPool}
         format={fmtNum}
-        tip="Everyone on your bank register — INCLUDING substantive staff who also pick up bank shifts, not just dedicated bank-only workers. This wider count is what the ~£2,700/worker agency-spend estimate is calibrated to (per bank-only it would be ~£8k). A rough figure is fine."
+        tip="Everyone on your bank register — INCLUDING substantive staff who also pick up bank shifts, not just dedicated bank-only workers. Counting only bank-only workers would understate the opportunity. A rough figure is fine."
       />
-      <Helper>Everyone on your bank register, including substantive staff who also do extra shifts. Better utilisation of this pool is the mechanism that displaces expensive agency spend.</Helper>
-      <div style={{ height: 1, background: C.border, margin: "22px 0" }} />
-      <TouchSlider
-        label="Annual agency spend"
-        value={agencySpend}
-        min={0}
-        max={Math.max(bankPool * 12000, 2000000)}
-        step={100000}
-        onChange={setAgencySpend}
-        format={fmtK}
-        tip="Your organisation's total annual agency spend, all staff groups (medical, nursing, AHP, admin) — the anchor for the whole saving, and a board-reported figure your finance team will know. Until you set it we estimate from your bank size using FY2025/26 national averages (~£2,700 per registered bank worker). Drag to your actual figure for accurate results."
-      />
-      <Helper>{spendAuto
-        ? <>Estimated from your bank size using <strong style={{ color: C.text }}>FY2025/26 national averages</strong> (~{fmt(AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP)}/registered worker = <strong style={{ color: C.text }}>{fmtK(agencySpend)}</strong>). <strong style={{ color: C.accent }}>Enter your actual agency spend for accurate results</strong> — it's the anchor the whole saving is built on.</>
-        : <>Your figure: <strong style={{ color: C.text }}>{fmt(agencySpend)}</strong>. This is the anchor the whole cash saving is built on.</>}</Helper>
+      <Helper>Everyone on your bank register, including substantive staff who also do extra shifts. Better utilisation of this pool is the mechanism that displaces expensive agency spend, and the size of the opportunity scales with it.</Helper>
       <div style={{ marginTop: 16, padding: "14px 18px", background: C.accentSoft, borderRadius: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.5 }}>
         BankStaff+ licence at this size: <strong style={{ color: C.accent }}>{fmt(platformCostFor(bankPool))}/yr</strong> <span style={{ color: C.textMuted }}>(G-Cloud pricing, ex VAT; your return is measured against this fee)</span>
       </div>

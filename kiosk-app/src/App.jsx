@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { C, F, W, H, KIOSK_STEPS, fmtK, fmtNum } from './theme';
 import { SplashScreen } from './components/SplashScreen';
 import { BackgroundParticles } from './components/BackgroundParticles';
-import { calc, DEFAULTS, platformCostFor, stance, AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP } from './calc/engine';
+import { calc, DEFAULTS, platformCostFor, stance } from './calc/engine';
 import { newId, flushSync, syncEnabled } from './stats/sync';
 import { StepIndicator, NavButtons, PageTransition } from './components';
 import { BankStep, AgencyStep, TeamStep, StanceStep } from './steps';
@@ -465,15 +465,11 @@ export default function App() {
   const [numManagers, setNumManagers] = useState(DEFAULTS.numManagers);
   const [displacement, setDisplacement] = useState(START_DISPLACEMENT);
   const [includeAdmin, setIncludeAdmin] = useState(false);  // temporary-staffing-team time in the cash total (off by default; secondary)
-  // Agency spend is the saving's anchor. Prefer the user's actual figure; until they set
-  // it, auto-estimate from bank size (£2,700/registered worker) and keep tracking bank size.
-  const [agencySpend, setAgencySpendState] = useState(START_BANKPOOL * AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP);
-  const [spendAuto, setSpendAuto] = useState(true);
-  useEffect(() => { if (spendAuto) setAgencySpendState(bankPool * AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP); }, [bankPool, spendAuto]);
-  const setAgencySpend = useCallback((v) => { setAgencySpendState(v); setSpendAuto(false); }, []);  // any manual change pins it
 
-  const rQuick = useMemo(() => calc({ bankPool, agencySpend, agencyFillRate, numManagers, displacement, includeAdmin, platformCost: platformCostFor(bankPool) }),
-    [bankPool, agencySpend, agencyFillRate, numManagers, displacement, includeAdmin]);
+  // Agency spend is not asked for on the kiosk (walk-up users won't know it); the engine
+  // derives it from bank size (£2,700/registered worker) as its fallback.
+  const rQuick = useMemo(() => calc({ bankPool, agencyFillRate, numManagers, displacement, includeAdmin, platformCost: platformCostFor(bankPool) }),
+    [bankPool, agencyFillRate, numManagers, displacement, includeAdmin]);
   const r = rQuick;
   const chooseStance = useCallback((v) => { setDisplacement(v); setStanceTouched(true); }, []);
   const steps = KIOSK_STEPS;
@@ -500,7 +496,6 @@ export default function App() {
     setBankPool(START_BANKPOOL); setAgencyFillRate(DEFAULTS.agencyFillRate);
     setNumManagers(DEFAULTS.numManagers); setDisplacement(START_DISPLACEMENT);
     setIncludeAdmin(false); setStanceTouched(false);
-    setSpendAuto(true); setAgencySpendState(START_BANKPOOL * AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP);
   }, []);
 
   // Results "Start over": back to the attract splash, fully reset (next visitor).
@@ -510,7 +505,7 @@ export default function App() {
 
   const renderStep = () => {
     switch (kioskStep) {
-      case 0: return <BankStep bankPool={bankPool} setBankPool={setBankPool} agencySpend={agencySpend} setAgencySpend={setAgencySpend} spendAuto={spendAuto} />;
+      case 0: return <BankStep bankPool={bankPool} setBankPool={setBankPool} />;
       case 1: return <AgencyStep agencyFillRate={agencyFillRate} setAgencyFillRate={setAgencyFillRate} />;
       case 2: return <TeamStep numManagers={numManagers} setNumManagers={setNumManagers} includeAdmin={includeAdmin} setIncludeAdmin={setIncludeAdmin} />;
       case 3: return <StanceStep displacement={displacement} chosen={stanceTouched} setDisplacement={chooseStance} />;
