@@ -293,12 +293,16 @@ const ADMIN_WORKING_DAYS = 225;
 const ADMIN_LOADED_HOURLY = 18;
 /* Simple variant embedded defaults */
 const SIMPLE_BLENDED_BANK_PAY = 34000;    // AfC 2026/27 band-mix weighted midpoint
-/* [Audit M3] Quick-mode agency-spend auto-estimate, per bank worker. The old derivation
-   (60 ad-hoc shifts/worker through the fill rate) had no source and implied ~£1.1k of
-   agency spend per bank worker - ~6x below the calibrated presets (£6k-£10k/worker) -
-   so Quick understated the saving vs Detailed for the same organisation. £7k sits at the
-   conservative end of the preset range; the user's own figure always takes precedence. */
-const QUICK_SPEND_PER_BANK_WORKER = 7000;
+/* Quick-mode agency-spend estimate, per REGISTERED bank worker (FY2025/26 basis).
+   REGISTERED = everyone on the trust's bank register, INCLUDING substantive staff who
+   also pick up bank shifts (~2/3 of registrants) — NOT bank-only headcount (per bank-only
+   the figure would be ~£8k). The UI label must say so, or the denominator is wrong.
+   Derivation: £1.2bn national NHS agency spend (NHS England M12 2025/26, unaudited)
+   ÷ ~400–500k registered bank workers ≈ £2,400–£3,000 → midpoint £2,700.
+   ⚠ REVIEW ANNUALLY — this decays fast: national policy mandates −30% agency in 2026/27,
+   −25% in 2027/28, and zero agency spend by 2029/30. It is only the fallback used when a
+   user gives bank size alone; a user-entered actual agency spend always takes precedence. */
+const AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP = 2700;   // FY2025-26 basis, review annually
 const RECRUIT_COST_PER_WORKER = 1000;     // recruit + onboard a bank worker
 const RECRUIT_RECOVERY_RATE = 0.10;       // share recovered by activating idle capacity
 /* [Benchmark brief §4] Displaceable share: only part of agency spend can realistically move to bank
@@ -433,12 +437,12 @@ function calc(input){
 }
 
 /* Build the engine input for the QUICK variant: anchored directly on agency spend
-   (user-set, or auto-estimated at ~£7k per bank worker, consistent with the presets).
+   (user-set, or auto-estimated at ~£2,700 per registered bank worker, FY2025/26 basis).
    The fill rate feeds the reliance narrative only - deriving spend from it via an
    unsourced shifts-per-worker assumption understated spend ~6x vs the presets (M3),
    and made the estimate hyperbolic as the fill rate approached 100%. */
 function simpleToInput(s, shared){
-  const agencySpend = s.agencySpend!=null ? num(s.agencySpend) : num(s.bankPool)*QUICK_SPEND_PER_BANK_WORKER;
+  const agencySpend = s.agencySpend!=null ? num(s.agencySpend) : num(s.bankPool)*AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP;
   return {
     groups:[{ id:"all", role:"Whole bank pool", bankPay:SIMPLE_BLENDED_BANK_PAY, headcount:num(s.bankPool), agencySpend }],
     premium:shared.premium, displacement:shared.displacement, shiftHours:shared.shiftHours, oncost:shared.oncost,
@@ -553,9 +557,9 @@ function App(){
   const [calculated,setCalculated]=useState(false);
   const [lead,setLead]=useState({name:"",email:"",org:"",consent:false,sent:false,busy:false,err:null}), [pdfBusy,setPdfBusy]=useState(false);
   // simple state (agencySpend auto-tracks bankPool at ~£7k/worker until the user edits it)
-  const [simple,setSimple]=useState({ bankPool:660, agencySpend:660*QUICK_SPEND_PER_BANK_WORKER, agencyFillRate:8.3, numManagers:12, includeAdmin:false });
+  const [simple,setSimple]=useState({ bankPool:660, agencySpend:660*AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP, agencyFillRate:8.3, numManagers:12, includeAdmin:false });
   const [spendAuto,setSpendAuto]=useState(true);
-  useEffect(()=>{ if(spendAuto) setSimple(s=>({...s,agencySpend:num(s.bankPool)*QUICK_SPEND_PER_BANK_WORKER})); },[simple.bankPool,spendAuto]);
+  useEffect(()=>{ if(spendAuto) setSimple(s=>({...s,agencySpend:num(s.bankPool)*AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP})); },[simple.bankPool,spendAuto]);
   // detailed state
   const [groups,setGroups]=useState(()=>buildOrg("acute")); const [preset,setPreset]=useState("acute"); const [fillRateNow,setFill]=useState(8);
   const [admin,setAdmin]=useState({ enabled:false, managers:12, hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY });
@@ -664,8 +668,8 @@ function App(){
             <p className="step-sub">A fast, conservative estimate for events and web. Switch to <b>Detailed</b> to model your agency spend by staff group.</p>
             <div className="card">
               <div className="inputs-grid">
-                <Field label="Bank staff pool size" value={simple.bankPool} min="0" onChange={v=>setSimple(s=>({...s,bankPool:num(v)}))} hint="Total people on your bank" info="Total bank workers across all groups; scales for large systems (e.g. Leeds ~5,000, Sussex ~10,000). Sets the auto-estimated agency spend and licence tier, and the duty-count narrative (2026/27 AfC band-mix rate, ~£34k blended)."/>
-                <Field label="Annual agency spend (£)" prefix="£" value={simple.agencySpend} min="0" step={100000} onChange={v=>{ setSimple(s=>({...s,agencySpend:num(v)})); setSpendAuto(false); }} hint={spendAuto?"Auto-estimated from your bank size · set your own":"The anchor for the saving"} info="Your organisation's total annual agency spend — the anchor for the saving. Until you set it, we estimate ~£7,000 per bank worker (the conservative end of the Detailed presets' £6k–£10k range). Your real figure makes the estimate far more credible."/>
+                <Field label="Registered bank workers" value={simple.bankPool} min="0" onChange={v=>setSimple(s=>({...s,bankPool:num(v)}))} hint="Everyone on your bank register (incl. substantive staff who do extra shifts)" info="Everyone on your bank register — including substantive staff who also pick up bank shifts, not just bank-only workers. This wider count is what the ~£2,700/worker agency-spend estimate is calibrated to (per bank-only it would be ~£8k). Scales for large systems (e.g. Leeds ~5,000, Sussex ~10,000); sets the estimated agency spend, licence tier and duty-count narrative (2026/27 AfC band-mix rate, ~£34k blended)."/>
+                <Field label="Annual agency spend (£)" prefix="£" value={simple.agencySpend} min="0" step={100000} onChange={v=>{ setSimple(s=>({...s,agencySpend:num(v)})); setSpendAuto(false); }} hint={spendAuto?"Estimated from your bank size · enter your actual spend":"Your figure · the anchor for the saving"} info="Your organisation's total annual agency spend (all staff groups — medical, nursing, AHP, admin) — the anchor for the saving, and a board-reported figure your finance team will know. Estimated from your bank size using FY2025/26 national averages (~£2,700 per registered bank worker) until you enter your actual spend, which makes the result far more credible. National agency spend is falling fast (£3bn→£1.2bn since 2023/24), so prefer your latest figure."/>
                 <Field label="Current agency fill rate (%)" value={simple.agencyFillRate} min="0" max="100" step={0.1} onChange={v=>setSimple(s=>({...s,agencyFillRate:num(v)}))} hint="Share of temp duties filled by agency (national avg 8.3%)" info="The % of temporary duties currently filled by agency (national average 8.3%, RLDatix data). Used for the agency-reliance reduction narrative. A pilot study recorded a move from 8.1% to 6.0% at one site."/>
                 <Field label="Temporary staffing team" value={simple.numManagers} min="0" onChange={v=>setSimple(s=>({...s,numManagers:num(v)}))} hint="Bank/temp staffing coordinators & admins" info="The people who do the day-to-day booking, chasing and reconciling of temporary shifts. Drives the time-saved-per-week and admin saving."/>
               </div>
@@ -863,7 +867,7 @@ function App(){
                     <b style={{color:C.navy}}>{fmt(grossR)}</b> premium{adminR>0?<> + <b style={{color:C.navy}}>{fmt(adminR)}</b> admin time</>:""}{recR>0?<> + <b style={{color:C.navy}}>{fmt(recR)}</b> recruitment</>:""} − <b style={{color:C.navy}}>{fmt(licR)}</b> licence fee = <b style={{color:netR>0?C.teal:"#8A6508"}}>{netR>=0?fmt(netR):"−"+fmt(-netR)}</b> net{netR>0?", the headline saving shown at the top.":", so the licence fee is larger than the premium at these inputs."}
                   </p>
                 </>; })()}
-              <p style={{fontSize:11.5,color:C.textLight,marginTop:".6rem",lineHeight:1.6}}>Bank rate = 2026/27 AfC blended midpoint, already including the employer on-cost (default 20%, employer NI + pension), so on-costs are counted once, not added on top. Premium defaults to the official ~20% House of Commons Library average — deliberately conservative and contested at shift level (nursing ~35–50%, medics ~80–120%). Set your own premium and every figure updates.{isQuick?<> Quick mode anchors on your annual agency spend ({fmtK(r.totSpend)}{spendAuto?", auto-estimated at ~£7k per bank worker until you set your own":""}) — for a per-staff-group model, switch to Detailed.</>:""}</p>
+              <p style={{fontSize:11.5,color:C.textLight,marginTop:".6rem",lineHeight:1.6}}>Bank rate = 2026/27 AfC blended midpoint, already including the employer on-cost (default 20%, employer NI + pension), so on-costs are counted once, not added on top. Premium defaults to the official ~20% House of Commons Library average — deliberately conservative and contested at shift level (nursing ~35–50%, medics ~80–120%). Set your own premium and every figure updates.{isQuick?<> Quick mode anchors on your annual agency spend ({fmtK(r.totSpend)}{spendAuto?", estimated from your bank size using FY2025/26 national averages — enter your actual agency spend for accurate results":""}) — for a per-staff-group model, switch to Detailed.</>:""}</p>
             </div>
 
             {/* Single annual steady-state (Rev D: ramp removed) */}
