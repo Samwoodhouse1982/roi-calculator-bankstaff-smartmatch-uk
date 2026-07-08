@@ -30,12 +30,16 @@ export const ADMIN_HRS_PER_DAY = 1.0;       // conservative (client suggested 2.
 export const ADMIN_WORKING_DAYS = 225;
 export const ADMIN_LOADED_HOURLY = 18;
 export const SIMPLE_BLENDED_BANK_PAY = 34000;    // AfC band-mix weighted midpoint (2026/27, +3.3%)
-/* [Audit M3] Quick-mode agency-spend auto-estimate, per bank worker. The old derivation
-   (60 ad-hoc shifts/worker run through the fill rate) had no source and implied ~£1.1k of
-   agency spend per bank worker — ~6× below the calibrated presets (£6k–£10k/worker) — so
-   Quick understated the saving vs Detailed for the same organisation. £7k sits at the
-   conservative end of the preset range; the fill rate now feeds the reliance narrative only. */
-export const QUICK_SPEND_PER_BANK_WORKER = 7000;
+/* Quick-mode agency-spend estimate, per REGISTERED bank worker (FY2025/26 basis).
+   REGISTERED = everyone on the trust's bank register, INCLUDING substantive staff who
+   also pick up bank shifts (~2/3 of registrants) — NOT bank-only headcount (per bank-only
+   the figure would be ~£8k). The UI label must say so, or the denominator is wrong.
+   Derivation: £1.2bn national NHS agency spend (NHS England M12 2025/26, unaudited)
+   ÷ ~400–500k registered bank workers ≈ £2,400–£3,000 → midpoint £2,700.
+   ⚠ REVIEW ANNUALLY — this decays fast: national policy mandates −30% agency in 2026/27,
+   −25% in 2027/28, and zero agency spend by 2029/30. It is only the fallback used when a
+   user gives bank size alone; a user-entered actual agency spend always takes precedence. */
+export const AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP = 2700;   // FY2025-26 basis, review annually
 export const DEFAULTS = { bankPool: 660, agencyFillRate: 8.3, numManagers: 12, premium: 20, displacement: 13 };  // agencyFillRate 8.3% = agreed national average (RLDatix internal data)
 /* [Benchmark §4] Displaceable share of agency that can realistically move to bank (excludes break-glass /
    safety-critical cover and hard-to-fill specialist roles); displacement applies to this share only. */
@@ -58,10 +62,10 @@ export function calc(inp) {
   const p = premium / 100, d = displacement / 100, oc = oncost / 100;
   const bankShiftCost = (SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR) * shiftHours * (1 + oc);
   const agencyShiftCost = bankShiftCost * (1 + p);
-  // [Audit M3] Anchor on agency spend (auto-estimated at ~£7k per bank worker, consistent
-  // with the detailed presets), NOT on an unsourced shifts-per-worker count run through the
-  // fill rate. The fill rate now feeds the reliance narrative (fillAfter) only.
-  const agencySpend = inp.agencySpend != null ? Math.max(0, Number(inp.agencySpend) || 0) : bankPool * QUICK_SPEND_PER_BANK_WORKER;
+  // Anchor on agency spend: the user's actual figure when given, else auto-estimated at
+  // ~£2,700 per registered bank worker (FY2025/26). The fill rate feeds the reliance
+  // narrative (fillAfter) only, not the cash.
+  const agencySpend = inp.agencySpend != null ? Math.max(0, Number(inp.agencySpend) || 0) : bankPool * AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP;
   const baseline = agencyShiftCost > 0 ? agencySpend / agencyShiftCost : 0;
   const displaced = baseline * displaceableShare * d;           // duty counts (need a pay rate)
   const agencySaving = agencySpend * displaceableShare * d * (p / (1 + p));   // CASH: pay-independent identity
@@ -76,7 +80,7 @@ export function calc(inp) {
   const fillAfter = agencyFillRate * (1 - displaceableShare * d);   // reduction on the displaceable share only, consistent with the modelled counts
   const exceedsSpend = agencySaving > agencySpend && agencySpend > 0;
   const adminOnly = agencySaving <= 0 && adminSaving > 0;       // reachable check: saving is admin time only
-  const implausibleRoi = roiPct != null && roiPct > 4000;       // >40× (M3: the re-anchored default start ~31× is legitimate scale)
+  const implausibleRoi = roiPct != null && roiPct > 4000;       // >40× flags genuinely extreme inputs; normal usage sits well below
   return { agencySpend, agencySaving, adminSaving, timeSavedWeek, grossBenefit, netSaving, roiPct, roiMultiple,
            paybackMonths, displaced, capacityValue, fillNow: agencyFillRate, fillAfter,
            exceedsSpend, adminOnly, implausibleRoi, premium, displacement, platformCost,
