@@ -117,6 +117,8 @@
   .qstep.done { color:var(--teal-mid); border-top-color:var(--teal-mid); }
   .qstep.active { color:var(--navy); border-top-color:var(--teal); }
   .qnav { display:flex; align-items:center; gap:10px; margin-top:1.5rem; }
+  .skip-link { background:none; border:none; color:var(--text-light); font-family:inherit; font-size:12.5px; font-weight:600; cursor:pointer; padding:6px 2px; text-decoration:underline; }
+  .skip-link:hover { color:var(--navy-mid); }
   .yesno { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   @media (max-width:520px){ .yesno{ grid-template-columns:1fr; } }
   .yn { text-align:left; font-family:inherit; background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:1rem 1.1rem; cursor:pointer; font-size:14px; font-weight:600; color:var(--navy); transition:.15s; }
@@ -784,6 +786,7 @@ function App(){
             <div className="qnav">
               {quickStep>0 && <button type="button" className="btn" onClick={()=>setQuickStep(s=>Math.max(0,s-1))}>← Back</button>}
               <div style={{flex:1}}/>
+              {quickStep<3 && <button type="button" className="skip-link" onClick={runCalc} title="Calculate now with these values and the default assumptions">Skip to results</button>}
               {quickStep<3
                 ? <button type="button" className="btn primary" onClick={()=>setQuickStep(s=>Math.min(3,s+1))}>Next →</button>
                 : <button type="button" className="btn primary" style={{fontSize:15}} onClick={runCalc}>{calculated?"Update results →":"Calculate my savings →"}</button>}
