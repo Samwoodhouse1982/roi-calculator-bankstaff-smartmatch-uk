@@ -109,6 +109,22 @@
   .hint { font-size:11px; color:var(--text-light); line-height:1.5; }
   .adv-toggle { background:none; border:none; color:var(--navy-mid); font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; padding:6px 0 0; text-decoration:underline; }
 
+  /* QUICK WIZARD: step indicator, nav, yes/no */
+  .qsteps { display:flex; gap:6px; margin-bottom:1.5rem; }
+  .qstep { flex:1; text-align:center; font-family:inherit; font-size:11.5px; font-weight:600; color:var(--text-light); background:none; border:none; border-top:3px solid var(--border); padding:9px 4px 0; cursor:pointer; line-height:1.35; transition:.15s; }
+  .qstep .qn { display:block; font-size:10px; font-weight:700; opacity:.7; margin-bottom:1px; }
+  .qstep:hover { color:var(--navy-mid); }
+  .qstep.done { color:var(--teal-mid); border-top-color:var(--teal-mid); }
+  .qstep.active { color:var(--navy); border-top-color:var(--teal); }
+  .qnav { display:flex; align-items:center; gap:10px; margin-top:1.5rem; }
+  .yesno { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  @media (max-width:520px){ .yesno{ grid-template-columns:1fr; } }
+  .yn { text-align:left; font-family:inherit; background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:1rem 1.1rem; cursor:pointer; font-size:14px; font-weight:600; color:var(--navy); transition:.15s; }
+  .yn small { display:block; font-size:11.5px; font-weight:400; color:var(--text-light); margin-top:4px; line-height:1.5; }
+  .yn:hover { border-color:var(--teal-mid); }
+  .yn.active { border-color:var(--teal); box-shadow:0 0 0 2px rgba(15,118,110,.15); background:var(--teal-light); }
+  .yn.active small { color:var(--text-mid); }
+
   .params-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:1.25rem; }
   @media (max-width:620px){ .params-grid{ grid-template-columns:1fr; } }
   .slider-ctx { display:flex; justify-content:space-between; font-size:11px; color:var(--text-light); margin-top:4px; }
@@ -226,7 +242,7 @@
     *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
   }
   @media (max-width:480px){ header,main{ padding-left:1.25rem; padding-right:1.25rem; } .roi-co{ gap:1.5rem; } }
-  @media print { .cal-overlay,.actions,.lead,.adv-toggle,.mode-toggle,header p{ display:none !important; } body{ background:#fff; font-size:11pt; } .results-box{ box-shadow:none; } }
+  @media print { .cal-overlay,.actions,.lead,.adv-toggle,.mode-toggle,.qnav,.qsteps,header p{ display:none !important; } body{ background:#fff; font-size:11pt; } .results-box{ box-shadow:none; } }
 </style>
 </head>
 <body>
@@ -605,6 +621,7 @@ function App(){
   // until the user types their own figure, at which point it's pinned.
   const [simple,setSimple]=useState({ bankPool:660, agencySpend:estimateAgencySpend(660,8.3), agencyFillRate:8.3, numManagers:12, includeAdmin:false });
   const [spendAuto,setSpendAuto]=useState(true);
+  const [quickStep,setQuickStep]=useState(0);   // Quick mode is a 4-step wizard (numbers -> admin -> confidence -> check & calculate)
   useEffect(()=>{ if(spendAuto) setSimple(s=>({...s,agencySpend:estimateAgencySpend(s.bankPool,s.agencyFillRate)})); },[simple.bankPool,simple.agencyFillRate,spendAuto]);
   // detailed state
   const [groups,setGroups]=useState(()=>buildOrg("acute")); const [preset,setPreset]=useState("acute"); const [fillRateNow,setFill]=useState(8);
@@ -710,8 +727,14 @@ function App(){
 
         {isQuick ? (
           <div className="section">
-            <div className="step-label"><div className="step-num">1</div><h2>Four quick inputs</h2></div>
-            <p className="step-sub">A fast, conservative estimate for events and web. Switch to <b>Detailed</b> to model your agency spend by staff group.</p>
+            <div className="qsteps" role="tablist" aria-label="Quick estimate steps">
+              {["Your numbers","Admin time","Confidence","Check & go"].map((t,i)=>(
+                <button key={i} type="button" role="tab" aria-selected={i===quickStep} className={"qstep"+(i===quickStep?" active":i<quickStep?" done":"")} onClick={()=>setQuickStep(i)}><span className="qn">Step {i+1}</span>{t}</button>
+              ))}
+            </div>
+            {quickStep===0 && <>
+            <div className="step-label"><div className="step-num">1</div><h2>Your numbers</h2></div>
+            <p className="step-sub">Set your bank size and agency exposure — slide, or tap any number to type it. Switch to <b>Detailed</b> to model spend by staff group.</p>
             <div className="card">
               <div>
                 <SliderField label="Registered bank workers" value={simple.bankPool} min={0} max={12000} step={10} format={fmtNum} onChange={v=>setSimple(s=>({...s,bankPool:num(v)}))} hint="Your whole bank register — not just bank-only staff (see i). Slide, or tap the number to type." info="Count EVERYONE on your bank register, including substantive staff who also pick up bank shifts — not just dedicated bank-only workers. Worked example: a trust with 150 bank-only workers plus 350 substantive staff who occasionally do bank shifts has 500 registered bank workers, not 150. This wider count is what the ~£2,700/worker agency-spend estimate is calibrated to (using bank-only would understate it ~3×). Scales for large systems (e.g. Leeds ~5,000, Sussex ~10,000); sets the estimated agency spend, licence tier and duty-count narrative (2026/27 AfC band-mix rate, ~£34k blended)."/>
@@ -719,14 +742,24 @@ function App(){
                 <SliderField label="Current agency fill rate" suffix="%" value={simple.agencyFillRate} min={0} max={30} step={0.1} format={v=>String(Math.round(num(v)*10)/10)} onChange={v=>setSimple(s=>({...s,agencyFillRate:num(v)}))} hint={spendAuto?"Share of temp duties on agency (avg 8.3%) — scales the estimate above":"Share of temp duties on agency (national avg 8.3%)"} info="The % of temporary duties currently filled by agency (national average 8.3%, RLDatix data). While agency spend is estimated, a higher fill rate scales that estimate up proportionally (twice the national average ≈ twice the agency exposure per bank worker). Once you enter your actual agency spend, this drives the agency-reliance reduction story only. A pilot study recorded a move from 8.1% to 6.0% at one site."/>
                 <SliderField label="Temporary staffing team" value={simple.numManagers} min={0} max={60} step={1} format={fmtNum} onChange={v=>setSimple(s=>({...s,numManagers:num(v)}))} hint="Bank/temp staffing coordinators & admins" info="The people who do the day-to-day booking, chasing and reconciling of temporary shifts. Drives the time-saved-per-week and admin saving."/>
               </div>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginTop:14}}>
-                <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600,color:C.navy,cursor:"pointer"}}>
-                  <input type="checkbox" checked={simple.includeAdmin!==false} onChange={e=>setSimple(s=>({...s,includeAdmin:e.target.checked}))}/> Include admin time saving in the cash total (off by default)
-                </label>
-                <InfoTip text="Off by default, treated as a secondary recommendation. The hours released are always shown as a per-week figure; tick this to also add their cash value (a conservative 1.0 h/day at a loaded £18/h) to the headline."/>
+            </div>
+            </>}
+
+            {quickStep===1 && <>
+            <div className="step-label"><div className="step-num">2</div><h2>Include admin time saving?</h2></div>
+            <p className="step-sub">Smart Match automates booking and matching, giving your temporary-staffing team hours back each week. Those hours are always shown — do you also want their cash value added to the headline saving?</p>
+            <div className="card">
+              <div className="yesno">
+                <button type="button" className={"yn"+(simple.includeAdmin!==true?" active":"")} onClick={()=>setSimple(s=>({...s,includeAdmin:false}))}>No — show the hours only<small>Recommended. Keeps the headline to hard agency cash savings; the hours released are still shown on their own.</small></button>
+                <button type="button" className={"yn"+(simple.includeAdmin===true?" active":"")} onClick={()=>setSimple(s=>({...s,includeAdmin:true}))}>Yes — add the £ value too<small>Adds a conservative 1.0 h/day at a loaded £18/h across your team to the cash saving.</small></button>
               </div>
             </div>
-            <div className="params-grid" style={{marginTop:12}}>
+            </>}
+
+            {quickStep===2 && <>
+            <div className="step-label"><div className="step-num">3</div><h2>Confidence level</h2></div>
+            <p className="step-sub">How much of today's agency work do you expect to move onto your own bank? Public/self-serve defaults to Conservative.</p>
+            <div className="params-grid">
               <div className="field">
                 <span className="flabel">Confidence level: {displacement}% · {st.key} <InfoTip text="Share of current agency usage that improved bank utilisation moves to bank, applied to the 80% displaceable share (so Moderate 26% ≈ 21% of all agency). Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; public/self-serve defaults to Conservative."/></span>
                 <div className="stance-btns">{[["Conservative",13],["Moderate",26],["Optimistic",50]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
@@ -735,13 +768,26 @@ function App(){
               </div>
               <div style={{alignSelf:"center"}}><div className="disp-note" style={{marginTop:0,background:st.bg,color:st.color}}>{st.note}</div></div>
             </div>
-            <button className="adv-toggle" onClick={()=>setAdv(a=>!a)}>{showAdv?"Hide":"Show"} advanced defaults (premium, licence fee, shift length)</button>
-            {showAdv && <div className="params-grid" style={{marginTop:10}}>
+            </>}
+
+            {quickStep===3 && <>
+            <div className="step-label"><div className="step-num">4</div><h2>Check the defaults</h2></div>
+            <p className="step-sub">Conservative, sourced defaults — leave them as they are, or adjust to your organisation's own rates, then calculate.</p>
+            <div className="params-grid">
               <Field label="Agency premium over bank (%)" value={premium} min="0" max="150" step={1} onChange={v=>setPremium(num(v))} info="Default 20% (HoC Library average); contested at shift level, use your own rate." />
               <Field label="BankStaff+ licence fee (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v)); setPcAuto(false); }} info="Auto-set from your bank size using G-Cloud pricing (ex VAT); fully editable. This is the ROI denominator — licence only (ex VAT); add implementation and change costs if material for your business case."/>
               <Field label="Shift length (hours)" value={shiftHours} min="1" step={0.5} onChange={v=>setSH(num(v))}/>
               <Field label="Bank on-cost (%)" value={oncost} min="0" step={1} onChange={v=>setOncost(num(v))} info="Employer NI + pension on bank pay, already included in the bank rate (default 20% — below the full ~30% NHS employer rate because bank-only workers often opt out of the pension; set your local loaded rate). It changes duty counts, not the cash saving, and is counted once, never added on top."/>
-            </div>}
+            </div>
+            </>}
+
+            <div className="qnav">
+              {quickStep>0 && <button type="button" className="btn" onClick={()=>setQuickStep(s=>Math.max(0,s-1))}>← Back</button>}
+              <div style={{flex:1}}/>
+              {quickStep<3
+                ? <button type="button" className="btn primary" onClick={()=>setQuickStep(s=>Math.min(3,s+1))}>Next →</button>
+                : <button type="button" className="btn primary" style={{fontSize:15}} onClick={runCalc}>{calculated?"Update results →":"Calculate my savings →"}</button>}
+            </div>
           </div>
         ) : (
         <>
@@ -849,8 +895,8 @@ function App(){
         </>
         )}
 
-        {/* RESULTS (shared) */}
-        {!calculated && (
+        {/* RESULTS (shared). Quick mode has its own Calculate on the wizard's last step. */}
+        {!calculated && !isQuick && (
           <div className="section" style={{textAlign:"center",padding:"1.5rem 0 0"}}>
             <button className="btn primary" style={{fontSize:16,padding:"14px 34px"}} onClick={runCalc}>Calculate my savings →</button>
             <p className="step-sub" style={{margin:"12px 0 0"}}>We'll model your bank pool and agency exposure, then adjust anything and the report updates live.</p>
