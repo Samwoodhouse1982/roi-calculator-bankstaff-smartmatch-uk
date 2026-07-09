@@ -391,7 +391,7 @@ function CalibratingScreen({ onDone }) {
   }, [onDone]);
 
   return (
-    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: '20vh' }}>
       <style>{`
         @keyframes calSpin { to { transform: rotate(360deg); } }
         @keyframes calPulse { 0%,100% { opacity:.5; transform:scale(1); } 50% { opacity:1; transform:scale(1.02); } }
