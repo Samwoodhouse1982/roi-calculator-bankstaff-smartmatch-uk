@@ -220,6 +220,15 @@ export function SplashScreen({ onStart, onAdminReveal }) {
         background: 'radial-gradient(ellipse at 30% 50%, rgba(0,212,170,0.07) 0%, transparent 60%), radial-gradient(ellipse at 70% 30%, rgba(0,180,255,0.05) 0%, transparent 50%)',
       }} />
 
+      {/* Product eyebrow pinned to the top of the page. The copy is kept (hidden) in
+          the title block below so the headline stays in its original position. */}
+      <div style={{
+        position: 'absolute', top: 70, left: 0, right: 0, zIndex: 2, textAlign: 'center',
+        fontSize: 20, fontWeight: 600, letterSpacing: 10, textTransform: 'uppercase',
+        color: C.accent, opacity: launching ? 0.3 : 0.95,
+        transition: 'opacity 600ms ease-out',
+      }}>RLDatix | BankStaff+</div>
+
       <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', maxWidth: 1000, padding: '75px 80px', marginTop: '15vh',
         // Subtle fade-out of content while the wipe expands, so the title doesn't bleed through
         opacity: launching ? 0.3 : 1,
@@ -228,7 +237,7 @@ export function SplashScreen({ onStart, onAdminReveal }) {
 
         <div style={{
           fontSize: 20, fontWeight: 600, letterSpacing: 10, textTransform: 'uppercase',
-          color: C.accent, marginBottom: 50, opacity: 0.95,
+          color: C.accent, marginBottom: 50, opacity: 0.95, visibility: 'hidden',
         }}>RLDatix | BankStaff+</div>
 
         <h1 style={{

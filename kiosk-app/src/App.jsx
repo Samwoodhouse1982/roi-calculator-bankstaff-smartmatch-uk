@@ -391,7 +391,7 @@ function CalibratingScreen({ onDone }) {
   }, [onDone]);
 
   return (
-    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: '20vh' }}>
       <style>{`
         @keyframes calSpin { to { transform: rotate(360deg); } }
         @keyframes calPulse { 0%,100% { opacity:.5; transform:scale(1); } 50% { opacity:1; transform:scale(1.02); } }
@@ -576,12 +576,16 @@ export default function App() {
       <div style={{ padding: "40px 56px 0", position: "relative", zIndex: 1 }}>
         <StepIndicator steps={steps} current={kioskStep} onJump={setKioskStep} />
       </div>
-      <div style={{ flex: 1, overflowY: "auto", padding: "0 56px 32px", position: "relative", zIndex: 1 }}>
-        <PageTransition step={kioskStep}>{renderStep()}</PageTransition>
+      <div style={{ flex: 1, overflowY: "auto", position: "relative", zIndex: 1 }}>
+        <div style={{ padding: "0 56px 32px" }}>
+          <PageTransition step={kioskStep}>{renderStep()}</PageTransition>
+        </div>
+        {/* Nav sits directly beneath the data box (not pinned to the bottom of the
+            1080×1920 screen) so the Back/Home/Next controls stay within easy reach. */}
+        <NavButtons step={kioskStep} totalSteps={steps.length}
+          onBack={() => setKioskStep(p => p - 1)} onNext={() => setKioskStep(p => p + 1)}
+          onCalculate={handleCalculate} onHome={handleStartOver} />
       </div>
-      <NavButtons step={kioskStep} totalSteps={steps.length}
-        onBack={() => setKioskStep(p => p - 1)} onNext={() => setKioskStep(p => p + 1)}
-        onCalculate={handleCalculate} onHome={handleStartOver} />
       {adminVisible && <AdminOverlay onClose={() => setAdminVisible(false)} />}
       {idleWarn && <IdleWarning seconds={idleSecs} onStay={() => armIdleRef.current()} />}
     </div>
