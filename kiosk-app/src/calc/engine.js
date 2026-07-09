@@ -109,43 +109,43 @@ const G = (id, role, band, bankPay, headcount, agencySpend) => ({ id, role, band
 
 export const ORG_TYPES = {
   acute: { label: "Acute trust (district general)", desc: "~2,200 bank · ~£15m agency", iconKey: "hospital", turnover: 430000000, groups: [
-    G("rn",  "Registered nurses",      "Band 5",     34592, 900, 6500000),
-    G("sn",  "Senior nurses",          "Band 6",     42170, 350, 2500000),
-    G("ahp", "AHPs (physio / OT)",     "Band 5/6",   38400, 300, 1500000),
+    G("rn",  "Registered nurses",      "Band 5",     35558, 900, 6500000),
+    G("sn",  "Senior nurses",          "Band 6",     44038, 350, 2500000),
+    G("ahp", "AHPs (physio / OT)",     "Band 5/6",   39798, 300, 1500000),
     G("hca", "Healthcare assistants",  "Band 2/3",   25900, 550, 500000),
     G("doc", "Medics (locum / SAS)",   "SAS / ST3+", 60000, 100, 4000000),
   ]},
   community: { label: "Community / specialist", desc: "~700 bank · ~£7m agency", iconKey: "community", turnover: 235000000, groups: [
-    G("cn",  "Community / district nurses", "Band 6",     42170, 200, 2500000),
-    G("rn",  "Registered nurses",           "Band 5",     34592, 180, 1800000),
-    G("ahp", "AHPs (physio / OT / SLT)",    "Band 5/6",   38400, 200, 2000000),
+    G("cn",  "Community / district nurses", "Band 6",     44038, 200, 2500000),
+    G("rn",  "Registered nurses",           "Band 5",     35558, 180, 1800000),
+    G("ahp", "AHPs (physio / OT / SLT)",    "Band 5/6",   39798, 200, 2000000),
     G("hca", "Healthcare assistants",       "Band 2/3",   25900, 100, 400000),
     G("doc", "Medics (locum / SAS)",        "SAS / ST3+", 60000, 20,  300000),
   ]},
   mental: { label: "Mental health trust", desc: "~1,000 bank · ~£10m agency", iconKey: "behavioral", turnover: 235000000, groups: [
-    G("rmn", "Mental health nurses (RMN)", "Band 5",     34592, 450, 4500000),
-    G("sn",  "Senior nurses",              "Band 6",     42170, 150, 2000000),
+    G("rmn", "Mental health nurses (RMN)", "Band 5",     35558, 450, 4500000),
+    G("sn",  "Senior nurses",              "Band 6",     44038, 150, 2000000),
     G("hca", "Healthcare assistants",      "Band 2/3",   25900, 300, 1500000),
-    G("ahp", "AHPs (OT / psychology)",     "Band 5/6",   38400, 50,  500000),
+    G("ahp", "AHPs (OT / psychology)",     "Band 5/6",   39798, 50,  500000),
     G("doc", "Medics (locum psych)",       "SAS / ST3+", 60000, 50,  1500000),
   ]},
   ambulance: { label: "Ambulance trust", desc: "~400 bank · ~£4m agency", iconKey: "physician", turnover: 220000000, groups: [
-    G("para", "Paramedics",               "Band 6",     42170, 180, 2200000),
+    G("para", "Paramedics",               "Band 6",     44038, 180, 2200000),
     G("emt",  "EMTs / care assistants",   "Band 3",     26618, 100, 700000),
-    G("rn",   "Nurses (111 / UCC)",       "Band 5",     34592, 60,  600000),
+    G("rn",   "Nurses (111 / UCC)",       "Band 5",     35558, 60,  600000),
     G("call", "Call handlers / dispatch", "Band 3",     26618, 50,  300000),
     G("doc",  "Medics (locum)",           "SAS / ST3+", 60000, 10,  200000),
   ]},
   ics: { label: "ICS / collaborative", desc: "~5,000 bank · ~£30m agency", iconKey: "network", turnover: 1000000000, groups: [
-    G("rn",  "Registered nurses",     "Band 5",     34592, 1900, 12000000),
-    G("sn",  "Senior nurses",         "Band 6",     42170, 900,  5000000),
-    G("ahp", "AHPs",                  "Band 5/6",   38400, 800,  4000000),
+    G("rn",  "Registered nurses",     "Band 5",     35558, 1900, 12000000),
+    G("sn",  "Senior nurses",         "Band 6",     44038, 900,  5000000),
+    G("ahp", "AHPs",                  "Band 5/6",   39798, 800,  4000000),
     G("hca", "Healthcare assistants", "Band 2/3",   25900, 1200, 2000000),
     G("doc", "Medics (locum / SAS)",  "SAS / ST3+", 60000, 200,  7000000),
   ]},
 };
 
-export const AFC_BANDS = [["Band 2", 25272], ["Band 3", 26618], ["Band 5", 34592], ["Band 5/6", 38400], ["Band 6", 42170], ["Band 2/3", 25900], ["SAS / ST3+", 60000]];
+export const AFC_BANDS = [["Band 2", 25272], ["Band 3", 26618], ["Band 5", 35558], ["Band 5/6", 39798], ["Band 6", 44038], ["Band 2/3", 25900], ["SAS / ST3+", 60000]];
 
 // Fresh editable copy of a type's staff-group profile.
 export const buildOrg = key => (ORG_TYPES[key] || ORG_TYPES.acute).groups.map(g => ({ ...g }));
