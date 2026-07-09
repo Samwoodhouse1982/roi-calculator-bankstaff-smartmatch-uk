@@ -113,6 +113,15 @@
   @media (max-width:620px){ .params-grid{ grid-template-columns:1fr; } }
   .slider-ctx { display:flex; justify-content:space-between; font-size:11px; color:var(--text-light); margin-top:4px; }
   input[type=range] { width:100%; accent-color:var(--teal); margin-top:8px; height:6px; }
+  /* Quick-mode slider control: slider + tap-to-type value readout (mobile-friendly) */
+  .sfld { padding:12px 0; }
+  .sfld + .sfld { border-top:1px solid var(--border); }
+  .sfld-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .sfld-val { display:inline-flex; align-items:baseline; font-size:19px; font-weight:700; color:var(--navy); white-space:nowrap; }
+  .sfld-val input { font:inherit; color:inherit; text-align:right; border:none; background:transparent; padding:2px 0; min-width:1ch; -moz-appearance:textfield; }
+  .sfld-val input::-webkit-outer-spin-button, .sfld-val input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .sfld-val input:focus { outline:none; box-shadow:inset 0 -2px 0 var(--teal-mid); }
+  .sfld > input[type=range] { margin-top:12px; height:8px; }   /* taller track = easier to grab on touch */
   .disp-note { margin-top:12px; font-size:12px; border-radius:var(--radius-sm); padding:9px 13px; line-height:1.5; }
   .contested { display:inline-block; font-size:10px; font-weight:600; color:var(--teal); background:var(--teal-light); padding:1px 7px; border-radius:10px; margin-left:6px; vertical-align:middle; }
 
@@ -520,6 +529,30 @@ function Field({label, value, onChange, min, max, step=1, prefix, info, hint}){
     {hint && <span className="hint">{hint}</span>}
   </div>);
 }
+/* Slider control with a tap-to-type value readout. Easier than a bare number box on
+   mobile (big target, no fiddly cursor), but still precise: the large readout is an
+   editable field and num() parses pasted "£4,294,000". The slider is coarse/touch;
+   the readout is exact. Used for the Quick-estimate inputs. */
+function SliderField({label, value, onChange, min=0, max=100, step=1, prefix, suffix, format, info, hint}){
+  const id="sl_"+useId();
+  const fmt=v=>format?format(num(v)):String(Math.round(num(v)));
+  const [txt,setTxt]=useState(fmt(value));
+  const editing=useRef(false);
+  useEffect(()=>{ if(!editing.current) setTxt(fmt(value)); },[value]);   // resync when value changes externally (e.g. auto-estimate)
+  const commit=()=>{ editing.current=false; let n=num(txt); if(n<Number(min))n=Number(min); setTxt(fmt(n)); onChange(n); };
+  const typeVal=t=>{ setTxt(t); if(t.trim()!=="" && !isNaN(parseFloat(String(t).replace(/[^0-9.\-]/g,"")))) onChange(num(t)); };
+  const slide=v=>{ const n=num(v); editing.current=false; setTxt(fmt(n)); onChange(n); };
+  const sv=Math.max(Number(min),Math.min(Number(max),num(value)));   // clamp for the slider track only; the readout may exceed max
+  return (<div className="sfld">
+    <div className="sfld-head">
+      <span className="flabel"><label htmlFor={id}>{label}</label>{info && <InfoTip text={info}/>}</span>
+      <span className="sfld-val">{prefix}<input id={id} type="text" inputMode="decimal" value={txt} style={{width:Math.max(2,String(txt).length)+"ch"}}
+        onFocus={()=>{editing.current=true;}} onChange={e=>typeVal(e.target.value)} onBlur={commit} onKeyDown={e=>{ if(e.key==="Enter") e.target.blur(); }}/>{suffix}</span>
+    </div>
+    <input type="range" min={min} max={max} step={step} value={sv} onChange={e=>slide(e.target.value)} aria-label={label}/>
+    {hint && <span className="hint">{hint}</span>}
+  </div>);
+}
 /* Size headline input: commits on blur / Enter (not per keystroke) so typing a
    new total does not progressively rescale and collapse the staff-group mix.
    allowZero: optional totals (turnover) can be cleared back to 0 to opt out;
@@ -680,11 +713,11 @@ function App(){
             <div className="step-label"><div className="step-num">1</div><h2>Four quick inputs</h2></div>
             <p className="step-sub">A fast, conservative estimate for events and web. Switch to <b>Detailed</b> to model your agency spend by staff group.</p>
             <div className="card">
-              <div className="inputs-grid">
-                <Field label="Registered bank workers" value={simple.bankPool} min="0" onChange={v=>setSimple(s=>({...s,bankPool:num(v)}))} hint="Your whole bank register — not just bank-only staff (see i)" info="Count EVERYONE on your bank register, including substantive staff who also pick up bank shifts — not just dedicated bank-only workers. Worked example: a trust with 150 bank-only workers plus 350 substantive staff who occasionally do bank shifts has 500 registered bank workers, not 150. This wider count is what the ~£2,700/worker agency-spend estimate is calibrated to (using bank-only would understate it ~3×). Scales for large systems (e.g. Leeds ~5,000, Sussex ~10,000); sets the estimated agency spend, licence tier and duty-count narrative (2026/27 AfC band-mix rate, ~£34k blended)."/>
-                <Field label="Annual agency spend (£)" prefix="£" value={simple.agencySpend} min="0" step={100000} onChange={v=>{ setSimple(s=>({...s,agencySpend:num(v)})); setSpendAuto(false); }} hint={spendAuto?"Estimated from your bank size · enter your actual spend":"Your figure · the anchor for the saving"} info="Your organisation's total annual agency spend (all staff groups — medical, nursing, AHP, admin) — the anchor for the saving, and a board-reported figure your finance team will know. Estimated from your bank size using FY2025/26 national averages (~£2,700 per registered bank worker) until you enter your actual spend, which makes the result far more credible. National agency spend is falling fast (£3bn→£1.2bn since 2023/24), so prefer your latest figure."/>
-                <Field label="Current agency fill rate (%)" value={simple.agencyFillRate} min="0" max="100" step={0.1} onChange={v=>setSimple(s=>({...s,agencyFillRate:num(v)}))} hint={spendAuto?"Share of temp duties on agency (avg 8.3%) — scales the estimate above":"Share of temp duties on agency (national avg 8.3%)"} info="The % of temporary duties currently filled by agency (national average 8.3%, RLDatix data). While agency spend is estimated, a higher fill rate scales that estimate up proportionally (twice the national average ≈ twice the agency exposure per bank worker). Once you enter your actual agency spend, this drives the agency-reliance reduction story only. A pilot study recorded a move from 8.1% to 6.0% at one site."/>
-                <Field label="Temporary staffing team" value={simple.numManagers} min="0" onChange={v=>setSimple(s=>({...s,numManagers:num(v)}))} hint="Bank/temp staffing coordinators & admins" info="The people who do the day-to-day booking, chasing and reconciling of temporary shifts. Drives the time-saved-per-week and admin saving."/>
+              <div>
+                <SliderField label="Registered bank workers" value={simple.bankPool} min={0} max={12000} step={10} format={fmtNum} onChange={v=>setSimple(s=>({...s,bankPool:num(v)}))} hint="Your whole bank register — not just bank-only staff (see i). Slide, or tap the number to type." info="Count EVERYONE on your bank register, including substantive staff who also pick up bank shifts — not just dedicated bank-only workers. Worked example: a trust with 150 bank-only workers plus 350 substantive staff who occasionally do bank shifts has 500 registered bank workers, not 150. This wider count is what the ~£2,700/worker agency-spend estimate is calibrated to (using bank-only would understate it ~3×). Scales for large systems (e.g. Leeds ~5,000, Sussex ~10,000); sets the estimated agency spend, licence tier and duty-count narrative (2026/27 AfC band-mix rate, ~£34k blended)."/>
+                <SliderField label="Annual agency spend" prefix="£" value={simple.agencySpend} min={0} max={Math.max(num(simple.bankPool)*15000,5000000)} step={100000} format={fmtNum} onChange={v=>{ setSimple(s=>({...s,agencySpend:num(v)})); setSpendAuto(false); }} hint={spendAuto?"Estimated from your bank size · slide or tap the number to enter your actual spend":"Your figure · the anchor for the saving"} info="Your organisation's total annual agency spend (all staff groups — medical, nursing, AHP, admin) — the anchor for the saving, and a board-reported figure your finance team will know. Estimated from your bank size using FY2025/26 national averages (~£2,700 per registered bank worker) until you enter your actual spend, which makes the result far more credible. National agency spend is falling fast (£3bn→£1.2bn since 2023/24), so prefer your latest figure."/>
+                <SliderField label="Current agency fill rate" suffix="%" value={simple.agencyFillRate} min={0} max={30} step={0.1} format={v=>String(Math.round(num(v)*10)/10)} onChange={v=>setSimple(s=>({...s,agencyFillRate:num(v)}))} hint={spendAuto?"Share of temp duties on agency (avg 8.3%) — scales the estimate above":"Share of temp duties on agency (national avg 8.3%)"} info="The % of temporary duties currently filled by agency (national average 8.3%, RLDatix data). While agency spend is estimated, a higher fill rate scales that estimate up proportionally (twice the national average ≈ twice the agency exposure per bank worker). Once you enter your actual agency spend, this drives the agency-reliance reduction story only. A pilot study recorded a move from 8.1% to 6.0% at one site."/>
+                <SliderField label="Temporary staffing team" value={simple.numManagers} min={0} max={60} step={1} format={fmtNum} onChange={v=>setSimple(s=>({...s,numManagers:num(v)}))} hint="Bank/temp staffing coordinators & admins" info="The people who do the day-to-day booking, chasing and reconciling of temporary shifts. Drives the time-saved-per-week and admin saving."/>
               </div>
               <div style={{display:"flex",alignItems:"center",gap:8,marginTop:14}}>
                 <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600,color:C.navy,cursor:"pointer"}}>
