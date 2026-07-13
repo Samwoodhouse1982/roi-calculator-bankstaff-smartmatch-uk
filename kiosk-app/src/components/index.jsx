@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { C, F } from '../theme';
+import { C, F, GUTTER } from '../theme';
 import { Icon } from './Icons';
 
 export function Card({ children, style }) {
-  return <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 24, padding: "36px 40px 32px", ...style }}>{children}</div>;
+  return <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20, padding: "clamp(18px, 3vw, 34px)", ...style }}>{children}</div>;
 }
 
 export function StepIndicator({ steps, current, onJump }) {
@@ -36,21 +36,21 @@ export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate, onHo
   if (step >= totalSteps - 1) return null;
   const ctx = context[step];
   return <div style={{ borderTop: `1px solid ${C.border}` }}>
-    {ctx && <div style={{ margin: "20px 56px 0", padding: "16px 20px", background: `${C.accent}08`, border: `1px solid ${C.accent}20`, borderRadius: 14, display: "flex", gap: 12, alignItems: "flex-start" }}>
+    {ctx && <div style={{ margin: `18px ${GUTTER} 0`, padding: "14px 18px", background: `${C.accent}08`, border: `1px solid ${C.accent}20`, borderRadius: 14, display: "flex", gap: 12, alignItems: "flex-start" }}>
       <span style={{ flexShrink: 0, marginTop: 1 }}><Icon name="lightbulb" size={20} stroke={C.accent} /></span>
       <div>
         <div style={{ fontSize: F.tiny, fontWeight: 700, color: C.accent, marginBottom: 4 }}>{ctx.title}</div>
         <div style={{ fontSize: F.tiny, color: C.textMid, lineHeight: 1.6 }}>{ctx.text}</div>
       </div>
     </div>}
-    <div style={{ padding: "16px 56px 40px", display: "flex", gap: 20, alignItems: "center" }}>
-      {step > 0 && <button onClick={onBack} style={{ padding: "24px 44px", borderRadius: 18, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: F.body, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>← Back</button>}
-      {step === 0 && onHome && <button onClick={onHome} aria-label="Home" style={{ padding: "22px 34px", borderRadius: 18, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: F.body, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 12 }}><Icon name="home" size={22} stroke={C.textMid} /> Home</button>}
+    <div style={{ padding: `14px ${GUTTER} 36px`, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+      {step > 0 && <button onClick={onBack} style={{ padding: "13px 26px", borderRadius: 14, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: F.body, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>← Back</button>}
+      {step === 0 && onHome && <button onClick={onHome} aria-label="Home" style={{ padding: "12px 22px", borderRadius: 14, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: F.body, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 10 }}><Icon name="home" size={18} stroke={C.textMid} /> Start again</button>}
       <div style={{ flex: 1 }} />
       {step < totalSteps - 2 ? (
-        <button onClick={onNext} style={{ padding: "24px 64px", borderRadius: 18, border: "none", background: C.accent, color: "#fff", fontSize: F.h3, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Next →</button>
+        <button onClick={onNext} style={{ padding: "14px 40px", borderRadius: 14, border: "none", background: C.accent, color: "#04201A", fontSize: F.h3, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Next →</button>
       ) : (
-        <button onClick={onCalculate} style={{ padding: "24px 64px", borderRadius: 18, border: "none", background: `linear-gradient(135deg, ${C.accent}, ${C.accentMid})`, color: "#fff", fontSize: F.h2, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 6px 28px rgba(0,212,170,0.4)" }}>Calculate ROI →</button>
+        <button onClick={onCalculate} style={{ padding: "14px 40px", borderRadius: 14, border: "none", background: `linear-gradient(135deg, ${C.accent}, ${C.accentMid})`, color: "#04201A", fontSize: F.h3, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 6px 28px rgba(0,212,170,0.4)" }}>Calculate ROI →</button>
       )}
     </div>
   </div>;
@@ -83,14 +83,17 @@ export function TouchSlider({ label, value, min, max, step = 1, onChange, format
 }
 
 export function Stepper({ label, value, min = 0, max = 999, step = 1, onChange, tip }) {
-  return <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 20 }}>
-    <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10 }}>
+  const btn = { width: 46, height: 46, borderRadius: 12, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: 24, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit", flexShrink: 0 };
+  return <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20, flexWrap: "wrap" }}>
+    <div style={{ flex: "1 1 200px", display: "flex", alignItems: "center", gap: 10 }}>
       <span style={{ fontSize: F.body, fontWeight: 600, color: C.textMid }}>{label}</span>
       {tip && <InfoTip text={tip} />}
     </div>
-    <button onClick={() => onChange(Math.max(min, value - step))} style={{ width: 64, height: 64, borderRadius: 16, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: 32, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>−</button>
-    <span style={{ fontSize: F.h1, fontWeight: 800, color: C.accent, minWidth: 90, textAlign: "center" }}>{value}</span>
-    <button onClick={() => onChange(Math.min(max, value + step))} style={{ width: 64, height: 64, borderRadius: 16, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: 32, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "inherit" }}>+</button>
+    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+      <button aria-label="Decrease" onClick={() => onChange(Math.max(min, value - step))} style={btn}>−</button>
+      <span style={{ fontSize: F.h1, fontWeight: 800, color: C.accent, minWidth: 64, textAlign: "center" }}>{value}</span>
+      <button aria-label="Increase" onClick={() => onChange(Math.min(max, value + step))} style={btn}>+</button>
+    </div>
   </div>;
 }
 
@@ -105,7 +108,7 @@ export function InfoTip({ text }) {
   useEffect(() => {
     if (!show || !iconRef.current) return;
     const rect = iconRef.current.getBoundingClientRect();
-    const W = 400; // bubble width
+    const W = Math.min(400, window.innerWidth - 40); // bubble width (fits phones)
     const ESTIMATED_H = 260; // bubble approx height
     const M = 14; // margin between icon and bubble
     const SAFE_TOP = 100; // header height safety margin
@@ -133,7 +136,7 @@ export function InfoTip({ text }) {
   // stopPropagation so interacting with the tooltip (icon, dismiss backdrop, bubble) never
   // reaches a clickable parent — e.g. a ToggleRow it sits inside would otherwise flip.
   return <span ref={iconRef} onClick={e => e.stopPropagation()} style={{ position: "relative", display: "inline-flex" }}>
-    <span onClick={e => { e.stopPropagation(); setShow(!show); }} style={{ width: 40, height: 40, borderRadius: "50%", background: C.border, color: C.textMid, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: F.body, fontWeight: 700, cursor: "pointer" }}>i</span>
+    <span role="button" aria-label="More information" onClick={e => { e.stopPropagation(); setShow(!show); }} style={{ width: 28, height: 28, borderRadius: "50%", background: C.border, color: C.textMid, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: F.small, fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>i</span>
     {show && <>
       <div onClick={e => { e.stopPropagation(); setShow(false); }} style={{ position: "fixed", inset: 0, zIndex: 99996 }} />
       <span style={{
@@ -142,7 +145,7 @@ export function InfoTip({ text }) {
         transform: pos.placeAbove ? "translateY(-100%)" : "none",
         background: C.surface2, color: C.text,
         fontSize: F.small, lineHeight: 1.6, padding: "20px 24px",
-        borderRadius: 18, width: 400, maxWidth: "calc(100vw - 40px)",
+        borderRadius: 16, width: "min(400px, calc(100vw - 40px))",
         boxShadow: "0 12px 48px rgba(0,0,0,.6)",
         zIndex: 99997, border: `1px solid ${C.border}`,
         animation: "kfade .2s ease-out"
@@ -152,8 +155,8 @@ export function InfoTip({ text }) {
 }
 
 export function SectionTitle({ number, children }) {
-  return <div style={{ fontSize: F.h2, fontWeight: 700, color: C.textMid, marginBottom: 28, display: "flex", alignItems: "center", gap: 16 }}>
-    <span style={{ width: 52, height: 52, borderRadius: "50%", background: C.accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: F.h3, fontWeight: 800, flexShrink: 0 }}>{number}</span>
+  return <div style={{ fontSize: F.h2, fontWeight: 700, color: C.textMid, marginBottom: 22, display: "flex", alignItems: "center", gap: 14 }}>
+    <span style={{ width: 40, height: 40, borderRadius: "50%", background: C.accent, color: "#04201A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: F.h3, fontWeight: 800, flexShrink: 0 }}>{number}</span>
     {children}
   </div>;
 }

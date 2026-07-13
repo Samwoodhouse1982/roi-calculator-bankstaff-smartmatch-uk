@@ -1,15 +1,17 @@
 {
-  "name": "smartmatch-roi-kiosk",
-  "version": "1.5.0",
+  "name": "smartmatch-roi-web",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test"
+    "test": "node --test",
+    "package": "npm run build && node scripts/package.mjs"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.2.8",
+    "jspdf": "^2.5.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

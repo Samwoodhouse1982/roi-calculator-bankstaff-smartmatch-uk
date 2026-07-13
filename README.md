@@ -5,9 +5,14 @@ ROI calculator. NHS terminology (bank/agency, AfC, Trust), pounds sterling,
 `en-GB` formatting. RLDatix corporate brand (navy + teal), built in the same
 design system as the Galen ROI calculator suite.
 
-> This branch (`main`) holds the **single-file HTML web embed**. The
-> **touchscreen / kiosk** version (Vite + React, 1080×1920) lives on the
-> [`smartmatch-touchscreen`](../../tree/smartmatch-touchscreen) branch.
+> This branch (`rld-smartmatch-web-from-kiosk`) holds the **web version built
+> from the kiosk**: the touchscreen build's exact flow and methodology
+> (`kiosk-app/`), made responsive and iframe-embeddable for the WordPress
+> site, with the Galen/EPR calculator's lead capture form ported in. The
+> original single-file web embed lives on [`main`](../../tree/main); the
+> touchscreen build lives on
+> [`smartmatch-touchscreen`](../../tree/smartmatch-touchscreen). See
+> `kiosk-app/README.md` for build + packaging.
 
 ## What's the calculator?
 

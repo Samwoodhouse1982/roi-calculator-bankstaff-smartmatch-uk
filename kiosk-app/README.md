@@ -1,7 +1,14 @@
-# Smart Match — Bank-Staff Utilisation ROI (Kiosk)
+# Smart Match — Bank-Staff Utilisation ROI (Web, from the kiosk)
 
-Touchscreen kiosk for the **RLDatix Smart Match** bank-staff utilisation ROI calculator (UK / NHS).
-Portrait 1080×1920 (9:16), dark navy + teal theme, touch-optimised. Currency en-GB (£).
+**Web version of the touchscreen kiosk calculator** for RLDatix Smart Match (BankStaff+), UK / NHS.
+Same methodology, engine and step flow as the kiosk build; fully responsive (phone → desktop),
+embeddable in an iframe (auto-resize via postMessage) and shareable as a static HTML package —
+run `npm run package` to produce `package/smartmatch-roi-web-embed.zip` (built app + WordPress
+embed snippet + client install guide). Dark navy + teal theme, en-GB (£).
+
+Differences from the kiosk build: no attract splash / idle reset / admin stats (kiosk-only chrome),
+plus a lead capture form on the results page ported from the EPR-migration/archive (Galen) ROI
+calculator (PDF summary download + HubSpot EU1 + local backup reviewable at `#admin-leads`).
 
 ## The model
 

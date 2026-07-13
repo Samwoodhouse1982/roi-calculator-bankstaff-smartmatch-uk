@@ -212,6 +212,11 @@ export const IconSearch = ({ size, stroke }) => <I size={size} stroke={stroke}>
   <path d="M16 16l5 5" />
 </I>;
 
+export const IconMail = ({ size, stroke }) => <I size={size} stroke={stroke}>
+  <rect x="3" y="5" width="18" height="14" rx="2" />
+  <path d="M3 7l9 6 9-6" />
+</I>;
+
 // ══════════════════════════════════════════════
 // LOOKUP MAP
 // ══════════════════════════════════════════════
@@ -243,6 +248,7 @@ export const ICONS = {
   lightbulb: IconLightbulb,
   check: IconCheck,
   search: IconSearch,
+  mail: IconMail,
 };
 
 export function Icon({ name, size = 24, stroke = "currentColor" }) {

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<title>Smart Match ROI Calculator: WordPress embed reference</title>
+</head>
+<body>
+<!--
+  ============================================================
+  EMBED SNIPPET: Smart Match Workforce ROI Calculator (web)
+  ============================================================
+  1. Host the contents of the dist/ folder anywhere on your site
+     or CDN, e.g. https://YOUR-DOMAIN/smartmatch-roi/
+     (all asset paths are relative — any subdirectory works).
+  2. Paste the <iframe> + <script> below into the host page.
+     In WordPress use a "Custom HTML" block (the site must allow
+     script tags — an admin editing a page normally can).
+
+  The calculator posts its content height to this page via
+  postMessage, so the iframe auto-resizes with no inner scrollbar,
+  and asks the page to scroll back to the top of the calculator
+  when the visitor moves between steps.
+  ============================================================
+-->
+
+<iframe
+  id="smartmatch-roi"
+  src="https://YOUR-DOMAIN/smartmatch-roi/index.html"
+  title="Smart Match Workforce ROI Calculator"
+  scrolling="no"
+  loading="lazy"
+  style="width:100%;border:none;min-height:720px;display:block;background:#0E1726;border-radius:12px;"
+></iframe>
+
+<script>
+  (function () {
+    var iframe = document.getElementById("smartmatch-roi");
+    var motion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    window.addEventListener("message", function (e) {
+      var d = e.data || {};
+      // Optional hardening: verify e.origin === "https://YOUR-DOMAIN" before acting.
+      if (d.type === "smartmatch-roi-resize" && typeof d.height === "number") {
+        iframe.style.height = Math.max(400, d.height) + "px";
+      }
+      // Step changed: bring the top of the calculator back into view.
+      if (d.type === "smartmatch-roi-scroll-top") {
+        var top = iframe.getBoundingClientRect().top;
+        if (top < 0) iframe.scrollIntoView({ behavior: motion, block: "start" });
+      }
+    });
+  })();
+</script>
+
+</body>
+</html>

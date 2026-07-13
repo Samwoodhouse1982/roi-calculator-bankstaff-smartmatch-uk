@@ -2,7 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { C, F, fmt, fmtK, fmtNum } from '../theme';
 import { Icon } from '../components/Icons';
 import { Card, InfoTip } from '../components';
+import { LeadCapture } from '../components/LeadCapture';
 import { stance, ADMIN_HRS_PER_DAY, ADMIN_WORKING_DAYS, ADMIN_LOADED_HOURLY, BANK_ONCOST, AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP } from '../calc/engine';
+
+// Responsive grid: side-by-side where there's room, stacked on narrow screens.
+const fluidGrid = (min) => ({ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${min}px), 1fr))` });
 
 /**
  * Animates a numeric value to a target over `duration` ms with ease-out cubic.
@@ -76,7 +80,7 @@ function KpiTile({ label, value, sub, iconKey, tip }) {
   </div>;
 }
 
-export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust, onStartOver }) {
+export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust, onStartOver, leadContext }) {
   if (!r) return null;
   const st = stance(displacement);
   const fmtPayback = m => m == null ? "n/a" : `${Math.round(m * 365 / 12).toLocaleString("en-GB")} days`;
@@ -95,8 +99,8 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
       <div style={{ fontSize: F.tiny, fontWeight: 700, color: C.textMuted, letterSpacing: 4, textTransform: "uppercase" }}>Smart Match · Indicative ROI</div>
     </div>
 
-    {/* Two co-headlines, side by side */}
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginBottom: 14 }}>
+    {/* Two co-headlines, side by side (stacked on narrow screens) */}
+    <div style={{ ...fluidGrid(320), gap: 18, marginBottom: 14 }}>
       {noNet ? (
       <div style={{ textAlign: "center", padding: "26px 22px", background: C.surface, borderRadius: 22, border: `1px solid ${C.amber}55`, display: "flex", flexDirection: "column", justifyContent: "center" }}>
         <div style={{ fontSize: F.h1, fontWeight: 800, color: C.amber, lineHeight: 1.1 }}>No net cash saving</div>
@@ -172,11 +176,8 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         { iconKey: "calendar", label: "Payback", value: noNet ? "n/a" : fmtPayback(r.paybackMonths), sub: "to recover the annual licence fee" },
         { iconKey: "check", label: "Return", value: (r.roiMultiple == null || noNet) ? "n/a" : <>{r.implausibleRoi ? "⚠ " : ""}<AnimVal value={r.roiMultiple} format={fmtMultiple} /></>, sub: "net saving ÷ licence fee, per year" },
       ];
-      const odd = tiles.length % 2 === 1;
-      return <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 14 }}>
-        {tiles.map((t, i) => <div key={i} style={odd && i === tiles.length - 1 ? { gridColumn: "1 / -1" } : undefined}>
-          <KpiTile iconKey={t.iconKey} label={t.label} value={t.value} sub={t.sub} tip={t.tip} />
-        </div>)}
+      return <div style={{ ...fluidGrid(260), gap: 16, marginBottom: 14 }}>
+        {tiles.map((t, i) => <KpiTile key={i} iconKey={t.iconKey} label={t.label} value={t.value} sub={t.sub} tip={t.tip} />)}
       </div>;
     })()}
 
@@ -305,15 +306,19 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
       </Collapsible>
     </Card>
 
+    {/* Lead capture — optional; results are never gated behind it.
+        Ported from the EPR-migration/archive (Galen) ROI calculator. */}
+    <LeadCapture r={r} leadContext={leadContext} />
+
     {/* Actions */}
-    <div style={{ display: "flex", gap: 16, justifyContent: "center", padding: "8px 0 32px" }}>
+    <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap", padding: "8px 0 32px" }}>
       <button onClick={onAdjust} style={{
-        padding: "22px 44px", borderRadius: 18, border: `2px solid ${C.accent}`,
+        padding: "14px 32px", borderRadius: 14, border: `2px solid ${C.accent}`,
         background: "transparent", color: C.accent, fontSize: F.body, fontWeight: 700,
         cursor: "pointer", fontFamily: "inherit"
       }}>← Adjust inputs</button>
       <button onClick={onStartOver} style={{
-        padding: "22px 44px", borderRadius: 18, border: `1px solid ${C.border}`,
+        padding: "14px 32px", borderRadius: 14, border: `1px solid ${C.border}`,
         background: C.surface, color: C.textMid, fontSize: F.body, fontWeight: 600,
         cursor: "pointer", fontFamily: "inherit"
       }}>Start over ↻</button>

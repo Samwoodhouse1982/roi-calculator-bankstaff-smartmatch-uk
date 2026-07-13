@@ -11,8 +11,24 @@ export const C = {
   rose: "#FF4F7A", rosePale: "#2A1020",
   blue: "#5B8DEF", purple: "#B07CF0",
 };
-export const F = { hero: 104, h1: 40, h2: 28, h3: 22, body: 18, small: 16, tiny: 14, label: 15 };
-export const W = 1080, H = 1920;
+// Fluid web typography. The kiosk build used fixed px sizes tuned for a
+// 1080×1920 touchscreen; this web variant scales each step between a phone
+// floor and a desktop ceiling. Every component reads fontSize from F, so this
+// one table makes the whole app responsive. (F values are CSS strings — do
+// not use them in arithmetic.)
+export const F = {
+  hero: "clamp(2.4rem, 7.5vw, 4rem)",
+  h1: "clamp(1.45rem, 3.4vw, 1.9rem)",
+  h2: "clamp(1.2rem, 2.6vw, 1.5rem)",
+  h3: "clamp(1.05rem, 2.2vw, 1.25rem)",
+  body: "clamp(0.92rem, 1.7vw, 1.02rem)",
+  small: "clamp(0.85rem, 1.5vw, 0.92rem)",
+  tiny: "clamp(0.76rem, 1.35vw, 0.82rem)",
+  label: "clamp(0.82rem, 1.5vw, 0.88rem)",
+};
+// Fluid horizontal gutter (was a fixed 56px on the kiosk) and content max width.
+export const GUTTER = "clamp(16px, 4vw, 44px)";
+export const MAXW = 900;
 export const fmt = n => "£" + Math.round(n || 0).toLocaleString("en-GB");
 export const fmtK = n => { n = n || 0; return n >= 1e6 ? `£${(n/1e6).toFixed(2)}m` : n >= 1000 ? `£${Math.round(n/1000).toLocaleString("en-GB")}k` : fmt(n); };
 export const fmtNum = n => Math.round(n || 0).toLocaleString("en-GB");
