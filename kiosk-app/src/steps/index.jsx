@@ -24,7 +24,7 @@ export function BankStep({ bankPool, setBankPool }) {
   const allInHr = ((SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR) * (1 + BANK_ONCOST)).toFixed(2);
   return <div>
     <SectionTitle number={1}>Your bank register</SectionTitle>
-    <Lead>How many workers are on your bank register in Optima? A rough figure is fine.</Lead>
+    <Lead>How many workers are on your bank register in Optima? These are the people you can offer temporary shifts to before turning to an agency.</Lead>
     <Card>
       <TouchSlider
         label="Registered bank workers"
@@ -34,8 +34,9 @@ export function BankStep({ bankPool, setBankPool }) {
         step={10}
         onChange={setBankPool}
         format={fmtNum}
-        tip="Everyone on your bank register, INCLUDING substantive staff who also pick up bank shifts, not just dedicated bank-only workers. Counting only bank-only workers would understate the opportunity."
+        tip="Everyone on your bank register, INCLUDING substantive staff who also pick up bank shifts, not just dedicated bank-only workers. Counting only bank-only workers would understate the opportunity. A rough figure is fine."
       />
+      <Helper>Slide to adjust your number of bank staff who use Optima. Better utilisation of this pool is the mechanism that displaces expensive agency spend.</Helper>
       <div style={{ marginTop: 16, padding: "14px 18px", background: C.accentSoft, borderRadius: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.5, display: "flex", alignItems: "center", gap: 8 }}>
         <span>BankStaff+ licence at this size: <strong style={{ color: C.accent }}>{fmt(platformCostFor(bankPool))}/yr</strong></span>
         <InfoTip text="G-Cloud pricing, ex VAT, banded by the number of licensed users. Your return and payback figures are measured against this annual fee." />
