@@ -5,8 +5,9 @@ import { platformCostFor, stance, SIMPLE_BLENDED_BANK_PAY, AFC_DIVISOR, BANK_ONC
 
 /* ────────────────────────────────────────────────────────────────────────
    Smart Match: three simple inputs (plus the modelling-stance slider that
-   lives on the Results screen). Each step is one clear question with a short
-   helper line. Teal accent, navy surfaces, en-GB throughout.
+   lives on the Results screen). Copy discipline: one job per element — a
+   one-line lead question, the control, one line of fine print; all detail
+   and caveats live in the (i) tooltips, never repeated on screen.
    ──────────────────────────────────────────────────────────────────────── */
 
 function Helper({ children }) {
@@ -19,9 +20,11 @@ function Lead({ children }) {
 
 // STEP 0. Your bank register — the single input; agency spend and everything else scale from it.
 export function BankStep({ bankPool, setBankPool }) {
+  const baseHr = (SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR).toFixed(2);
+  const allInHr = ((SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR) * (1 + BANK_ONCOST)).toFixed(2);
   return <div>
     <SectionTitle number={1}>Your bank register</SectionTitle>
-    <Lead>How many workers are on your bank register in Optima? These are the people you can offer temporary shifts to before turning to an agency.</Lead>
+    <Lead>How many workers are on your bank register in Optima? A rough figure is fine.</Lead>
     <Card>
       <TouchSlider
         label="Registered bank workers"
@@ -31,17 +34,15 @@ export function BankStep({ bankPool, setBankPool }) {
         step={10}
         onChange={setBankPool}
         format={fmtNum}
-        tip="Everyone on your bank register, INCLUDING substantive staff who also pick up bank shifts, not just dedicated bank-only workers. Counting only bank-only workers would understate the opportunity. A rough figure is fine."
+        tip="Everyone on your bank register, INCLUDING substantive staff who also pick up bank shifts, not just dedicated bank-only workers. Counting only bank-only workers would understate the opportunity."
       />
-      <Helper>Slide to adjust your number of bank staff who use Optima. Better utilisation of this pool is the mechanism that displaces expensive agency spend.</Helper>
-      <div style={{ marginTop: 16, padding: "14px 18px", background: C.accentSoft, borderRadius: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.5 }}>
-        BankStaff+ licence at this size: <strong style={{ color: C.accent }}>{fmt(platformCostFor(bankPool))}/yr</strong> <span style={{ color: C.textMuted }}>(G-Cloud pricing, ex VAT; your return is measured against this fee)</span>
+      <div style={{ marginTop: 16, padding: "14px 18px", background: C.accentSoft, borderRadius: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.5, display: "flex", alignItems: "center", gap: 8 }}>
+        <span>BankStaff+ licence at this size: <strong style={{ color: C.accent }}>{fmt(platformCostFor(bankPool))}/yr</strong></span>
+        <InfoTip text="G-Cloud pricing, ex VAT, banded by the number of licensed users. Your return and payback figures are measured against this annual fee." />
       </div>
-      <div style={{ marginTop: 10, fontSize: F.tiny, color: C.textMuted, lineHeight: 1.5, display: "flex", alignItems: "flex-start", gap: 8 }}>
-        <span>
-          Bank shift costs use <strong style={{ color: C.textMid }}>2026/27 NHS Agenda for Change band-mix midpoints</strong> (~£{Math.round(SIMPLE_BLENDED_BANK_PAY / 1000)}k blended). This gives an hourly base rate of £{(SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR).toFixed(2)}, and we add an additional <strong style={{ color: C.textMid }}>{Math.round(BANK_ONCOST * 100)}% employer on-cost</strong> (employer NI, pension etc), bringing the hourly rate to <strong style={{ color: C.textMid }}>£{((SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR) * (1 + BANK_ONCOST)).toFixed(2)} all-in</strong>.
-        </span>
-        <InfoTip text={`Employer on-costs are the costs on top of gross pay: employer National Insurance and pension contributions. The bank rate here already includes a ${Math.round(BANK_ONCOST * 100)}% on-cost, so raw Agenda for Change pay of £${(SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR).toFixed(2)}/hr becomes £${((SIMPLE_BLENDED_BANK_PAY / AFC_DIVISOR) * (1 + BANK_ONCOST)).toFixed(2)}/hr all-in. ${Math.round(BANK_ONCOST * 100)}% sits below the full ~30% NHS employer rate because bank-only workers often opt out of the pension. It changes the modelled shift counts, not the cash saving, and is counted once, never added again.`} />
+      <div style={{ marginTop: 10, fontSize: F.tiny, color: C.textMuted, lineHeight: 1.5, display: "flex", alignItems: "center", gap: 8 }}>
+        <span>Shift costs: 2026/27 NHS Agenda for Change band-mix (~£{Math.round(SIMPLE_BLENDED_BANK_PAY / 1000)}k blended), {Math.round(BANK_ONCOST * 100)}% employer on-cost included.</span>
+        <InfoTip text={`Base Agenda for Change pay of £${baseHr}/hr plus a ${Math.round(BANK_ONCOST * 100)}% employer on-cost (employer National Insurance and pension) gives £${allInHr}/hr all-in. ${Math.round(BANK_ONCOST * 100)}% sits below the full ~30% NHS employer rate because bank-only workers often opt out of the pension. On-costs change the modelled shift counts, not the cash saving, and are counted once, never added again.`} />
       </div>
     </Card>
   </div>;
@@ -51,7 +52,7 @@ export function BankStep({ bankPool, setBankPool }) {
 export function AgencyStep({ agencyFillRate, setAgencyFillRate }) {
   return <div>
     <SectionTitle number={2}>Agency reliance</SectionTitle>
-    <Lead>Of all the temporary duties you fill each year, what share currently goes to an agency rather than your own bank?</Lead>
+    <Lead>What share of your temporary duties currently goes to agency rather than your own bank?</Lead>
     <Card>
       <TouchSlider
         label="Current agency fill rate"
@@ -61,9 +62,9 @@ export function AgencyStep({ agencyFillRate, setAgencyFillRate }) {
         step={0.1}
         onChange={setAgencyFillRate}
         format={v => `${Math.round(v * 10) / 10}%`}
-        tip="The proportion of temporary shifts filled by agency staff. This drives the agency-reliance reduction shown on your results (the cash saving is anchored to your agency spend, premium and confidence level, not to this rate). Defaults to 8.3%, the agreed national average drawn from nationally available RLDatix data."
+        tip="The proportion of temporary shifts filled by agency staff. This drives the agency-reliance reduction shown on your results (the cash saving is anchored to your agency spend, premium and confidence level, not to this rate). Defaults to 8.3%, the national average drawn from RLDatix data."
       />
-      <Helper>Percentage refers to the proportion of staffing requirements fulfilled by agency workers. The default 8.3% is a starting point based on national average of organisations; set your own for a tailored figure. It shapes the reliance-reduction story, not the cash headline.</Helper>
+      <Helper>The default 8.3% is the national average; set your own if you know it.</Helper>
     </Card>
   </div>;
 }
@@ -72,7 +73,7 @@ export function AgencyStep({ agencyFillRate, setAgencyFillRate }) {
 export function TeamStep({ numManagers, setNumManagers, includeAdmin, setIncludeAdmin }) {
   return <div>
     <SectionTitle number={3}>Your temporary staffing team</SectionTitle>
-    <Lead>How many people spend their time booking, chasing and reconciling temporary shifts? Smart Match gives these colleagues back time, and this sets the "hours released each week" figure on your results.</Lead>
+    <Lead>How many people book, chase and reconcile temporary shifts day to day? This sets the "hours released each week" figure on your results.</Lead>
     <Card>
       <Stepper
         label="Temporary staffing team"
@@ -81,11 +82,9 @@ export function TeamStep({ numManagers, setNumManagers, includeAdmin, setInclude
         max={60}
         step={1}
         onChange={setNumManagers}
-        tip="Count the people who do the day-to-day booking, chasing and reconciling of temporary shifts, your bank / temporary staffing coordinators, officers and administrators. Managers who don't do the day-to-day entry aren't counted."
+        tip="Count the people who do the day-to-day booking, chasing and reconciling of temporary shifts: your bank / temporary staffing coordinators, officers and administrators. Managers who don't do the day-to-day entry aren't counted."
       />
-      <Helper>
-        Include your <strong style={{ color: C.text }}>bank / temporary staffing coordinators</strong>, <strong style={{ color: C.text }}>officers</strong> and <strong style={{ color: C.text }}>administrators</strong>, anyone whose day is spent placing and reconciling shifts, not the managers above them.
-      </Helper>
+      <Helper>Count coordinators, officers and administrators, not the managers above them.</Helper>
       <div style={{ marginTop: 24, padding: "18px 22px", background: C.surface2, borderRadius: 16, border: `1px solid ${C.accent}55` }}>
         <ToggleRow
           on={includeAdmin}
@@ -103,7 +102,7 @@ export function StanceStep({ displacement, chosen, setDisplacement }) {
   const st = stance(displacement);
   return <div>
     <SectionTitle number={4}>Your confidence level</SectionTitle>
-    <Lead>How much of today's agency work do you expect to move onto your own bank? Choose the outlook that fits your evidence; you can change it on the results screen.</Lead>
+    <Lead>How much of today's agency work do you expect to move to your own bank? You can change this on the results screen.</Lead>
     <Card>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <span style={{ fontSize: F.body, fontWeight: 600, color: C.textMid }}>Agency work moved to your bank</span>

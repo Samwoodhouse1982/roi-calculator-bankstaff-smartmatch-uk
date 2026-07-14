@@ -23,13 +23,13 @@ export function StepIndicator({ steps, current, onJump }) {
 
 const STEP_CONTEXT = [
   // 0 - Your bank
-  { title: "Why this matters", text: "The size of your staff bank sets the scale of the opportunity. Better utilisation of this pool is the mechanism that moves temporary work off agency and onto your own bank, and the agency premium you displace is the cash saving." },
+  { title: "Why this matters", text: "The size of your bank sets the scale of the opportunity: the agency premium displaced when work moves onto your own bank is the cash saving." },
   // 1 - Agency
-  { title: "Why this matters", text: "Your current agency fill rate tells us how much temporary work is being paid at a premium today. Each agency shift costs more than the equivalent bank shift; improving utilisation displaces some of that premium back into your budget." },
+  { title: "Why this matters", text: "Your fill rate shows how much temporary work is paid at an agency premium today; better bank utilisation returns part of that premium to your budget." },
   // 2 - Your team
-  { title: "Why this matters", text: "The people who book, chase and reconcile temporary shifts spend real hours on admin. Smart Match gives a conservative slice of that time back per person, which we value as cash and also show as hours saved per week." },
+  { title: "Why this matters", text: "Smart Match automates booking and matching, handing a conservative slice of time back to each team member, shown as hours per week and valued as cash." },
   // 3 - Confidence / optimism
-  { title: "Why this matters", text: "This sets how much of today's agency work you expect to move onto your own bank. Conservative is the cautious choice; Moderate matches what one site achieved; Optimistic assumes more. It flexes every figure, and you can revisit it on the results screen." },
+  { title: "Why this matters", text: "Conservative is the cautious choice, Moderate matches what one pilot site achieved, Optimistic assumes more. Every figure flexes with it." },
 ];
 
 export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate, onHome, context = STEP_CONTEXT }) {
