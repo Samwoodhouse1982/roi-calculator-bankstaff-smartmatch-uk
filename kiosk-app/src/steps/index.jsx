@@ -53,7 +53,11 @@ export function BankStep({ bankPool, setBankPool }) {
 export function AgencyStep({ agencyFillRate, setAgencyFillRate, bankPool, agencySpend, setAgencySpend }) {
   const estimate = Math.round(bankPool * AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP);
   const known = agencySpend != null;
-  const fmtM = v => v >= 1000000 ? `£${(v / 1000000).toFixed(v >= 10000000 ? 0 : 1)}m` : fmt(v);
+  const fmtM = v => v >= 1000000 ? `£${(v / 1000000 >= 100 ? (v / 1000000).toFixed(0) : (v / 1000000).toFixed(1).replace(/\.0$/, ""))}m` : fmt(v);
+  // Slider range adapts to the bank-size estimate, so the control keeps good
+  // resolution for a small community trust (~£2m) or a large ICS (~£30m) alike.
+  const sliderMax = Math.max(10000000, Math.ceil(estimate * 3 / 5000000) * 5000000);
+  const sliderStep = Math.max(100000, Math.round(sliderMax / 200 / 100000) * 100000);
   return <div>
     <SectionTitle number={2}>Agency reliance</SectionTitle>
     <Lead>What share of your temporary duties currently goes to agency rather than your own bank?</Lead>
@@ -82,22 +86,36 @@ export function AgencyStep({ agencyFillRate, setAgencyFillRate, bankPool, agency
           <Helper>We currently estimate <strong style={{ color: C.accent }}>{fmtM(estimate)}/yr</strong> from your bank size. Toggle on to use your own figure.</Helper>
         ) : (
           <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: F.small, fontWeight: 600, color: C.textMid, marginBottom: 8 }}>Your total annual agency spend</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: F.h3, fontWeight: 700, color: C.accent }}>£</span>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  step={100000}
-                  value={agencySpend}
-                  onChange={e => setAgencySpend(e.target.value === "" ? 0 : Math.max(0, Math.round(Number(e.target.value)) || 0))}
-                  aria-label="Your total annual agency spend in pounds"
-                  style={{ width: 200, padding: "12px 14px", fontSize: F.body, fontWeight: 700, borderRadius: 12, border: `1px solid ${C.border}`, fontFamily: "inherit", color: C.text, background: "#fff" }}
-                />
-              </div>
-              <span style={{ fontSize: F.small, color: C.textMuted }}>= {fmtM(agencySpend)}/yr</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 12 }}>
+              <span style={{ fontSize: F.small, fontWeight: 600, color: C.textMid }}>Your total annual agency spend</span>
+              <span style={{ fontSize: F.h2, fontWeight: 800, color: C.accent }}>{fmtM(agencySpend)}</span>
+            </div>
+            {/* Exact figure: comma-grouped text field, no fiddly spinner arrows */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <span style={{ fontSize: F.h3, fontWeight: 700, color: C.accent }}>£</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={agencySpend.toLocaleString("en-GB")}
+                onChange={e => { const raw = e.target.value.replace(/[^\d]/g, ""); setAgencySpend(raw === "" ? 0 : Math.min(999999999, Number(raw))); }}
+                aria-label="Your total annual agency spend in pounds"
+                style={{ flex: "1 1 160px", maxWidth: 240, padding: "12px 14px", fontSize: F.body, fontWeight: 700, borderRadius: 12, border: `1px solid ${C.border}`, fontFamily: "inherit", color: C.text, background: "#fff" }}
+              />
+              <span style={{ fontSize: F.small, color: C.textMuted }}>/ yr</span>
+            </div>
+            {/* Quick-set: drag the slider, then fine-tune the number above */}
+            <input
+              type="range"
+              min={0}
+              max={sliderMax}
+              step={sliderStep}
+              value={Math.min(agencySpend, sliderMax)}
+              onChange={e => setAgencySpend(Number(e.target.value))}
+              aria-label="Set your annual agency spend with the slider"
+              style={{ width: "100%", cursor: "pointer", accentColor: C.accent }}
+            />
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: F.tiny, color: C.textMuted, marginTop: 6 }}>
+              <span>£0</span><span>drag to set, or type an exact figure above</span><span>{fmtM(sliderMax)}+</span>
             </div>
             <Helper>This figure anchors your cash saving; the fill rate above only shapes the reliance narrative. Estimate at your bank size was {fmtM(estimate)}/yr.</Helper>
           </div>
