@@ -177,7 +177,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
       const teamSize = Math.round(r.timeSavedWeek / (ADMIN_HRS_PER_DAY * 5));
       const adminTip = `${teamSize} ${teamSize === 1 ? "person" : "people"} × ${ADMIN_HRS_PER_DAY} h/day × ${ADMIN_WORKING_DAYS} working days × £${ADMIN_LOADED_HOURLY}/h (loaded) = ${fmt(r.adminSaving)}`;
       const tiles = [
-        { iconKey: "pound", label: "Agency premium avoided", value: <AnimVal value={r.agencySaving} format={fmtK} />, sub: "agency vs bank gap, before licence" },
+        { iconKey: "pound", label: "Agency premium avoided", value: <AnimVal value={r.agencySaving} format={fmtK} />, sub: "agency vs bank gap, excluding licence fee" },
         ...(r.adminSaving > 0 ? [{ iconKey: "clock", label: "Admin time saving", value: <AnimVal value={r.adminSaving} format={fmtK} />, sub: "temp staffing team time, valued", tip: adminTip }] : []),
         { iconKey: "calendar", label: "Payback", value: noNet ? "n/a" : fmtPayback(r.paybackMonths), sub: "to recover the annual licence fee" },
         { iconKey: "check", label: "Return", value: (r.roiMultiple == null || noNet) ? "n/a" : <>{r.implausibleRoi ? "⚠ " : ""}<AnimVal value={r.roiMultiple} format={fmtMultiple} /></>, sub: "net saving ÷ licence fee, per year" },
