@@ -69,7 +69,7 @@ async function generatePDF(r, lead, ctx) {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
   const NAVY = [15, 65, 70], TEAL = [26, 138, 122], SEAFOAM = [52, 222, 194],
-        PALE = [238, 246, 244], PALE_SEA = [232, 250, 246], BORDER = [212, 224, 221],
+        PALE = [238, 247, 242], PALE_SEA = [232, 250, 246], BORDER = [212, 224, 221],
         TEXT = [15, 65, 70], MID = [61, 90, 94], MUTED = [120, 130, 150];
   const M = 14, W = 210 - 2 * M;   // margins / usable width
   const noNet = r.netSaving <= 0;
