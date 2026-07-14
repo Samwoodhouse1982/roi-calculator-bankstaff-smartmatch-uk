@@ -48,9 +48,9 @@ export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate, onHo
       {step === 0 && onHome && <button onClick={onHome} aria-label="Home" style={{ padding: "12px 22px", borderRadius: 14, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: F.body, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 10 }}><Icon name="home" size={18} stroke={C.textMid} /> Start again</button>}
       <div style={{ flex: 1 }} />
       {step < totalSteps - 2 ? (
-        <button onClick={onNext} style={{ padding: "14px 40px", borderRadius: 14, border: "none", background: C.accent, color: "#04201A", fontSize: F.h3, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Next →</button>
+        <button onClick={onNext} style={{ padding: "14px 40px", borderRadius: 14, border: "none", background: C.accent, color: "#fff", fontSize: F.h3, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Next →</button>
       ) : (
-        <button onClick={onCalculate} style={{ padding: "14px 40px", borderRadius: 14, border: "none", background: `linear-gradient(135deg, ${C.accent}, ${C.accentMid})`, color: "#04201A", fontSize: F.h3, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 6px 28px rgba(0,212,170,0.4)" }}>Calculate ROI →</button>
+        <button onClick={onCalculate} style={{ padding: "14px 40px", borderRadius: 14, border: "none", background: `linear-gradient(135deg, ${C.accent}, ${C.accentMid})`, color: "#fff", fontSize: F.h3, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 6px 24px rgba(15,65,70,0.25)" }}>Calculate ROI →</button>
       )}
     </div>
   </div>;
@@ -146,7 +146,7 @@ export function InfoTip({ text }) {
         background: C.surface2, color: C.text,
         fontSize: F.small, lineHeight: 1.6, padding: "20px 24px",
         borderRadius: 16, width: "min(400px, calc(100vw - 40px))",
-        boxShadow: "0 12px 48px rgba(0,0,0,.6)",
+        boxShadow: "0 12px 40px rgba(15,65,70,.28)",
         zIndex: 99997, border: `1px solid ${C.border}`,
         animation: "kfade .2s ease-out"
       }}>{text}</span>
@@ -156,7 +156,7 @@ export function InfoTip({ text }) {
 
 export function SectionTitle({ number, children }) {
   return <div style={{ fontSize: F.h2, fontWeight: 700, color: C.textMid, marginBottom: 22, display: "flex", alignItems: "center", gap: 14 }}>
-    <span style={{ width: 40, height: 40, borderRadius: "50%", background: C.accent, color: "#04201A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: F.h3, fontWeight: 800, flexShrink: 0 }}>{number}</span>
+    <span style={{ width: 40, height: 40, borderRadius: "50%", background: C.accent, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: F.h3, fontWeight: 800, flexShrink: 0 }}>{number}</span>
     {children}
   </div>;
 }

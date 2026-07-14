@@ -1,15 +1,20 @@
+// LIGHT theme — the RLDatix web-calculator design system (deep teal + seafoam
+// on white), matching the main-branch Smart Match web build and the Galen ROI
+// suite so the calculator sits comfortably on rldatix.com. Colours only: the
+// kiosk build's dark palette lives on the smartmatch-touchscreen branch.
 export const C = {
-  bg: "#0E1726", bgGrad1: "#0B1424", bgGrad2: "#16263F",
-  surface: "#1B2B4B", surface2: "#22335A", border: "#2C4070", borderLight: "#243454",
-  text: "#EEF1F7", textMid: "#A9B6CE", textMuted: "#7E8CA8",
-  accent: "#00D4AA", accentMid: "#00FFC8", accentSoft: "#0A2A22", accentPale: "#0A2520",
-  navy: "#1B2B4B", navyMid: "#2C4070", good: "#36C28B", amber: "#F0A848",
+  bg: "#EEF6F4", bgGrad1: "#E8F2EF", bgGrad2: "#F5FAF8",
+  surface: "#FFFFFF", surface2: "#F0F7F5", border: "#D4E0DD", borderLight: "#E8EFEC",
+  text: "#0F4146", textMid: "#3D5A5E", textMuted: "#5F787C",
+  accent: "#0F4146", accentMid: "#1A8A7A", accentSoft: "#E8FAF6", accentPale: "#F3FBF9",
+  navy: "#0F4146", navyMid: "#1A5459", good: "#1A8A7A", amber: "#8A6508",
+  seafoam: "#34DEC2",
   // Alias keys (teal/seafoam family) so existing components that import them don't break.
-  accentLight: "#003328",
-  green: "#36C28B", greenPale: "#13261D",
-  teal: "#00D4AA", tealLight: "#00FFC8", tealPale: "#0A2A22",
-  rose: "#FF4F7A", rosePale: "#2A1020",
-  blue: "#5B8DEF", purple: "#B07CF0",
+  accentLight: "#D6F7EE",
+  green: "#1A8A7A", greenPale: "#EEF7F1",
+  teal: "#0F4146", tealLight: "#D6F7EE", tealPale: "#E8FAF6",
+  rose: "#93405A", rosePale: "#FAF0F4",
+  blue: "#2E7BA6", purple: "#6E5AA8",
 };
 // Fluid web typography. The kiosk build used fixed px sizes tuned for a
 // 1080×1920 touchscreen; this web variant scales each step between a phone

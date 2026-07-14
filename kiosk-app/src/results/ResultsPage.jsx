@@ -92,7 +92,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
 
   return <div style={{ animation: "rfade .5s ease-out" }}>
     <style>{`@keyframes rfade { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
-      @keyframes glow { 0%,100% { text-shadow: 0 0 30px rgba(0,212,170,0.25); } 50% { text-shadow: 0 0 56px rgba(0,212,170,0.5); } }`}</style>
+      @keyframes glow { 0%,100% { text-shadow: 0 0 26px rgba(52,222,194,0.35); } 50% { text-shadow: 0 0 46px rgba(52,222,194,0.6); } }`}</style>
 
     {/* Eyebrow */}
     <div style={{ textAlign: "center", padding: "14px 0 4px" }}>

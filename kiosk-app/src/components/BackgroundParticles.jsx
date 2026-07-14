@@ -123,17 +123,20 @@ export function BackgroundParticles() {
           p.phase = Math.random() * Math.PI * 2;
         }
 
+        // Light-theme colouring: deep-teal particles at low opacity read as a
+        // subtle texture on the pale background (the dark kiosk build used
+        // bright/high-lightness teals instead).
         if (p.glow) {
           const grad = ctx.createRadialGradient(p.x, drawY, 0, p.x, drawY, p.r * 8);
-          grad.addColorStop(0, `hsla(${p.hue}, 80%, 65%, ${p.opacity * 0.15})`);
-          grad.addColorStop(1, `hsla(${p.hue}, 80%, 65%, 0)`);
+          grad.addColorStop(0, `hsla(${p.hue}, 60%, 40%, ${p.opacity * 0.12})`);
+          grad.addColorStop(1, `hsla(${p.hue}, 60%, 40%, 0)`);
           ctx.fillStyle = grad;
           ctx.beginPath();
           ctx.arc(p.x, drawY, p.r * 8, 0, Math.PI * 2);
           ctx.fill();
         }
 
-        ctx.fillStyle = `hsla(${p.hue}, 75%, ${p.glow ? 80 : 58}%, ${p.opacity})`;
+        ctx.fillStyle = `hsla(${p.hue}, 55%, ${p.glow ? 34 : 30}%, ${p.opacity * 0.7})`;
         ctx.beginPath();
         ctx.arc(p.x, drawY, p.r, 0, Math.PI * 2);
         ctx.fill();

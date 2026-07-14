@@ -51,13 +51,13 @@ async function generatePDF(r, lead, ctx) {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   let y = 18;
-  doc.setFillColor(14, 23, 38); doc.rect(0, 0, 210, 30, "F");
+  doc.setFillColor(15, 65, 70); doc.rect(0, 0, 210, 30, "F");
   doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(16);
   doc.text("Smart Match: Workforce ROI Estimate", 14, 16);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(0, 212, 170);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(52, 222, 194);
   doc.text("RLDatix BankStaff+ · indicative · " + new Date().toLocaleDateString("en-GB") + (lead.org ? " · " + lead.org : ""), 14, 23);
   y = 40;
-  doc.setTextColor(27, 43, 75); doc.setFont("helvetica", "bold"); doc.setFontSize(11);
+  doc.setTextColor(15, 65, 70); doc.setFont("helvetica", "bold"); doc.setFontSize(11);
   doc.text("Headline", 14, y); y += 6;
   doc.setFont("helvetica", "normal"); doc.setFontSize(10);
   const noNet = r.netSaving <= 0;
@@ -149,38 +149,39 @@ export function LeadCapture({ r, leadContext }) {
   }, [lead, sending, r, leadContext]);
 
   if (submitted) {
-    return <div style={{ marginBottom: 28, padding: "26px 28px", borderRadius: 18, background: `linear-gradient(135deg, ${C.surface} 0%, ${C.surface2} 100%)`, border: `1px solid ${C.accent}55`, textAlign: "center" }}>
-      <div style={{ fontSize: F.h3, fontWeight: 800, color: C.accent, marginBottom: 8 }}>Thanks, {lead.name.split(" ")[0]} — your report has downloaded.</div>
-      <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6 }}>A Smart Match specialist can validate these figures against your organisation's own bank and agency rates. We'll be in touch.</div>
+    return <div style={{ marginBottom: 28, padding: "26px 28px", borderRadius: 18, background: `linear-gradient(135deg, ${C.navy} 0%, ${C.navyMid} 100%)`, border: "none", textAlign: "center" }}>
+      <div style={{ fontSize: F.h3, fontWeight: 800, color: C.seafoam, marginBottom: 8 }}>Thanks, {lead.name.split(" ")[0]} — your report has downloaded.</div>
+      <div style={{ fontSize: F.small, color: "rgba(255,255,255,0.8)", lineHeight: 1.6 }}>A Smart Match specialist can validate these figures against your organisation's own bank and agency rates. We'll be in touch.</div>
     </div>;
   }
 
   const ready = lead.name && lead.email;
 
-  return <div style={{ marginBottom: 28, padding: "clamp(18px, 3vw, 28px)", borderRadius: 18, background: `linear-gradient(135deg, ${C.surface} 0%, ${C.surface2} 100%)`, border: `1px solid ${C.accent}40` }}>
+  // Navy card on the light page — the Galen calculator's lead-gen treatment.
+  return <div style={{ marginBottom: 28, padding: "clamp(18px, 3vw, 28px)", borderRadius: 18, background: `linear-gradient(135deg, ${C.navy} 0%, ${C.navyMid} 100%)`, border: "none" }}>
     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-      <Icon name="mail" size={22} stroke={C.accent} />
-      <h3 style={{ fontSize: F.h3, fontWeight: 800, margin: 0, color: C.text }}>Get this breakdown in your inbox</h3>
+      <Icon name="mail" size={22} stroke={C.seafoam} />
+      <h3 style={{ fontSize: F.h3, fontWeight: 800, margin: 0, color: "#fff" }}>Get this breakdown in your inbox</h3>
     </div>
-    <p style={{ fontSize: F.small, color: C.textMid, marginTop: 6, marginBottom: 18 }}>Download a formatted summary ready to share with your team or board.</p>
+    <p style={{ fontSize: F.small, color: "rgba(255,255,255,0.75)", marginTop: 6, marginBottom: 18 }}>Download a formatted summary ready to share with your team or board.</p>
     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
       <input type="text" placeholder="Your name *" aria-label="Your name (required)" autoComplete="name" value={lead.name} onChange={e => setLead(p => ({ ...p, name: e.target.value }))} style={inputStyle} />
       <input type="email" placeholder="Work email *" aria-label="Work email (required)" autoComplete="email" value={lead.email} onChange={e => setLead(p => ({ ...p, email: e.target.value }))} style={inputStyle} />
     </div>
     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
       <input type="text" placeholder="Organisation" aria-label="Organisation" autoComplete="organization" value={lead.org} onChange={e => setLead(p => ({ ...p, org: e.target.value }))} style={inputStyle} />
-      <select aria-label="Your role" value={lead.role} onChange={e => setLead(p => ({ ...p, role: e.target.value }))} style={{ ...inputStyle, background: C.surface2, color: lead.role ? "#fff" : "rgba(255,255,255,0.5)", border: `1px solid ${C.border}` }}>
-        <option value="">Your role</option>
-        {ROLE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
+      <select aria-label="Your role" value={lead.role} onChange={e => setLead(p => ({ ...p, role: e.target.value }))} style={{ ...inputStyle, background: "rgba(255,255,255,0.15)", color: lead.role ? "#fff" : "rgba(255,255,255,0.5)" }}>
+        <option value="" style={{ color: C.text }}>Your role</option>
+        {ROLE_OPTIONS.map(o => <option key={o} value={o} style={{ color: C.text }}>{o}</option>)}
       </select>
     </div>
     <button type="button" onClick={submitLead} disabled={!ready || sending} style={{
-      padding: "14px 32px", background: ready ? C.accent : "rgba(255,255,255,0.12)",
-      color: ready ? "#04201A" : "rgba(255,255,255,0.4)",
+      padding: "14px 32px", background: ready ? "#fff" : "rgba(255,255,255,0.15)",
+      color: ready ? C.navy : "rgba(255,255,255,0.4)",
       border: "none", borderRadius: 999, fontSize: F.body, fontWeight: 800,
       cursor: ready && !sending ? "pointer" : "not-allowed", fontFamily: "inherit",
     }}>{sending ? "Generating report..." : "Download PDF report"}</button>
-    <p style={{ fontSize: F.tiny, color: C.textMuted, marginTop: 12, marginBottom: 0 }}>Optional — the calculator is open to everyone. We may reach out to see if we can help with your programme; details are processed in line with the RLDatix privacy notice.</p>
+    <p style={{ fontSize: F.tiny, color: "rgba(255,255,255,0.55)", marginTop: 12, marginBottom: 0 }}>Optional — the calculator is open to everyone. We may reach out to see if we can help with your programme; details are processed in line with the RLDatix privacy notice.</p>
   </div>;
 }
 
@@ -221,7 +222,7 @@ export function AdminLeads({ onClose }) {
         <p style={{ fontSize: F.tiny, color: C.textMuted, marginTop: 6 }}>Stored in this browser only, as a backup — HubSpot holds the canonical copies. Remove <code>#admin-leads</code> from the URL to return.</p>
       </div>
       <div style={{ display: "flex", gap: 10 }}>
-        <button onClick={exportCSV} disabled={!records.length} style={{ padding: "10px 20px", borderRadius: 10, border: "none", background: records.length ? C.accent : C.border, color: records.length ? "#04201A" : C.textMuted, fontSize: F.tiny, fontWeight: 700, cursor: records.length ? "pointer" : "default", fontFamily: "inherit" }}>Export CSV</button>
+        <button onClick={exportCSV} disabled={!records.length} style={{ padding: "10px 20px", borderRadius: 10, border: "none", background: records.length ? C.accent : C.border, color: records.length ? "#fff" : C.textMuted, fontSize: F.tiny, fontWeight: 700, cursor: records.length ? "pointer" : "default", fontFamily: "inherit" }}>Export CSV</button>
         <button onClick={clearAll} disabled={!records.length} style={{ padding: "10px 20px", borderRadius: 10, border: `1px solid ${C.border}`, background: "transparent", color: records.length ? C.textMid : C.textMuted, fontSize: F.tiny, fontWeight: 600, cursor: records.length ? "pointer" : "default", fontFamily: "inherit" }}>Clear</button>
         <button onClick={onClose} style={{ padding: "10px 20px", borderRadius: 10, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: F.tiny, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Close</button>
       </div>
