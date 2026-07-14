@@ -105,6 +105,27 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
       <div style={{ fontSize: F.tiny, fontWeight: 700, color: C.textMuted, letterSpacing: 4, textTransform: "uppercase" }}>Smart Match · Indicative ROI</div>
     </div>
 
+    {/* Confidence level — a slim strip at the top of the report; adjusting it
+        recomputes every figure live. Full stance context lives in the (i). */}
+    <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", padding: "10px 16px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, marginBottom: 18 }}>
+      <span style={{ fontSize: F.tiny, fontWeight: 700, color: C.textMid, display: "inline-flex", alignItems: "center", gap: 8 }}>
+        Confidence level
+        <InfoTip text={`${st.key}: ${st.note} Adjust it here and every figure recomputes live.`} />
+      </span>
+      <div style={{ display: "flex", gap: 6 }}>
+        {[["Conservative", 13], ["Moderate", 26], ["Optimistic", 50]].map(([lbl, v]) => {
+          const on = chosen && displacement === v;
+          return <button key={v} onClick={() => setDisplacement(v)} style={{
+            padding: "6px 12px", borderRadius: 999, cursor: "pointer", fontFamily: "inherit",
+            border: `1px solid ${on ? C.accent : C.border}`, background: on ? C.accent : C.surface2,
+            color: on ? "#fff" : C.textMid, fontWeight: 700, fontSize: F.tiny, transition: "all .15s",
+          }}>{lbl}</button>;
+        })}
+      </div>
+      <input type="range" aria-label="Agency work moved to your bank (%)" min={13} max={50} step={1} value={displacement} onChange={e => setDisplacement(Number(e.target.value))} style={{ flex: "1 1 120px", minWidth: 110, cursor: "pointer", accentColor: C.accent }} />
+      <span style={{ fontSize: F.small, fontWeight: 800, color: C.accent, minWidth: 42, textAlign: "right" }}>{displacement}%</span>
+    </div>
+
     {/* Two co-headlines, side by side (stacked on narrow screens) */}
     <div style={{ ...fluidGrid(320), gap: 18, marginBottom: 14 }}>
       {noNet ? (
@@ -130,37 +151,6 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, lineHeight: 1.5, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>Time your temporary staffing team gets back each week as Smart Match automates shift booking and matching, scaled to your team's size.</div>
       </div>
     </div>
-
-    {/* Confidence / modelling stance — set upfront, reconfigurable here at the top of the report */}
-    <Card style={{ marginBottom: 28 }}>
-      <CTitle iconKey="search">Confidence level</CTitle>
-      <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6, marginBottom: 18 }}>
-        Adjust it here and the cash figures recompute live. It sets how much of today's agency work you assume moves onto your own bank.
-      </div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-        <span style={{ fontSize: F.body, fontWeight: 600, color: C.textMid }}>Agency work moved to your bank</span>
-        <span style={{ fontSize: F.h1, fontWeight: 800, color: C.accent }}>{displacement}%</span>
-      </div>
-      <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-        {[["Conservative", 13], ["Moderate", 26], ["Optimistic", 50]].map(([lbl, v]) => {
-          const on = chosen && displacement === v;
-          return <button key={v} onClick={() => setDisplacement(v)} style={{
-            flex: 1, padding: "16px 8px", borderRadius: 14, cursor: "pointer", fontFamily: "inherit",
-            border: `1px solid ${on ? C.accent : C.border}`, background: on ? C.accent : C.surface2,
-            color: on ? "#fff" : C.textMid, fontWeight: 700, fontSize: F.small, transition: "all .15s",
-            display: "flex", flexDirection: "column", gap: 3, alignItems: "center"
-          }}>{lbl}<span style={{ fontSize: F.tiny, fontWeight: 600, opacity: 0.8 }}>{v}%</span></button>;
-        })}
-      </div>
-      <input type="range" aria-label="Agency work moved to your bank (%)" min={13} max={50} step={1} value={displacement} onChange={e => setDisplacement(Number(e.target.value))} style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: F.tiny, color: C.textMuted, marginTop: 8 }}>
-        <span>13% · conservative</span><span>26% · moderate</span><span>50% · optimistic</span>
-      </div>
-      {chosen && <div style={{ marginTop: 16, padding: "16px 20px", background: C.accentSoft, borderRadius: 14, border: `1px solid ${C.accent}30` }}>
-        <div style={{ fontSize: F.body, fontWeight: 800, color: C.accent, marginBottom: 6 }}>{st.key}</div>
-        <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6 }}>{st.note}</div>
-      </div>}
-    </Card>
 
     {/* Guardrail */}
     {r.exceedsSpend && <div style={{ marginBottom: 14, padding: "14px 20px", background: C.accentSoft, border: `1px solid ${C.accent}`, borderRadius: 14, fontSize: F.small, color: C.text, lineHeight: 1.5 }}>
@@ -197,6 +187,10 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
     {!noNet && <div style={{ textAlign: "center", fontSize: F.small, color: C.textMuted, lineHeight: 1.5, margin: "0 auto 28px", maxWidth: 760 }}>
       These are annual figures: the saving recurs every year Smart Match is in use.
     </div>}
+
+    {/* Lead capture — straight after the headline tiles, while the numbers land.
+        Optional; results are never gated behind it. Ported from the Galen calculator. */}
+    <LeadCapture r={r} leadContext={leadContext} />
 
     {/* How the cash saving is worked out — bank vs agency rate vs the premium gap (the defensible basis) */}
     <Card style={{ marginBottom: 28 }}>
@@ -312,10 +306,6 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         </div>
       </Collapsible>
     </Card>
-
-    {/* Lead capture — optional; results are never gated behind it.
-        Ported from the EPR-migration/archive (Galen) ROI calculator. */}
-    <LeadCapture r={r} leadContext={leadContext} />
 
     {/* Actions */}
     <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap", padding: "8px 0 32px" }}>
