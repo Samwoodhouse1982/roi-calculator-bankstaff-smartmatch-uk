@@ -146,7 +146,7 @@ async function generatePDF(r, lead, ctx) {
   });
   doc.setTextColor(...MUTED); doc.setFont("helvetica", "bold"); doc.setFontSize(8.5);
   doc.text("SAVING BY CONFIDENCE LEVEL", M, y); y += 3;
-  const sW = (W - 8) / 3, sH = 33;
+  const sW = (W - 8) / 3, sH = 47;
   scenarios.forEach((s, i) => {
     const x = M + i * (sW + 4);
     if (s.selected) { doc.setFillColor(...PALE_SEA); doc.setDrawColor(...TEAL); doc.setLineWidth(0.7); }
@@ -166,15 +166,27 @@ async function generatePDF(r, lead, ctx) {
     // net saving headline
     const net = s.rr.netSaving;
     doc.setTextColor(...TEAL); doc.setFont("helvetica", "bold"); doc.setFontSize(15);
-    doc.text(net > 0 ? fmtK(net) : "No net saving", x + 4, y + 21.5);
+    doc.text(net > 0 ? fmtK(net) : "No net saving", x + 4, y + 21);
     doc.setTextColor(...MID); doc.setFont("helvetica", "normal"); doc.setFontSize(6.5);
-    doc.text("net annual cash saving", x + 4, y + 25.5);
-    // two supporting stats
+    doc.text("net annual cash saving", x + 4, y + 25);
+    // full KPI list beneath a separator (mirrors the KPI row, per scenario)
     doc.setDrawColor(...BORDER); doc.setLineWidth(0.2); doc.line(x + 4, y + 27.5, x + sW - 4, y + 27.5);
-    doc.setTextColor(...MID); doc.setFontSize(6.8);
-    doc.text("Premium avoided", x + 4, y + 31);
-    doc.setTextColor(...NAVY); doc.setFont("helvetica", "bold");
-    doc.text(fmtK(s.rr.agencySaving), x + sW - 4, y + 31, { align: "right" });
+    const paybk = net > 0 && s.rr.paybackMonths != null ? Math.round(s.rr.paybackMonths * 365 / 12).toLocaleString("en-GB") + " days" : "n/a";
+    const ret = net > 0 && s.rr.roiMultiple != null ? (Math.round(s.rr.roiMultiple * 10) / 10) + "x" : "n/a";
+    const stats = [
+      ["Agency premium avoided", fmtK(s.rr.agencySaving)],
+      ["Admin time value", fmtK(adminValue)],
+      ["Payback", paybk],
+      ["Return on licence fee", ret],
+    ];
+    let sy = y + 31.5;
+    stats.forEach(([k, v]) => {
+      doc.setFont("helvetica", "normal"); doc.setFontSize(6.8); doc.setTextColor(...MID);
+      doc.text(k, x + 4, sy);
+      doc.setFont("helvetica", "bold"); doc.setTextColor(...NAVY);
+      doc.text(String(v), x + sW - 4, sy, { align: "right" });
+      sy += 4.1;
+    });
   });
   y += sH + 7;
 
