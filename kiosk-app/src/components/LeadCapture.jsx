@@ -244,8 +244,8 @@ async function generatePDF(r, lead, ctx) {
   doc.text("ABOUT THESE FIGURES", M, y); y += 5;
   const explain = [
     ["Cash saving", "the agency premium displaced when better bank utilisation moves duties off agency onto your own bank. It excludes the cost of the bank shifts themselves; that is capacity, shown separately, and never added to the saving."],
-    ["Assumptions", "2026/27 NHS Agenda for Change pay midpoints, deliberately conservative and fully editable. The 20% agency premium is the official House of Commons Library average."],
-    ["Agency spend", "estimated from your bank size using FY2025/26 national averages (~£2,700 per registered bank worker) unless you supply your own figure, which makes the result more accurate."],
+    ["Assumptions", "based on 2026/27 NHS Agenda for Change pay midpoints and deliberately conservative throughout. The 20% agency premium reflects figures cited in House of Commons Library research."],
+    ["Agency spend", "was estimated from your bank size using FY2025/26 national averages (~£2,700 per registered bank worker); a figure based on your own agency book would give a more accurate result."],
   ];
   doc.setFontSize(7.5);
   explain.forEach(([term, def]) => {
