@@ -191,7 +191,7 @@ async function generatePDF(r, lead, ctx) {
   y += sH + 7;
 
   // ── Two columns: Your inputs | Capacity and wider value ──
-  const colW = (W - 4) / 2, colH = 46;
+  const colW = (W - 4) / 2, colH = 42;
   const colBox = (x, title, rows, note) => {
     doc.setFillColor(...PALE); doc.setDrawColor(...BORDER);
     doc.roundedRect(x, y, colW, colH, 2.5, 2.5, "FD");
@@ -222,24 +222,49 @@ async function generatePDF(r, lead, ctx) {
     ["Est. annual agency spend (anchor)", fmt(r.agencySpend)],
     ["BankStaff+ licence fee", fmt(r.platformCost) + "/yr"],
   ], "Capacity is coverage, not cash; it is never added to the saving.");
-  y += colH + 7;
+  y += colH + 5;
 
   // ── How the saving is worked out ──
   doc.setFillColor(...PALE_SEA); doc.setDrawColor(...TEAL);
-  doc.roundedRect(M, y, W, 26, 2.5, 2.5, "FD");
+  doc.roundedRect(M, y, W, 22, 2.5, 2.5, "FD");
   doc.setTextColor(...NAVY); doc.setFont("helvetica", "bold"); doc.setFontSize(9.5);
   doc.text("How the cash saving is worked out", M + 4, y + 7);
   doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(...MID);
   const gap = r.agencyShiftCost - r.bankShiftCost;
-  doc.text(`Your own bank ${fmt(Math.round(r.bankShiftCost))}/shift  ·  agency, same shift ${fmt(Math.round(r.agencyShiftCost))}/shift  ·  premium displaced ${fmt(Math.round(gap))}/shift`, M + 4, y + 13.5);
+  doc.text(`Your own bank ${fmt(Math.round(r.bankShiftCost))}/shift  ·  agency, same shift ${fmt(Math.round(r.agencyShiftCost))}/shift  ·  premium displaced ${fmt(Math.round(gap))}/shift`, M + 4, y + 12.5);
   doc.setFont("helvetica", "bold"); doc.setTextColor(...TEAL);
   const adminEq = ctx.includeAdmin && r.adminSaving > 0 ? ` + ${fmt(Math.round(r.adminSaving))} admin time` : "";
-  doc.text(`${fmt(Math.round(r.agencySaving))} premium${adminEq}  -  ${fmt(Math.round(r.platformCost))} licence fee  =  ${noNet ? "-" + fmt(Math.abs(Math.round(r.netSaving))) : fmt(Math.round(r.netSaving))} net a year`, M + 4, y + 20.5);
-  y += 26 + 7;
+  doc.text(`${fmt(Math.round(r.agencySaving))} premium${adminEq}  -  ${fmt(Math.round(r.platformCost))} licence fee  =  ${noNet ? "-" + fmt(Math.abs(Math.round(r.netSaving))) : fmt(Math.round(r.netSaving))} net a year`, M + 4, y + 18.5);
+  y += 22 + 6;
 
-  // ── Disclaimer ──
-  doc.setFontSize(7.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...MUTED);
-  doc.text(doc.splitTextToSize("Indicative only. Cash saving = agency premium displaced when improved bank utilisation moves duties off agency; it excludes the cost of the bank shifts themselves (capacity, shown separately). 2026/27 NHS AfC midpoints; conservative, editable assumptions. Agency spend estimated from bank size (FY2025/26 national averages) unless supplied. Pilot-study figures are from 2 sites in a 4-trust programme, anonymised pending client sign-off, and are not solely attributable to the platform.", W), M, y);
+  // ── About these figures (plain-English explainer) ──
+  doc.setDrawColor(...BORDER); doc.setLineWidth(0.2); doc.line(M, y, M + W, y); y += 5;
+  doc.setTextColor(...MUTED); doc.setFont("helvetica", "bold"); doc.setFontSize(8);
+  doc.text("ABOUT THESE FIGURES", M, y); y += 5;
+  const explain = [
+    ["Cash saving", "the agency premium displaced when better bank utilisation moves duties off agency onto your own bank. It excludes the cost of the bank shifts themselves; that is capacity, shown separately, and never added to the saving."],
+    ["Assumptions", "2026/27 NHS Agenda for Change pay midpoints, deliberately conservative and fully editable. The 20% agency premium is the official House of Commons Library average."],
+    ["Agency spend", "estimated from your bank size using FY2025/26 national averages (~£2,700 per registered bank worker) unless you supply your own figure, which makes the result more accurate."],
+  ];
+  doc.setFontSize(7.5);
+  explain.forEach(([term, def]) => {
+    const label = term + " — ";
+    doc.setFont("helvetica", "bold"); doc.setTextColor(...NAVY);
+    doc.text(label, M, y);
+    const lw = doc.getTextWidth(label);
+    doc.setFont("helvetica", "normal"); doc.setTextColor(...MID);
+    const lines = doc.splitTextToSize(def, W - lw);
+    doc.text(lines, M + lw, y);
+    y += lines.length * 3.3 + 1.3;
+  });
+  y += 2;
+
+  // ── Legal disclaimer (separated) ──
+  doc.setDrawColor(...BORDER); doc.setLineWidth(0.2); doc.line(M, y, M + W, y); y += 4.5;
+  doc.setFont("helvetica", "bold"); doc.setFontSize(6.8); doc.setTextColor(...MUTED);
+  doc.text("DISCLAIMER", M, y); y += 3.6;
+  doc.setFont("helvetica", "italic"); doc.setFontSize(6.8); doc.setTextColor(...MUTED);
+  doc.text(doc.splitTextToSize("Indicative only, not a quote or a guarantee. Pilot-study figures are from two sites within a four-trust programme, anonymised pending client sign-off, and are not solely attributable to the platform. Validate against your organisation's own bank and agency rates before use in a business case.", W), M, y);
 
   const orgSlug = lead.org ? "-" + lead.org.trim().replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "") : "";
   doc.save("smart-match-roi-estimate" + orgSlug + ".pdf");
