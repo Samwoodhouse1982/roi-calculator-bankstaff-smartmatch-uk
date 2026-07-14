@@ -45,7 +45,7 @@ export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate, onHo
     </div>}
     <div style={{ padding: `14px ${GUTTER} 36px`, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
       {step > 0 && <button onClick={onBack} style={{ padding: "13px 26px", borderRadius: 14, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: F.body, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>← Back</button>}
-      {step === 0 && onHome && <button onClick={onHome} aria-label="Home" style={{ padding: "12px 22px", borderRadius: 14, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: F.body, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 10 }}><Icon name="home" size={18} stroke={C.textMid} /> Start again</button>}
+      {step === 0 && onHome && <button onClick={onHome} style={{ padding: "12px 22px", borderRadius: 14, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: F.body, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 10 }}><Icon name="home" size={18} stroke={C.textMid} /> Start again</button>}
       <div style={{ flex: 1 }} />
       {step < totalSteps - 2 ? (
         <button onClick={onNext} style={{ padding: "14px 40px", borderRadius: 14, border: "none", background: C.accent, color: "#fff", fontSize: F.h3, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Next →</button>

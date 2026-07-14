@@ -5,6 +5,7 @@ import { StepIndicator, NavButtons, PageTransition } from './components';
 import { BankStep, AgencyStep, TeamStep, StanceStep } from './steps';
 import { ResultsPage } from './results/ResultsPage';
 import { AdminLeads } from './components/LeadCapture';
+import rldatixLogo from './assets/rldatix-logo.png';
 
 /* ────────────────────────────────────────────────────────────────────────
    RLD Smart Match — WEB version of the kiosk calculator.
@@ -22,6 +23,40 @@ const EMBEDDED = (() => { try { return window.self !== window.top; } catch (e) {
 function postToHost(msg) {
   if (!EMBEDDED) return;
   try { window.parent.postMessage(msg, '*'); } catch (e) { /* host gone; ignore */ }
+}
+
+/* Static start screen — the kiosk splash's content (eyebrow, title, intro,
+   start button, RLDatix wordmark) without any of its animation: no particles,
+   no pulse, no radial launch wipe. The white logo asset is rendered through a
+   CSS mask so it takes the brand navy on the light background. */
+function StartScreen({ onStart }) {
+  return (
+    <div style={{ maxWidth: 760, margin: '0 auto', padding: `clamp(48px, 9vh, 110px) ${GUTTER} clamp(36px, 6vh, 70px)`, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ fontSize: F.tiny, fontWeight: 700, letterSpacing: 6, textTransform: 'uppercase', color: C.accentMid, marginBottom: 28 }}>RLDatix | BankStaff+</div>
+      <h1 style={{ fontSize: 'clamp(1.9rem, 5.2vw, 3rem)', fontWeight: 800, lineHeight: 1.15, color: C.text, margin: '0 0 20px', letterSpacing: '-0.5px' }}>
+        Measure your ROI from<br />Smart Match AI
+      </h1>
+      <div style={{ width: 120, height: 5, borderRadius: 3, margin: '0 auto 26px', background: `linear-gradient(90deg, ${C.accentMid}, ${C.seafoam})` }} />
+      <p style={{ fontSize: F.body, color: C.textMid, lineHeight: 1.65, margin: '0 auto 12px', maxWidth: 640 }}>
+        Smart Match, a new BankStaff+ feature, automatically connects your bank workforce with vacant shifts through Loop, to improve fill rates, lower agency usage, and reduce the administrative burden.
+      </p>
+      <p style={{ fontSize: F.body, color: C.text, fontWeight: 600, margin: '0 auto 36px', maxWidth: 640 }}>
+        See how much your organisation could save with Smart Match.
+      </p>
+      <button onClick={onStart} style={{
+        padding: '16px 56px', borderRadius: 999, border: 'none', background: C.accent, color: '#fff',
+        fontSize: F.h3, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: 1,
+      }}>Get started →</button>
+      <div role="img" aria-label="RLDatix" style={{
+        width: 120, height: 24, marginTop: 'clamp(36px, 7vh, 70px)', background: C.navy, opacity: 0.75,
+        WebkitMaskImage: `url(${rldatixLogo})`, maskImage: `url(${rldatixLogo})`,
+        WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
+        WebkitMaskSize: 'contain', maskSize: 'contain',
+        WebkitMaskPosition: 'center', maskPosition: 'center',
+      }} />
+      <div style={{ fontSize: F.tiny, color: C.textMuted, marginTop: 10 }}>Smart Match · Bank-Staff Utilisation ROI</div>
+    </div>
+  );
 }
 
 function CalibratingScreen({ onDone }) {
@@ -84,6 +119,7 @@ const START_DISPLACEMENT = 26;
 const START_BANKPOOL = 2000;
 
 export default function App() {
+  const [showStart, setShowStart] = useState(true);            // static landing screen (kiosk splash, sans animation)
   const [stanceTouched, setStanceTouched] = useState(false);   // no confidence box highlighted until the user picks one
   const [kioskStep, setKioskStep] = useState(0);
   const [calibrating, setCalibrating] = useState(false);
@@ -119,9 +155,9 @@ export default function App() {
     setIncludeAdmin(false); setStanceTouched(false);
   }, []);
 
-  // "Start over": back to step 1 with defaults (no attract splash on the web).
+  // "Start over": back to the start screen with defaults.
   const handleStartOver = useCallback(() => {
-    setKioskStep(0); setCalibrating(false); resetAll();
+    setShowStart(true); setKioskStep(0); setCalibrating(false); resetAll();
   }, [resetAll]);
 
   // #admin-leads reviews locally stored lead-form submissions (ported from the
@@ -157,7 +193,7 @@ export default function App() {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' });
     postToHost({ type: 'smartmatch-roi-scroll-top' });
-  }, [kioskStep, calibrating]);
+  }, [kioskStep, calibrating, showStart]);
 
   const renderStep = () => {
     switch (kioskStep) {
@@ -175,6 +211,10 @@ export default function App() {
 
   if (adminLeads) {
     return <div style={shell}><AdminLeads onClose={() => { window.location.hash = ''; }} /></div>;
+  }
+
+  if (showStart) {
+    return <div style={shell}><StartScreen onStart={() => setShowStart(false)} /></div>;
   }
 
   if (calibrating) {
