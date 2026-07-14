@@ -196,7 +196,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
     <Card style={{ marginBottom: 28, borderLeft: `3px solid ${C.accentMid}` }}>
       <CTitle iconKey="pound" color={C.accentMid}>How the cash saving is worked out</CTitle>
       <div style={{ fontSize: F.small, color: C.text, lineHeight: 1.7, marginBottom: 14 }}>
-        We only ever bank the <strong style={{ color: C.accent }}>gap</strong> between an agency shift and the same shift on your own bank, never the whole agency cost, and only on the shifts you realistically move to bank.
+        The saving is the <strong style={{ color: C.accent }}>extra</strong> an agency charges for a shift, over what the same shift would cost on your own bank: the premium, not the whole agency bill. We only count it on the shifts you can realistically move from agency to your bank.
       </div>
       {(() => {
         const hrs = r.shiftHours || 8;
