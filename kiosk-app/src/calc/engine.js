@@ -50,9 +50,9 @@ export const DISPLACEABLE_SHARE_DEFAULT = 0.80;
    'Moderate' is the customer-facing name (was internally 'Expected'). */
 export function stance(d) {
   const eff = Math.round(d * DISPLACEABLE_SHARE_DEFAULT);   // effective share of ALL agency
-  if (d <= 18) return { key: "Conservative", note: `Assumes ${d}% of the displaceable agency share moves to your own bank — about ${eff}% of all agency, well below the 26% relative fall seen in a pilot study. It holds up without your own organisation's data.` };
-  if (d <= 30) return { key: "Moderate", note: `Assumes ${d}% of the displaceable agency share moves to your own bank — about ${eff}% of all agency, near the 26% relative fall reached at a community trust (agency fill 8.1%→6.0%). Single-site and partly attributable, so best used in a guided conversation.` };
-  return { key: "Optimistic", note: `Assumes ${d}% of the displaceable agency share moves to your own bank — about ${eff}% of all agency, at or beyond the pilot result, so best backed by your own organisation's figures.` };
+  if (d <= 18) return { key: "Conservative", note: `Assumes ${d}% of the displaceable agency share moves to your own bank, about ${eff}% of all agency, well below the 26% relative fall seen in a pilot study. It holds up without your own organisation's data.` };
+  if (d <= 30) return { key: "Moderate", note: `Assumes ${d}% of the displaceable agency share moves to your own bank, about ${eff}% of all agency, near the 26% relative fall reached at a community trust (agency fill 8.1%→6.0%). Single-site and partly attributable, so best used in a guided conversation.` };
+  return { key: "Optimistic", note: `Assumes ${d}% of the displaceable agency share moves to your own bank, about ${eff}% of all agency, at or beyond the pilot result, so best backed by your own organisation's figures.` };
 }
 
 export function calc(inp) {

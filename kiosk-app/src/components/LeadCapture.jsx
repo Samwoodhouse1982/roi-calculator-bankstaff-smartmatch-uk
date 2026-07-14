@@ -150,7 +150,7 @@ export function LeadCapture({ r, leadContext }) {
 
   if (submitted) {
     return <div style={{ marginBottom: 28, padding: "26px 28px", borderRadius: 18, background: `linear-gradient(135deg, ${C.navy} 0%, ${C.navyMid} 100%)`, border: "none", textAlign: "center" }}>
-      <div style={{ fontSize: F.h3, fontWeight: 800, color: C.seafoam, marginBottom: 8 }}>Thanks, {lead.name.split(" ")[0]} — your report has downloaded.</div>
+      <div style={{ fontSize: F.h3, fontWeight: 800, color: C.seafoam, marginBottom: 8 }}>Thanks, {lead.name.split(" ")[0]}, your report has downloaded.</div>
       <div style={{ fontSize: F.small, color: "rgba(255,255,255,0.8)", lineHeight: 1.6 }}>A Smart Match specialist can validate these figures against your organisation's own bank and agency rates. We'll be in touch.</div>
     </div>;
   }
@@ -181,7 +181,7 @@ export function LeadCapture({ r, leadContext }) {
       border: "none", borderRadius: 999, fontSize: F.body, fontWeight: 800,
       cursor: ready && !sending ? "pointer" : "not-allowed", fontFamily: "inherit",
     }}>{sending ? "Generating report..." : "Download PDF report"}</button>
-    <p style={{ fontSize: F.tiny, color: "rgba(255,255,255,0.55)", marginTop: 12, marginBottom: 0 }}>Optional — the calculator is open to everyone. We may reach out to see if we can help with your programme; details are processed in line with the RLDatix privacy notice.</p>
+    <p style={{ fontSize: F.tiny, color: "rgba(255,255,255,0.55)", marginTop: 12, marginBottom: 0 }}>Optional: the calculator is open to everyone. We may reach out to see if we can help with your programme; details are processed in line with the RLDatix privacy notice.</p>
   </div>;
 }
 
@@ -219,7 +219,7 @@ export function AdminLeads({ onClose }) {
       <div>
         <div style={{ fontSize: F.tiny, fontWeight: 700, color: C.accent, letterSpacing: 3, textTransform: "uppercase" }}>Admin · local records</div>
         <h2 style={{ fontSize: F.h2, fontWeight: 800, color: C.text, margin: "4px 0 0" }}>Lead form submissions ({records.length})</h2>
-        <p style={{ fontSize: F.tiny, color: C.textMuted, marginTop: 6 }}>Stored in this browser only, as a backup — HubSpot holds the canonical copies. Remove <code>#admin-leads</code> from the URL to return.</p>
+        <p style={{ fontSize: F.tiny, color: C.textMuted, marginTop: 6 }}>Stored in this browser only, as a backup; HubSpot holds the canonical copies. Remove <code>#admin-leads</code> from the URL to return.</p>
       </div>
       <div style={{ display: "flex", gap: 10 }}>
         <button onClick={exportCSV} disabled={!records.length} style={{ padding: "10px 20px", borderRadius: 10, border: "none", background: records.length ? C.accent : C.border, color: records.length ? "#fff" : C.textMuted, fontSize: F.tiny, fontWeight: 700, cursor: records.length ? "pointer" : "default", fontFamily: "inherit" }}>Export CSV</button>

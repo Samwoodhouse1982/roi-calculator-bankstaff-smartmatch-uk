@@ -67,9 +67,9 @@ function Row({ label, value, accent }) {
   </div>;
 }
 
-// One of the KPI tiles.
+// One of the KPI tiles (hover lift via the .kpi-tile class in the page styles).
 function KpiTile({ label, value, sub, iconKey, tip }) {
-  return <div style={{ padding: "24px 22px", background: C.surface, borderRadius: 18, border: `1px solid ${C.accent}25` }}>
+  return <div className="kpi-tile" style={{ padding: "24px 22px", background: C.surface, borderRadius: 18, border: `1px solid ${C.accent}25` }}>
     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
       <Icon name={iconKey} size={26} stroke={C.accent} />
       <span style={{ fontSize: F.tiny, fontWeight: 600, color: C.textMuted }}>{label}</span>
@@ -92,7 +92,13 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
 
   return <div style={{ animation: "rfade .5s ease-out" }}>
     <style>{`@keyframes rfade { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
-      @keyframes glow { 0%,100% { text-shadow: 0 0 26px rgba(52,222,194,0.35); } 50% { text-shadow: 0 0 46px rgba(52,222,194,0.6); } }`}</style>
+      @keyframes glow { 0%,100% { text-shadow: 0 0 26px rgba(52,222,194,0.35); } 50% { text-shadow: 0 0 46px rgba(52,222,194,0.6); } }
+      .kpi-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:14px; }
+      .kpi-grid-4 { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-bottom:14px; }
+      @media (max-width:640px) { .kpi-grid-3, .kpi-grid-4 { grid-template-columns:1fr; } }
+      .kpi-tile { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+      .kpi-tile:hover { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(15,65,70,0.14); border-color: ${C.seafoam}; }
+      @media (prefers-reduced-motion: reduce) { .kpi-tile, .kpi-tile:hover { transition:none; transform:none; } }`}</style>
 
     {/* Eyebrow */}
     <div style={{ textAlign: "center", padding: "14px 0 4px" }}>
@@ -176,7 +182,8 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         { iconKey: "calendar", label: "Payback", value: noNet ? "n/a" : fmtPayback(r.paybackMonths), sub: "to recover the annual licence fee" },
         { iconKey: "check", label: "Return", value: (r.roiMultiple == null || noNet) ? "n/a" : <>{r.implausibleRoi ? "⚠ " : ""}<AnimVal value={r.roiMultiple} format={fmtMultiple} /></>, sub: "net saving ÷ licence fee, per year" },
       ];
-      return <div style={{ ...fluidGrid(260), gap: 16, marginBottom: 14 }}>
+      // 4 tiles (admin saving on) → 2×2; 3 tiles → one row of three. Stacks on phones.
+      return <div className={tiles.length === 4 ? "kpi-grid-4" : "kpi-grid-3"}>
         {tiles.map((t, i) => <KpiTile key={i} iconKey={t.iconKey} label={t.label} value={t.value} sub={t.sub} tip={t.tip} />)}
       </div>;
     })()}
@@ -206,7 +213,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         const grossR = Math.round(r.agencySaving), adminR = Math.round(r.adminSaving || 0), licR = Math.round(r.platformCost), netR = grossR + adminR - licR;
         const rate = (shift, hr) => <>{fmt(shift)}<span style={{ fontSize: F.tiny, color: C.textMuted, fontWeight: 400 }}> /shift · {money2(hr)}/hr</span></>;
         return <>
-          <Row label={<span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Your own bank (blended rate, all-in) <InfoTip text={`Already includes a ${Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension) on top of raw Agenda for Change pay — below the full ~30% NHS rate because bank-only workers often opt out of the pension. This is the true cost of a bank shift; the saving is the gap between it and the agency rate, so on-costs are counted once, never twice.`} /></span>} value={rate(r.bankShiftCost, bankHr)} />
+          <Row label={<span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Your own bank (blended rate, all-in) <InfoTip text={`Already includes a ${Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension) on top of raw Agenda for Change pay, below the full ~30% NHS rate because bank-only workers often opt out of the pension. This is the true cost of a bank shift; the saving is the gap between it and the agency rate, so on-costs are counted once, never twice.`} /></span>} value={rate(r.bankShiftCost, bankHr)} />
           <Row label={r.perGroupPremium ? "Agency, same shift (your per-group premiums)" : `Agency, same shift (at ${r.premium}% premium)`} value={rate(r.agencyShiftCost, agencyHr)} />
           <Row label="Premium displaced = the saving" value={rate(gapShift, gapHr)} accent />
           <div style={{ marginTop: 14, fontSize: F.small, color: C.textMid, lineHeight: 1.6 }}>
@@ -218,7 +225,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         </>;
       })()}
       <div style={{ marginTop: 14, fontSize: F.tiny, color: C.textMuted, fontStyle: "italic", lineHeight: 1.6 }}>
-        Bank rate = 2026/27 AfC blended midpoint, already including a {Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension — below the full ~30% NHS rate because bank-only workers often opt out of the pension), so on-costs are counted once and never added on top. Premium defaults to the official ~20% House of Commons Library average, deliberately conservative and contested at shift level (nursing ~35–50%, medics ~80–120%).{r.agencySpend != null ? <> Agency spend is estimated from your bank size using FY2025/26 national averages (~{fmt(AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP)} per registered bank worker), which anchors the saving.</> : ""}
+        Bank rate = 2026/27 AfC blended midpoint, already including a {Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension, below the full ~30% NHS rate because bank-only workers often opt out of the pension), so on-costs are counted once and never added on top. Premium defaults to the official ~20% House of Commons Library average, deliberately conservative and contested at shift level (nursing ~35–50%, medics ~80–120%).{r.agencySpend != null ? <> Agency spend is estimated from your bank size using FY2025/26 national averages (~{fmt(AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP)} per registered bank worker), which anchors the saving.</> : ""}
       </div>
     </Card>
 
