@@ -197,16 +197,17 @@ async function generatePDF(r, lead, ctx) {
     doc.roundedRect(x, y, colW, colH, 2.5, 2.5, "FD");
     doc.setTextColor(...NAVY); doc.setFont("helvetica", "bold"); doc.setFontSize(9.5);
     doc.text(title, x + 4, y + 7);
-    let ry = y + 14;
+    let ry = y + 13;
     doc.setFontSize(8);
     rows.forEach(([k, v]) => {
       doc.setTextColor(...MID); doc.setFont("helvetica", "normal");
       doc.text(k, x + 4, ry);
       doc.setTextColor(...TEXT); doc.setFont("helvetica", "bold");
       doc.text(String(v), x + colW - 4, ry, { align: "right" });
-      ry += 5.6;
+      ry += 5.1;
     });
-    if (note) { doc.setTextColor(...MUTED); doc.setFont("helvetica", "italic"); doc.setFontSize(6.5); doc.text(doc.splitTextToSize(note, colW - 8), x + 4, ry + 1); }
+    // Anchor the note a fixed distance above the box floor so it always sits inside.
+    if (note) { doc.setTextColor(...MUTED); doc.setFont("helvetica", "italic"); doc.setFontSize(6.5); doc.text(note, x + 4, y + colH - 3.5); }
   };
   colBox(M, "Your inputs", [
     ["Registered bank workers", fmtNum(ctx.bankPool)],
@@ -221,7 +222,7 @@ async function generatePDF(r, lead, ctx) {
     ["Agency reliance", (Math.round(r.fillNow * 10) / 10) + "% down to " + (Math.round(r.fillAfter * 10) / 10) + "%"],
     ["Est. annual agency spend (anchor)", fmt(r.agencySpend)],
     ["BankStaff+ licence fee", fmt(r.platformCost) + "/yr"],
-  ], "Capacity is coverage, not cash; it is never added to the saving.");
+  ], "Capacity is coverage, not cash, never added to the saving.");
   y += colH + 5;
 
   // ── How the saving is worked out ──
