@@ -95,10 +95,11 @@ export function LeadCapture({ r, leadContext }) {
   const [sending, setSending] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  // Light fields on the navy card: near-white so they read as inputs, dark text.
   const inputStyle = {
     flex: "1 1 200px", minWidth: 150, padding: "11px 14px", borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.25)", background: "rgba(255,255,255,0.1)",
-    color: "#fff", fontSize: F.small, outline: "none", fontFamily: "inherit",
+    border: "1px solid rgba(255,255,255,0.45)", background: "rgba(255,255,255,0.92)",
+    color: C.text, fontSize: F.small, outline: "none", fontFamily: "inherit",
   };
 
   const submitLead = useCallback(async () => {
@@ -170,7 +171,7 @@ export function LeadCapture({ r, leadContext }) {
     </div>
     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
       <input type="text" placeholder="Organisation" aria-label="Organisation" autoComplete="organization" value={lead.org} onChange={e => setLead(p => ({ ...p, org: e.target.value }))} style={inputStyle} />
-      <select aria-label="Your role" value={lead.role} onChange={e => setLead(p => ({ ...p, role: e.target.value }))} style={{ ...inputStyle, background: "rgba(255,255,255,0.15)", color: lead.role ? "#fff" : "rgba(255,255,255,0.5)" }}>
+      <select aria-label="Your role" value={lead.role} onChange={e => setLead(p => ({ ...p, role: e.target.value }))} style={{ ...inputStyle, color: lead.role ? C.text : C.textMuted }}>
         <option value="" style={{ color: C.text }}>Your role</option>
         {ROLE_OPTIONS.map(o => <option key={o} value={o} style={{ color: C.text }}>{o}</option>)}
       </select>
