@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { C, F, fmt, fmtK, fmtNum } from '../theme';
 import { Icon } from './Icons';
+import { calc, stance } from '../calc/engine';
 import rldatixLogo from '../assets/rldatix-logo.png';
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -133,6 +134,49 @@ async function generatePDF(r, lead, ctx) {
     doc.text(doc.splitTextToSize(sub, kW - 6), x + 3, y + 15.5);
   });
   y += kH + 7;
+
+  // ── Confidence scenarios: every stance modelled, the chosen one flagged ──
+  // Each tile recomputes the whole model at that confidence level (same bank
+  // size, fill rate, team and admin choice); the one matching the visitor's
+  // selection in the flow is highlighted.
+  const chosenKey = stance(ctx.displacement).key;
+  const scenarios = [["Conservative", 13], ["Moderate", 26], ["Optimistic", 50]].map(([key, d]) => {
+    const rr = calc({ bankPool: ctx.bankPool, agencyFillRate: ctx.agencyFillRate, numManagers: ctx.numManagers, displacement: d, includeAdmin: ctx.includeAdmin, platformCost: r.platformCost });
+    return { key, d, rr, selected: key === chosenKey };
+  });
+  doc.setTextColor(...MUTED); doc.setFont("helvetica", "bold"); doc.setFontSize(8.5);
+  doc.text("SAVING BY CONFIDENCE LEVEL", M, y); y += 3;
+  const sW = (W - 8) / 3, sH = 33;
+  scenarios.forEach((s, i) => {
+    const x = M + i * (sW + 4);
+    if (s.selected) { doc.setFillColor(...PALE_SEA); doc.setDrawColor(...TEAL); doc.setLineWidth(0.7); }
+    else { doc.setFillColor(255, 255, 255); doc.setDrawColor(...BORDER); doc.setLineWidth(0.2); }
+    doc.roundedRect(x, y, sW, sH, 2.5, 2.5, "FD");
+    doc.setLineWidth(0.2);
+    // header: stance name + % (+ SELECTED pill)
+    doc.setTextColor(...NAVY); doc.setFont("helvetica", "bold"); doc.setFontSize(9.5);
+    doc.text(s.key, x + 4, y + 8);
+    doc.setTextColor(...MID); doc.setFont("helvetica", "normal"); doc.setFontSize(7.5);
+    doc.text(s.d + "% to bank", x + 4, y + 12.5);
+    if (s.selected) {
+      doc.setFillColor(...TEAL); doc.roundedRect(x + sW - 27, y + 3.5, 23, 5.5, 2.75, 2.75, "F");
+      doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(6);
+      doc.text("YOUR CHOICE", x + sW - 15.5, y + 7.2, { align: "center" });
+    }
+    // net saving headline
+    const net = s.rr.netSaving;
+    doc.setTextColor(...TEAL); doc.setFont("helvetica", "bold"); doc.setFontSize(15);
+    doc.text(net > 0 ? fmtK(net) : "No net saving", x + 4, y + 21.5);
+    doc.setTextColor(...MID); doc.setFont("helvetica", "normal"); doc.setFontSize(6.5);
+    doc.text("net annual cash saving", x + 4, y + 25.5);
+    // two supporting stats
+    doc.setDrawColor(...BORDER); doc.setLineWidth(0.2); doc.line(x + 4, y + 27.5, x + sW - 4, y + 27.5);
+    doc.setTextColor(...MID); doc.setFontSize(6.8);
+    doc.text("Premium avoided", x + 4, y + 31);
+    doc.setTextColor(...NAVY); doc.setFont("helvetica", "bold");
+    doc.text(fmtK(s.rr.agencySaving), x + sW - 4, y + 31, { align: "right" });
+  });
+  y += sH + 7;
 
   // ── Two columns: Your inputs | Capacity and wider value ──
   const colW = (W - 4) / 2, colH = 46;
