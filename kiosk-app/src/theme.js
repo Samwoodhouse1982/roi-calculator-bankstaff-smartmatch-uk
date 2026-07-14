@@ -3,7 +3,7 @@
 // suite so the calculator sits comfortably on rldatix.com. Colours only: the
 // kiosk build's dark palette lives on the smartmatch-touchscreen branch.
 export const C = {
-  bg: "#EEF6F4", bgGrad1: "#E8F2EF", bgGrad2: "#F5FAF8",
+  bg: "#EEF7F2", bgGrad1: "#E8F2EF", bgGrad2: "#F5FAF8",
   surface: "#FFFFFF", surface2: "#F0F7F5", border: "#D4E0DD", borderLight: "#E8EFEC",
   text: "#0F4146", textMid: "#3D5A5E", textMuted: "#5F787C",
   accent: "#0F4146", accentMid: "#1A8A7A", accentSoft: "#E8FAF6", accentPale: "#F3FBF9",
