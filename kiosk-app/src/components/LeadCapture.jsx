@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { C, F, fmt, fmtK, fmtNum } from '../theme';
 import { Icon } from './Icons';
+import rldatixLogo from '../assets/rldatix-logo.png';
 
 /* ────────────────────────────────────────────────────────────────────────
    Lead capture — ported from the RLDatix EPR-migration/archive (Galen) ROI
@@ -46,46 +47,144 @@ function saveSubmission(record) {
   } catch (e) { console.warn("Local backup failed:", e); }
 }
 
-// One-page PDF summary of the results (jsPDF, bundled — no CDN dependency).
+// Fetch the bundled white RLDatix wordmark as a data URL for jsPDF (best-effort).
+async function logoDataUrl() {
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = rldatixLogo; });
+    // Downscale before embedding: jsPDF stores PNGs as raw pixels, so the
+    // full-size asset would bloat the file by megabytes.
+    const w = 400, h = Math.round(w * img.height / img.width);
+    const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+    cv.getContext("2d").drawImage(img, 0, 0, w, h);
+    return cv.toDataURL("image/png");
+  } catch (e) { return null; }
+}
+
+/* One-page PDF summary (jsPDF, bundled — no CDN dependency).
+   Layout mirrors the report page: navy header with the white RLDatix wordmark
+   top-right, two headline callout boxes, a KPI row (incl. the admin-time value,
+   marked in/out of the cash total), then Your inputs + Capacity side by side,
+   the worked-out equation strip, and the disclaimer. RLDatix light palette. */
 async function generatePDF(r, lead, ctx) {
   const { jsPDF } = await import("jspdf");
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
-  let y = 18;
-  doc.setFillColor(15, 65, 70); doc.rect(0, 0, 210, 30, "F");
-  doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(16);
-  doc.text("Smart Match: Workforce ROI Estimate", 14, 16);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(52, 222, 194);
-  doc.text("RLDatix BankStaff+ · indicative · " + new Date().toLocaleDateString("en-GB") + (lead.org ? " · " + lead.org : ""), 14, 23);
-  y = 40;
-  doc.setTextColor(15, 65, 70); doc.setFont("helvetica", "bold"); doc.setFontSize(11);
-  doc.text("Headline", 14, y); y += 6;
-  doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+  const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
+  const NAVY = [15, 65, 70], TEAL = [26, 138, 122], SEAFOAM = [52, 222, 194],
+        PALE = [238, 246, 244], PALE_SEA = [232, 250, 246], BORDER = [212, 224, 221],
+        TEXT = [15, 65, 70], MID = [61, 90, 94], MUTED = [120, 130, 150];
+  const M = 14, W = 210 - 2 * M;   // margins / usable width
   const noNet = r.netSaving <= 0;
-  const payback = m => m == null ? "n/a" : Math.round(m * 365 / 12).toLocaleString("en-GB") + " days";
-  [
-    ["Potential annual cash saving (net of licence)", noNet ? "None at these inputs (licence fee exceeds the modelled premium)" : fmt(r.netSaving)],
-    ["Admin time released / week", fmtNum(r.timeSavedWeek) + " hours"],
-    ["Agency premium avoided (gross)", fmt(r.agencySaving)],
-    ["Admin time saving (cash)", r.adminSaving > 0 ? fmt(r.adminSaving) : "not included"],
-    ["Payback (licence / gross)", noNet ? "n/a" : payback(r.paybackMonths)],
-    ["Return (net / licence fee)", (noNet || r.roiMultiple == null) ? "n/a" : (Math.round(r.roiMultiple * 10) / 10) + "x"],
-    ["Estimated annual agency spend (anchor)", fmt(r.agencySpend)],
-    ["BankStaff+ licence fee", fmt(r.platformCost) + "/yr"],
-    ["Shifts moved from agency to bank / year", fmtNum(r.displaced)],
-    ["Agency reliance", (Math.round(r.fillNow * 10) / 10) + "% -> " + (Math.round(r.fillAfter * 10) / 10) + "%"],
-  ].forEach(([k, v]) => { doc.text(k, 14, y); doc.text(String(v), 196, y, { align: "right" }); y += 6; });
-  y += 4;
-  doc.setFont("helvetica", "bold"); doc.text("Your inputs", 14, y); y += 6; doc.setFont("helvetica", "normal");
-  [
+  const paybackDays = m => m == null ? "n/a" : Math.round(m * 365 / 12).toLocaleString("en-GB") + " days";
+  // Admin-time value is always reported: in the cash total when toggled on,
+  // otherwise as its own separately-shown figure.
+  const adminValue = ctx.includeAdmin ? r.adminSaving : ctx.numManagers * 1 * 225 * 18;
+
+  // ── Header band ──
+  doc.setFillColor(...NAVY); doc.rect(0, 0, 210, 34, "F");
+  doc.setFillColor(...SEAFOAM); doc.rect(0, 34, 210, 1.4, "F");
+  doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(17);
+  doc.text("Smart Match: Workforce ROI Estimate", M, 16);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...SEAFOAM);
+  doc.text("RLDatix BankStaff+ · indicative · " + new Date().toLocaleDateString("en-GB") + (lead.org ? " · " + lead.org : ""), M, 24);
+  const logo = await logoDataUrl();
+  if (logo) { try { doc.addImage(logo, "PNG", 210 - M - 38, 9, 38, 7.3); } catch (e) { /* header still fine without it */ } }
+
+  // ── Headline callouts ──
+  let y = 42;
+  doc.setTextColor(...MUTED); doc.setFont("helvetica", "bold"); doc.setFontSize(8.5);
+  doc.text("YOUR ESTIMATED ANNUAL IMPACT", M, y); y += 3;
+  const hbW = (W - 4) / 2, hbH = 28;
+  const headlineBox = (x, big, label, sub) => {
+    doc.setFillColor(...PALE_SEA); doc.setDrawColor(...TEAL);
+    doc.roundedRect(x, y, hbW, hbH, 2.5, 2.5, "FD");
+    doc.setTextColor(...TEAL); doc.setFont("helvetica", "bold"); doc.setFontSize(21);
+    doc.text(big, x + hbW / 2, y + 13, { align: "center" });
+    doc.setTextColor(...TEXT); doc.setFontSize(9.5);
+    doc.text(label, x + hbW / 2, y + 20, { align: "center" });
+    doc.setTextColor(...MID); doc.setFont("helvetica", "normal"); doc.setFontSize(7.5);
+    doc.text(sub, x + hbW / 2, y + 24.5, { align: "center" });
+  };
+  headlineBox(M,
+    noNet ? "No net cash saving" : fmt(Math.round(r.netSaving)),
+    noNet ? "at this scale" : "Potential annual cash saving",
+    noNet ? "licence fee exceeds the modelled premium" : "after the " + fmt(r.platformCost) + "/yr licence fee");
+  headlineBox(M + hbW + 4,
+    fmtNum(r.timeSavedWeek) + " hrs",
+    "released each week",
+    "temporary staffing team time given back");
+  y += hbH + 6;
+
+  // ── KPI row ──
+  const kW = (W - 9) / 4, kH = 21;
+  const kpis = [
+    ["AGENCY PREMIUM AVOIDED", fmt(Math.round(r.agencySaving)), "agency vs bank gap, excluding licence fee"],
+    ["ADMIN TIME VALUE", fmt(Math.round(adminValue)), ctx.includeAdmin ? "included in the cash total" : "shown separately, not in the cash total"],
+    ["PAYBACK", noNet ? "n/a" : paybackDays(r.paybackMonths), "to recover the annual licence fee"],
+    ["RETURN", (noNet || r.roiMultiple == null) ? "n/a" : (Math.round(r.roiMultiple * 10) / 10) + "x", "net saving ÷ licence fee, per year"],
+  ];
+  kpis.forEach(([label, val, sub], i) => {
+    const x = M + i * (kW + 3);
+    doc.setFillColor(255, 255, 255); doc.setDrawColor(...BORDER);
+    doc.roundedRect(x, y, kW, kH, 2, 2, "FD");
+    doc.setTextColor(...MUTED); doc.setFont("helvetica", "bold"); doc.setFontSize(6.3);
+    doc.text(label, x + 3, y + 5);
+    doc.setTextColor(...NAVY); doc.setFontSize(12.5);
+    doc.text(String(val), x + 3, y + 11.5);
+    doc.setTextColor(...MID); doc.setFont("helvetica", "normal"); doc.setFontSize(6.2);
+    doc.text(doc.splitTextToSize(sub, kW - 6), x + 3, y + 15.5);
+  });
+  y += kH + 7;
+
+  // ── Two columns: Your inputs | Capacity and wider value ──
+  const colW = (W - 4) / 2, colH = 46;
+  const colBox = (x, title, rows, note) => {
+    doc.setFillColor(...PALE); doc.setDrawColor(...BORDER);
+    doc.roundedRect(x, y, colW, colH, 2.5, 2.5, "FD");
+    doc.setTextColor(...NAVY); doc.setFont("helvetica", "bold"); doc.setFontSize(9.5);
+    doc.text(title, x + 4, y + 7);
+    let ry = y + 14;
+    doc.setFontSize(8);
+    rows.forEach(([k, v]) => {
+      doc.setTextColor(...MID); doc.setFont("helvetica", "normal");
+      doc.text(k, x + 4, ry);
+      doc.setTextColor(...TEXT); doc.setFont("helvetica", "bold");
+      doc.text(String(v), x + colW - 4, ry, { align: "right" });
+      ry += 5.6;
+    });
+    if (note) { doc.setTextColor(...MUTED); doc.setFont("helvetica", "italic"); doc.setFontSize(6.5); doc.text(doc.splitTextToSize(note, colW - 8), x + 4, ry + 1); }
+  };
+  colBox(M, "Your inputs", [
     ["Registered bank workers", fmtNum(ctx.bankPool)],
     ["Current agency fill rate", ctx.agencyFillRate + "%"],
     ["Temporary staffing team", fmtNum(ctx.numManagers)],
     ["Confidence level", ctx.displacement + "% (" + ctx.stance + ")"],
-    ["Admin time in cash saving", ctx.includeAdmin ? "included" : "shown separately (not in cash total)"],
-  ].forEach(([k, v]) => { doc.text(k, 14, y); doc.text(String(v), 196, y, { align: "right" }); y += 6; });
-  y += 6;
-  doc.setFontSize(8); doc.setTextColor(120, 130, 150);
-  doc.text(doc.splitTextToSize("Indicative only. Cash saving = agency premium displaced when improved bank utilisation moves duties off agency; it excludes the cost of the bank shifts themselves (capacity, shown separately). 2026/27 NHS AfC midpoints; conservative, editable assumptions. Agency spend estimated from bank size (FY2025/26 national averages) unless supplied. Pilot-study figures are from 2 sites in a 4-trust programme, anonymised pending client sign-off, and are not solely attributable to the platform.", 182), 14, y);
+    ["Admin time in cash total", ctx.includeAdmin ? "included" : "shown separately"],
+  ]);
+  colBox(M + colW + 4, "Capacity and wider value", [
+    ["Shifts moved to bank / year", fmtNum(r.displaced)],
+    ["Bank backfill cost", fmt(Math.round(r.capacityValue))],
+    ["Agency reliance", (Math.round(r.fillNow * 10) / 10) + "% down to " + (Math.round(r.fillAfter * 10) / 10) + "%"],
+    ["Est. annual agency spend (anchor)", fmt(r.agencySpend)],
+    ["BankStaff+ licence fee", fmt(r.platformCost) + "/yr"],
+  ], "Capacity is coverage, not cash; it is never added to the saving.");
+  y += colH + 7;
+
+  // ── How the saving is worked out ──
+  doc.setFillColor(...PALE_SEA); doc.setDrawColor(...TEAL);
+  doc.roundedRect(M, y, W, 26, 2.5, 2.5, "FD");
+  doc.setTextColor(...NAVY); doc.setFont("helvetica", "bold"); doc.setFontSize(9.5);
+  doc.text("How the cash saving is worked out", M + 4, y + 7);
+  doc.setFontSize(8); doc.setFont("helvetica", "normal"); doc.setTextColor(...MID);
+  const gap = r.agencyShiftCost - r.bankShiftCost;
+  doc.text(`Your own bank ${fmt(Math.round(r.bankShiftCost))}/shift  ·  agency, same shift ${fmt(Math.round(r.agencyShiftCost))}/shift  ·  premium displaced ${fmt(Math.round(gap))}/shift`, M + 4, y + 13.5);
+  doc.setFont("helvetica", "bold"); doc.setTextColor(...TEAL);
+  const adminEq = ctx.includeAdmin && r.adminSaving > 0 ? ` + ${fmt(Math.round(r.adminSaving))} admin time` : "";
+  doc.text(`${fmt(Math.round(r.agencySaving))} premium${adminEq}  -  ${fmt(Math.round(r.platformCost))} licence fee  =  ${noNet ? "-" + fmt(Math.abs(Math.round(r.netSaving))) : fmt(Math.round(r.netSaving))} net a year`, M + 4, y + 20.5);
+  y += 26 + 7;
+
+  // ── Disclaimer ──
+  doc.setFontSize(7.5); doc.setFont("helvetica", "normal"); doc.setTextColor(...MUTED);
+  doc.text(doc.splitTextToSize("Indicative only. Cash saving = agency premium displaced when improved bank utilisation moves duties off agency; it excludes the cost of the bank shifts themselves (capacity, shown separately). 2026/27 NHS AfC midpoints; conservative, editable assumptions. Agency spend estimated from bank size (FY2025/26 national averages) unless supplied. Pilot-study figures are from 2 sites in a 4-trust programme, anonymised pending client sign-off, and are not solely attributable to the platform.", W), M, y);
+
   const orgSlug = lead.org ? "-" + lead.org.trim().replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "") : "";
   doc.save("smart-match-roi-estimate" + orgSlug + ".pdf");
 }
