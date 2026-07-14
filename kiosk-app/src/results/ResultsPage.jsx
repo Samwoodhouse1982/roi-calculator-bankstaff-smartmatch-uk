@@ -154,7 +154,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
 
     {/* Guardrail */}
     {r.exceedsSpend && <div style={{ marginBottom: 14, padding: "14px 20px", background: C.accentSoft, border: `1px solid ${C.accent}`, borderRadius: 14, fontSize: F.small, color: C.text, lineHeight: 1.5 }}>
-      <strong>Check your inputs.</strong> The modelled saving exceeds your estimated agency spend. Try a lower premium or a lower confidence level.
+      <strong>Check your inputs.</strong> The modelled saving exceeds your agency spend. Try a lower premium or a lower confidence level.
     </div>}
     {r.adminOnly && !noNet && <div style={{ marginBottom: 14, padding: "14px 20px", background: C.accentSoft, border: `1px solid ${C.accent}`, borderRadius: 14, fontSize: F.small, color: C.text, lineHeight: 1.5 }}>
       <strong>Admin time only.</strong> No agency premium saving is modelled (agency spend is zero), so this figure is the admin-time value on its own.
@@ -219,7 +219,9 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         </>;
       })()}
       <div style={{ marginTop: 14, fontSize: F.tiny, color: C.textMuted, fontStyle: "italic", lineHeight: 1.6 }}>
-        Bank rate = 2026/27 AfC blended midpoint, already including a {Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension, below the full ~30% NHS rate because bank-only workers often opt out of the pension), so on-costs are counted once and never added on top. Premium defaults to the official ~20% House of Commons Library average, deliberately conservative and contested at shift level (nursing ~35–50%, medics ~80–120%).{r.agencySpend != null ? <> Agency spend is estimated from your bank size using FY2025/26 national averages (~{fmt(AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP)} per registered bank worker), which anchors the saving.</> : ""}
+        Bank rate = 2026/27 AfC blended midpoint, already including a {Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension, below the full ~30% NHS rate because bank-only workers often opt out of the pension), so on-costs are counted once and never added on top. Premium defaults to the official ~20% House of Commons Library average, deliberately conservative and contested at shift level (nursing ~35–50%, medics ~80–120%).{r.agencySpend != null ? (leadContext && leadContext.agencySpend != null
+          ? <> Agency spend is the annual figure you supplied, which anchors the saving.</>
+          : <> Agency spend is estimated from your bank size using FY2025/26 national averages (~{fmt(AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP)} per registered bank worker), which anchors the saving.</>) : ""}
       </div>
     </Card>
 

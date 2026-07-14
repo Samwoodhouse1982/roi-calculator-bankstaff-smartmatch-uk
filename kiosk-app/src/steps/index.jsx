@@ -1,7 +1,7 @@
 import React from 'react';
 import { C, F, fmt, fmtNum } from '../theme';
-import { Card, SectionTitle, TouchSlider, Stepper, InfoTip, DecisionRow } from '../components';
-import { platformCostFor, stance, SIMPLE_BLENDED_BANK_PAY, AFC_DIVISOR, BANK_ONCOST } from '../calc/engine';
+import { Card, SectionTitle, TouchSlider, Stepper, InfoTip, DecisionRow, ToggleRow } from '../components';
+import { platformCostFor, stance, SIMPLE_BLENDED_BANK_PAY, AFC_DIVISOR, BANK_ONCOST, AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP } from '../calc/engine';
 
 /* ────────────────────────────────────────────────────────────────────────
    Smart Match: three simple inputs (plus the modelling-stance slider that
@@ -49,8 +49,11 @@ export function BankStep({ bankPool, setBankPool }) {
   </div>;
 }
 
-// STEP 1. Agency: current agency fill rate %
-export function AgencyStep({ agencyFillRate, setAgencyFillRate }) {
+// STEP 1. Agency: current agency fill rate %, plus an optional actual-agency-spend override.
+export function AgencyStep({ agencyFillRate, setAgencyFillRate, bankPool, agencySpend, setAgencySpend }) {
+  const estimate = Math.round(bankPool * AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP);
+  const known = agencySpend != null;
+  const fmtM = v => v >= 1000000 ? `£${(v / 1000000).toFixed(v >= 10000000 ? 0 : 1)}m` : fmt(v);
   return <div>
     <SectionTitle number={2}>Agency reliance</SectionTitle>
     <Lead>What share of your temporary duties currently goes to agency rather than your own bank?</Lead>
@@ -66,6 +69,40 @@ export function AgencyStep({ agencyFillRate, setAgencyFillRate }) {
         tip="The proportion of temporary shifts filled by agency staff. This drives the agency-reliance reduction shown on your results (the cash saving is anchored to your agency spend, premium and confidence level, not to this rate). Defaults to 8.3%, the national average drawn from RLDatix data."
       />
       <Helper>The default 8.3% is the national average; set your own if you know it.</Helper>
+
+      {/* Optional: replace the bank-size estimate of agency spend with the real figure. */}
+      <div style={{ marginTop: 24, padding: "18px 22px", background: C.surface2, borderRadius: 16, border: `1px solid ${C.accent}55` }}>
+        <ToggleRow
+          on={known}
+          onToggle={() => setAgencySpend(known ? null : estimate)}
+          label="I know our annual agency spend"
+          tip="Your total annual agency staffing spend across the roles your bank register covers (all staff groups, whole register, not bank-only). This is the anchor for the cash saving, so a real figure makes the result far more accurate. Leave off and we estimate it from your bank size at ~£2,700 per registered worker."
+        />
+        {!known ? (
+          <Helper>We currently estimate <strong style={{ color: C.accent }}>{fmtM(estimate)}/yr</strong> from your bank size. Toggle on to use your own figure.</Helper>
+        ) : (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: F.small, fontWeight: 600, color: C.textMid, marginBottom: 8 }}>Your total annual agency spend</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: F.h3, fontWeight: 700, color: C.accent }}>£</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  step={100000}
+                  value={agencySpend}
+                  onChange={e => setAgencySpend(e.target.value === "" ? 0 : Math.max(0, Math.round(Number(e.target.value)) || 0))}
+                  aria-label="Your total annual agency spend in pounds"
+                  style={{ width: 200, padding: "12px 14px", fontSize: F.body, fontWeight: 700, borderRadius: 12, border: `1px solid ${C.border}`, fontFamily: "inherit", color: C.text, background: "#fff" }}
+                />
+              </div>
+              <span style={{ fontSize: F.small, color: C.textMuted }}>= {fmtM(agencySpend)}/yr</span>
+            </div>
+            <Helper>This figure anchors your cash saving; the fill rate above only shapes the reliance narrative. Estimate at your bank size was {fmtM(estimate)}/yr.</Helper>
+          </div>
+        )}
+      </div>
     </Card>
   </div>;
 }

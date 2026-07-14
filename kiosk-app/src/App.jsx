@@ -131,11 +131,13 @@ export default function App() {
   const [numManagers, setNumManagers] = useState(DEFAULTS.numManagers);
   const [displacement, setDisplacement] = useState(START_DISPLACEMENT);
   const [includeAdmin, setIncludeAdmin] = useState(null);  // temporary-staffing-team time in the cash total; null = undecided (a required Yes/No before leaving Step 3)
+  const [agencySpend, setAgencySpend] = useState(null);    // optional actual annual agency spend; null = use the £2,700/worker estimate
 
-  // Agency spend is not asked for (casual web visitors won't know it); the engine
-  // derives it from bank size (£2,700/registered worker) as its fallback.
-  const rQuick = useMemo(() => calc({ bankPool, agencyFillRate, numManagers, displacement, includeAdmin, platformCost: platformCostFor(bankPool) }),
-    [bankPool, agencyFillRate, numManagers, displacement, includeAdmin]);
+  // Agency spend is not required (casual web visitors won't know it); when left blank
+  // the engine derives it from bank size (£2,700/registered worker). Step 2 offers an
+  // optional override for users who know their figure, which then anchors the cash.
+  const rQuick = useMemo(() => calc({ bankPool, agencyFillRate, numManagers, displacement, includeAdmin, agencySpend, platformCost: platformCostFor(bankPool) }),
+    [bankPool, agencyFillRate, numManagers, displacement, includeAdmin, agencySpend]);
   const r = rQuick;
   const chooseStance = useCallback((v) => { setDisplacement(v); setStanceTouched(true); }, []);
   const steps = KIOSK_STEPS;
@@ -152,7 +154,7 @@ export default function App() {
   const resetAll = useCallback(() => {
     setBankPool(START_BANKPOOL); setAgencyFillRate(DEFAULTS.agencyFillRate);
     setNumManagers(DEFAULTS.numManagers); setDisplacement(START_DISPLACEMENT);
-    setIncludeAdmin(null); setStanceTouched(false);
+    setIncludeAdmin(null); setAgencySpend(null); setStanceTouched(false);
   }, []);
 
   // "Start over": back to the start screen with defaults.
@@ -198,11 +200,11 @@ export default function App() {
   const renderStep = () => {
     switch (kioskStep) {
       case 0: return <BankStep bankPool={bankPool} setBankPool={setBankPool} />;
-      case 1: return <AgencyStep agencyFillRate={agencyFillRate} setAgencyFillRate={setAgencyFillRate} />;
+      case 1: return <AgencyStep agencyFillRate={agencyFillRate} setAgencyFillRate={setAgencyFillRate} bankPool={bankPool} agencySpend={agencySpend} setAgencySpend={setAgencySpend} />;
       case 2: return <TeamStep numManagers={numManagers} setNumManagers={setNumManagers} includeAdmin={includeAdmin} setIncludeAdmin={setIncludeAdmin} />;
       case 3: return <StanceStep displacement={displacement} chosen={stanceTouched} setDisplacement={chooseStance} />;
       case 4: return <ResultsPage r={rQuick} displacement={displacement} chosen={stanceTouched} setDisplacement={chooseStance} onAdjust={handleAdjust} onStartOver={handleStartOver}
-        leadContext={{ bankPool, agencyFillRate, numManagers, displacement, includeAdmin, stance: stance(displacement).key }} />;
+        leadContext={{ bankPool, agencyFillRate, numManagers, displacement, includeAdmin, agencySpend, stance: stance(displacement).key }} />;
       default: return null;
     }
   };

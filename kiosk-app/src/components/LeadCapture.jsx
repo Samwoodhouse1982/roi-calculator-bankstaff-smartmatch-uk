@@ -141,7 +141,7 @@ async function generatePDF(r, lead, ctx) {
   // selection in the flow is highlighted.
   const chosenKey = stance(ctx.displacement).key;
   const scenarios = [["Conservative", 13], ["Moderate", 26], ["Optimistic", 50]].map(([key, d]) => {
-    const rr = calc({ bankPool: ctx.bankPool, agencyFillRate: ctx.agencyFillRate, numManagers: ctx.numManagers, displacement: d, includeAdmin: ctx.includeAdmin, platformCost: r.platformCost });
+    const rr = calc({ bankPool: ctx.bankPool, agencyFillRate: ctx.agencyFillRate, numManagers: ctx.numManagers, displacement: d, includeAdmin: ctx.includeAdmin, agencySpend: ctx.agencySpend, platformCost: r.platformCost });
     return { key, d, rr, selected: key === chosenKey };
   });
   doc.setTextColor(...MUTED); doc.setFont("helvetica", "bold"); doc.setFontSize(8.5);
@@ -220,7 +220,7 @@ async function generatePDF(r, lead, ctx) {
     ["Shifts moved to bank / year", fmtNum(r.displaced)],
     ["Bank backfill cost", fmt(Math.round(r.capacityValue))],
     ["Agency reliance", (Math.round(r.fillNow * 10) / 10) + "% down to " + (Math.round(r.fillAfter * 10) / 10) + "%"],
-    ["Est. annual agency spend (anchor)", fmt(r.agencySpend)],
+    [ctx.agencySpend != null ? "Your annual agency spend (anchor)" : "Est. annual agency spend (anchor)", fmt(r.agencySpend)],
     ["BankStaff+ licence fee", fmt(r.platformCost) + "/yr"],
   ], "Capacity is coverage, not cash, never added to the saving.");
   y += colH + 5;
@@ -245,7 +245,9 @@ async function generatePDF(r, lead, ctx) {
   const explain = [
     ["Cash saving", "the agency premium displaced when better bank utilisation moves duties off agency onto your own bank. It excludes the cost of the bank shifts themselves; that is capacity, shown separately, and never added to the saving."],
     ["Assumptions", "based on 2026/27 NHS Agenda for Change pay midpoints and deliberately conservative throughout. The 20% agency premium reflects figures cited in House of Commons Library research."],
-    ["Agency spend", "was estimated from your bank size using FY2025/26 national averages (~£2,700 per registered bank worker); a figure based on your own agency book would give a more accurate result."],
+    ["Agency spend", ctx.agencySpend != null
+      ? "was the annual agency figure you supplied, which anchors the cash saving directly."
+      : "was estimated from your bank size using FY2025/26 national averages (~£2,700 per registered bank worker); a figure based on your own agency book would give a more accurate result."],
   ];
   doc.setFontSize(7.5);
   explain.forEach(([term, def]) => {
