@@ -219,7 +219,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         </>;
       })()}
       <div style={{ marginTop: 14, fontSize: F.tiny, color: C.textMuted, fontStyle: "italic", lineHeight: 1.6 }}>
-        Bank rate = 2026/27 AfC blended midpoint, already including a {Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension, below the full ~30% NHS rate because bank-only workers often opt out of the pension), so on-costs are counted once and never added on top. Premium defaults to the official ~20% House of Commons Library average, deliberately conservative and contested at shift level (nursing ~35–50%, medics ~80–120%).{r.agencySpend != null ? (leadContext && leadContext.agencySpend != null
+        Bank rate = 2026/27 AfC blended midpoint, already including a {Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension, below the full ~30% NHS rate because bank-only workers often opt out of the pension), so on-costs are counted once and never added on top. Premium defaults to ~20%, reflecting figures cited in House of Commons Library research, deliberately conservative and contested at shift level (nursing ~35-50%, medics ~80-120%).{r.agencySpend != null ? (leadContext && leadContext.agencySpend != null
           ? <> Agency spend is the annual figure you supplied, which anchors the saving.</>
           : <> Agency spend is estimated from your bank size using FY2025/26 national averages (~{fmt(AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP)} per registered bank worker), which anchors the saving.</>) : ""}
       </div>
