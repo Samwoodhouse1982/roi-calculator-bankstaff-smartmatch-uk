@@ -193,8 +193,8 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
     <LeadCapture r={r} leadContext={leadContext} />
 
     {/* How the cash saving is worked out — bank vs agency rate vs the premium gap (the defensible basis) */}
-    <Card style={{ marginBottom: 28 }}>
-      <CTitle iconKey="pound">How the cash saving is worked out</CTitle>
+    <Card style={{ marginBottom: 28, borderLeft: `3px solid ${C.accentMid}` }}>
+      <CTitle iconKey="pound" color={C.accentMid}>How the cash saving is worked out</CTitle>
       <div style={{ fontSize: F.small, color: C.text, lineHeight: 1.7, marginBottom: 14 }}>
         We only ever bank the <strong style={{ color: C.accent }}>gap</strong> between an agency shift and the same shift on your own bank, never the whole agency cost, and only on the shifts you realistically move to bank.
       </div>
@@ -254,8 +254,8 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
     </Card>}
 
     {/* Capacity + wider value (merged): explicitly NOT a cash saving */}
-    <Card style={{ marginBottom: 28, borderLeft: `3px solid ${C.amber}` }}>
-      <CTitle iconKey="calendar" color={C.amber}>Capacity and wider value</CTitle>
+    <Card style={{ marginBottom: 28, borderLeft: `3px solid ${C.blue}` }}>
+      <CTitle iconKey="calendar" color={C.blue}>Capacity and wider value</CTitle>
       <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.6, marginBottom: 16 }}>
         Filling more shifts from your own bank is real operational value: steadier rosters, better continuity of care and less last-minute reliance on agency. It is deliberately kept separate from the cash saving above and is never added to it.
       </div>
@@ -282,7 +282,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
     </Card>
 
     {/* Methodology */}
-    <Card style={{ marginBottom: 28 }}>
+    <Card style={{ marginBottom: 28, borderLeft: `3px solid ${C.seafoam}` }}>
       <Collapsible title="How we calculated this">
         <div style={{ fontSize: F.small, color: C.textMid, lineHeight: 1.75 }}>
           <p style={{ marginTop: 0 }}>
