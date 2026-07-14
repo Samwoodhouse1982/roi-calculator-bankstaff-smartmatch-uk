@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { C, F, GUTTER, MAXW, KIOSK_STEPS } from './theme';
-import { BackgroundParticles } from './components/BackgroundParticles';
 import { calc, DEFAULTS, platformCostFor, stance } from './calc/engine';
 import { StepIndicator, NavButtons, PageTransition } from './components';
 import { BankStep, AgencyStep, TeamStep, StanceStep } from './steps';
@@ -180,7 +179,6 @@ export default function App() {
 
   if (calibrating) {
     return <div style={shell}>
-      <BackgroundParticles />
       <div style={{ position: 'relative', zIndex: 1 }}>
         <CalibratingScreen onDone={handleCalibrationDone} />
       </div>
@@ -189,7 +187,6 @@ export default function App() {
 
   return (
     <div style={shell}>
-      <BackgroundParticles />
       <div style={{ maxWidth: MAXW, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <div style={{ padding: `clamp(18px, 3vw, 36px) ${GUTTER} 0` }}>
           <StepIndicator steps={steps} current={kioskStep} onJump={setKioskStep} />
