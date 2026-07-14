@@ -249,7 +249,7 @@ async function generatePDF(r, lead, ctx) {
   ];
   doc.setFontSize(7.5);
   explain.forEach(([term, def]) => {
-    const label = term + " — ";
+    const label = term + ": ";
     doc.setFont("helvetica", "bold"); doc.setTextColor(...NAVY);
     doc.text(label, M, y);
     const lw = doc.getTextWidth(label);
@@ -333,7 +333,7 @@ export function LeadCapture({ r, leadContext }) {
   if (submitted) {
     return <div style={{ marginBottom: 28, padding: "26px 28px", borderRadius: 18, background: `linear-gradient(135deg, ${C.navy} 0%, ${C.navyMid} 100%)`, border: "none", textAlign: "center" }}>
       <div style={{ fontSize: F.h3, fontWeight: 800, color: C.seafoam, marginBottom: 8 }}>Thanks, {lead.name.split(" ")[0]}, your report has downloaded.</div>
-      <div style={{ fontSize: F.small, color: "rgba(255,255,255,0.8)", lineHeight: 1.6 }}>A Smart Match specialist can validate these figures against your organisation's own bank and agency rates. We'll be in touch.</div>
+      <div style={{ fontSize: F.small, color: "rgba(255,255,255,0.8)", lineHeight: 1.6 }}>An RLDatix BankStaff specialist can validate these figures against your organisation's own bank and agency rates. We'll be in touch.</div>
     </div>;
   }
 
@@ -363,7 +363,7 @@ export function LeadCapture({ r, leadContext }) {
       border: "none", borderRadius: 999, fontSize: F.body, fontWeight: 800,
       cursor: ready && !sending ? "pointer" : "not-allowed", fontFamily: "inherit",
     }}>{sending ? "Generating report..." : "Download PDF report"}</button>
-    <p style={{ fontSize: F.tiny, color: "rgba(255,255,255,0.55)", marginTop: 12, marginBottom: 0 }}>Optional: the calculator is open to everyone. We may reach out to see if we can help with your programme; details are processed in line with the RLDatix privacy notice.</p>
+    <p style={{ fontSize: F.tiny, color: "rgba(255,255,255,0.55)", marginTop: 12, marginBottom: 0 }}>By submitting your details, you agree to share your name and email address so we can reach out to see if we can help with your programme. Details are processed in line with RLDatix's privacy notice.</p>
   </div>;
 }
 

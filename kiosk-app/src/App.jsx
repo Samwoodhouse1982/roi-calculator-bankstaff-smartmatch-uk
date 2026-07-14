@@ -130,7 +130,7 @@ export default function App() {
   const [agencyFillRate, setAgencyFillRate] = useState(DEFAULTS.agencyFillRate);
   const [numManagers, setNumManagers] = useState(DEFAULTS.numManagers);
   const [displacement, setDisplacement] = useState(START_DISPLACEMENT);
-  const [includeAdmin, setIncludeAdmin] = useState(false);  // temporary-staffing-team time in the cash total (off by default; secondary)
+  const [includeAdmin, setIncludeAdmin] = useState(null);  // temporary-staffing-team time in the cash total; null = undecided (a required Yes/No before leaving Step 3)
 
   // Agency spend is not asked for (casual web visitors won't know it); the engine
   // derives it from bank size (£2,700/registered worker) as its fallback.
@@ -152,7 +152,7 @@ export default function App() {
   const resetAll = useCallback(() => {
     setBankPool(START_BANKPOOL); setAgencyFillRate(DEFAULTS.agencyFillRate);
     setNumManagers(DEFAULTS.numManagers); setDisplacement(START_DISPLACEMENT);
-    setIncludeAdmin(false); setStanceTouched(false);
+    setIncludeAdmin(null); setStanceTouched(false);
   }, []);
 
   // "Start over": back to the start screen with defaults.
@@ -235,6 +235,7 @@ export default function App() {
           <PageTransition step={kioskStep}>{renderStep()}</PageTransition>
         </div>
         <NavButtons step={kioskStep} totalSteps={steps.length}
+          nextDisabled={kioskStep === 2 && includeAdmin == null}
           onBack={() => setKioskStep(p => p - 1)} onNext={() => setKioskStep(p => p + 1)}
           onCalculate={handleCalculate} onHome={handleStartOver} />
       </div>

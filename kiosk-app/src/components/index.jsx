@@ -32,7 +32,7 @@ const STEP_CONTEXT = [
   { title: "Why this matters", text: "Conservative is the cautious choice, Moderate matches what one pilot site achieved, Optimistic assumes more. Every figure flexes with it." },
 ];
 
-export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate, onHome, context = STEP_CONTEXT }) {
+export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate, onHome, nextDisabled = false, context = STEP_CONTEXT }) {
   if (step >= totalSteps - 1) return null;
   const ctx = context[step];
   return <div style={{ borderTop: `1px solid ${C.border}` }}>
@@ -48,7 +48,7 @@ export function NavButtons({ step, totalSteps, onBack, onNext, onCalculate, onHo
       {step === 0 && onHome && <button onClick={onHome} style={{ padding: "12px 22px", borderRadius: 14, border: `1px solid ${C.border}`, background: C.surface, color: C.textMid, fontSize: F.body, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 10 }}><Icon name="home" size={18} stroke={C.textMid} /> Start again</button>}
       <div style={{ flex: 1 }} />
       {step < totalSteps - 2 ? (
-        <button onClick={onNext} style={{ padding: "14px 40px", borderRadius: 14, border: "none", background: C.accent, color: "#fff", fontSize: F.h3, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Next →</button>
+        <button onClick={onNext} disabled={nextDisabled} style={{ padding: "14px 40px", borderRadius: 14, border: "none", background: nextDisabled ? C.border : C.accent, color: nextDisabled ? C.textMuted : "#fff", fontSize: F.h3, fontWeight: 700, cursor: nextDisabled ? "not-allowed" : "pointer", fontFamily: "inherit" }}>Next →</button>
       ) : (
         <button onClick={onCalculate} style={{ padding: "14px 40px", borderRadius: 14, border: "none", background: `linear-gradient(135deg, ${C.accent}, ${C.accentMid})`, color: "#fff", fontSize: F.h3, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 6px 24px rgba(15,65,70,0.25)" }}>Calculate ROI →</button>
       )}
@@ -171,6 +171,30 @@ export function ToggleRow({ on, onToggle, label, tip }) {
     </div>
     <span style={{ fontSize: F.body, fontWeight: 600, color: C.text }}>{label}</span>
     {tip && <InfoTip text={tip} />}
+  </div>;
+}
+
+/* A required yes/no decision. Starts neutral (value == null); the user must pick
+   one side before the flow will let them continue, so no silent default is
+   assumed on their behalf. */
+export function DecisionRow({ value, onChange, label, tip, yesLabel = "Yes", noLabel = "No" }) {
+  const undecided = value == null;
+  const opt = (selected) => ({
+    flex: "1 1 0", padding: "13px 20px", borderRadius: 12, cursor: "pointer", fontFamily: "inherit",
+    border: `1px solid ${selected ? C.accent : C.border}`,
+    background: selected ? C.accent : C.surface,
+    color: selected ? "#fff" : C.textMid, fontWeight: 700, fontSize: F.body,
+  });
+  return <div>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+      <span style={{ fontSize: F.body, fontWeight: 600, color: C.text }}>{label}</span>
+      {tip && <InfoTip text={tip} />}
+    </div>
+    <div role="radiogroup" aria-label={label} style={{ display: "flex", gap: 12 }}>
+      <button type="button" role="radio" aria-checked={value === true} onClick={() => onChange(true)} style={opt(value === true)}>{yesLabel}</button>
+      <button type="button" role="radio" aria-checked={value === false} onClick={() => onChange(false)} style={opt(value === false)}>{noLabel}</button>
+    </div>
+    {undecided && <div style={{ marginTop: 10, fontSize: F.tiny, color: C.textMuted }}>Choose Yes or No to continue.</div>}
   </div>;
 }
 

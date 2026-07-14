@@ -1,6 +1,6 @@
 import React from 'react';
 import { C, F, fmt, fmtNum } from '../theme';
-import { Card, SectionTitle, TouchSlider, Stepper, InfoTip, ToggleRow } from '../components';
+import { Card, SectionTitle, TouchSlider, Stepper, InfoTip, DecisionRow } from '../components';
 import { platformCostFor, stance, SIMPLE_BLENDED_BANK_PAY, AFC_DIVISOR, BANK_ONCOST } from '../calc/engine';
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -87,11 +87,13 @@ export function TeamStep({ numManagers, setNumManagers, includeAdmin, setInclude
       />
       <Helper>Count coordinators, officers and administrators, not the managers above them.</Helper>
       <div style={{ marginTop: 24, padding: "18px 22px", background: C.surface2, borderRadius: 16, border: `1px solid ${C.accent}55` }}>
-        <ToggleRow
-          on={includeAdmin}
-          onToggle={setIncludeAdmin}
-          label="Also add this recovered time to the cash saving"
-          tip="Off by default, a secondary recommendation. Turn this on to value the team's recovered time (a conservative 1.0 h/day at a loaded £18/h) and add it to the headline cash saving. Either way, the hours released show on your results."
+        <DecisionRow
+          value={includeAdmin}
+          onChange={setIncludeAdmin}
+          label="Also add this recovered time to the cash saving?"
+          yesLabel="Yes, add it"
+          noLabel="No, show separately"
+          tip="A secondary choice. Pick Yes to value the team's recovered time (a conservative 1.0 h/day at a loaded £18/h) and add it to the headline cash saving; pick No to keep it shown separately. Either way, the hours released still show on your results."
         />
       </div>
     </Card>
