@@ -85,7 +85,7 @@ async function generatePDF(r, lead, ctx) {
   doc.setTextColor(255, 255, 255); doc.setFont("helvetica", "bold"); doc.setFontSize(17);
   doc.text("Smart Match: Workforce ROI Estimate", M, 16);
   doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(...SEAFOAM);
-  doc.text("RLDatix BankStaff+ · indicative · " + new Date().toLocaleDateString("en-GB") + (lead.org ? " · " + lead.org : ""), M, 24);
+  doc.text("RLDatix BankStaff+ · " + new Date().toLocaleDateString("en-GB") + (lead.org ? " · " + lead.org : ""), M, 24);
   const logo = await logoDataUrl();
   if (logo) { try { doc.addImage(logo, "PNG", 210 - M - 38, 9, 38, 7.3); } catch (e) { /* header still fine without it */ } }
 
