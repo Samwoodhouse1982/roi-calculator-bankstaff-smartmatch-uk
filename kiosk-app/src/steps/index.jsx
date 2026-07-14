@@ -55,8 +55,9 @@ export function AgencyStep({ agencyFillRate, setAgencyFillRate, bankPool, agency
   const known = agencySpend != null;
   const fmtM = v => v >= 1000000 ? `£${(v / 1000000 >= 100 ? (v / 1000000).toFixed(0) : (v / 1000000).toFixed(1).replace(/\.0$/, ""))}m` : fmt(v);
   // Slider range adapts to the bank-size estimate, so the control keeps good
-  // resolution for a small community trust (~£2m) or a large ICS (~£30m) alike.
-  const sliderMax = Math.max(10000000, Math.ceil(estimate * 3 / 5000000) * 5000000);
+  // resolution for a small community trust (~£2m) or a large ICS (~£30m) alike,
+  // capped at £50m for the very largest Trusts (type a higher figure if needed).
+  const sliderMax = Math.min(50000000, Math.max(10000000, Math.ceil(estimate * 3 / 5000000) * 5000000));
   const sliderStep = Math.max(100000, Math.round(sliderMax / 200 / 100000) * 100000);
   return <div>
     <SectionTitle number={2}>Agency reliance</SectionTitle>
