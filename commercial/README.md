@@ -5,7 +5,7 @@ utilisation ROI calculator, used by **account managers in hosted conversations**
 (not public self-serve — the page is `noindex` and has no lead capture). NHS
 terminology (bank/agency, AfC, Trust), pounds sterling, `en-GB` formatting.
 RLDatix corporate brand (navy + teal), built in the same design system as the
-Galen ROI calculator suite.
+wider RLDatix ROI calculator suite.
 
 Two modes in one page: **Quick** (single-page whole-bank view: bank size,
 optional actual agency spend, a required admin-time Yes/No, confidence level,

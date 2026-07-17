@@ -189,7 +189,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
     </div>}
 
     {/* Lead capture — straight after the headline tiles, while the numbers land.
-        Optional; results are never gated behind it. Ported from the Galen calculator. */}
+        Optional; results are never gated behind it. Ported from an earlier RLDatix calculator. */}
     <LeadCapture r={r} leadContext={leadContext} />
 
     {/* How the cash saving is worked out — bank vs agency rate vs the premium gap (the defensible basis) */}

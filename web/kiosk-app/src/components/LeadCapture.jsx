@@ -5,7 +5,7 @@ import { calc, stance } from '../calc/engine';
 import rldatixLogo from '../assets/rldatix-logo.png';
 
 /* ────────────────────────────────────────────────────────────────────────
-   Lead capture — ported from the RLDatix EPR-migration/archive (Galen) ROI
+   Lead capture — ported from an earlier RLDatix ROI
    calculator and restyled for the Smart Match theme. Same mechanics:
 
    1. Submit generates + downloads a PDF summary (the value exchange).
@@ -14,13 +14,13 @@ import rldatixLogo from '../assets/rldatix-logo.png';
    3. Fire-and-forget POST to HubSpot (EU1) with the calculator context in the
       message field.
 
-   The HubSpot portal is RLDatix's (same as the Galen calculator). The form
-   GUID below is the Galen calculator's working form — swap it for a dedicated
+   The HubSpot portal is RLDatix's. The form
+   GUID below is borrowed from another live RLDatix calculator form — swap it for a dedicated
    Smart Match form GUID when marketing creates one; submissions are
    distinguishable meanwhile via the message field ("Smart Match ROI ...").
    ──────────────────────────────────────────────────────────────────────── */
 const HUBSPOT_PORTAL_ID = "27174408";
-const HUBSPOT_FORM_GUID = "3f860858-5a58-4f1b-8419-a561af17adbe";   // Galen calculator form — replace with a Smart Match form GUID when available
+const HUBSPOT_FORM_GUID = "3f860858-5a58-4f1b-8419-a561af17adbe";   // interim: another RLDatix calculator's live form — replace with a Smart Match form GUID when available
 const HUBSPOT_REGION = "eu1";   // EU data centre
 
 const STORAGE_KEY = "smartmatch-roi-web-submissions";
@@ -341,7 +341,7 @@ export function LeadCapture({ r, leadContext }) {
 
   const ready = lead.name && lead.email;
 
-  // Navy card on the light page — the Galen calculator's lead-gen treatment.
+  // Navy card on the light page — the house lead-gen treatment.
   return <div style={{ marginBottom: 28, padding: "clamp(18px, 3vw, 28px)", borderRadius: 18, background: `linear-gradient(135deg, ${C.navy} 0%, ${C.navyMid} 100%)`, border: "none" }}>
     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
       <Icon name="mail" size={22} stroke={C.seafoam} />
@@ -370,7 +370,7 @@ export function LeadCapture({ r, leadContext }) {
 }
 
 /* ── #admin-leads: review + CSV-export locally stored submissions ─────────
-   Ported from the Galen calculator's admin view. Records live only in this
+   Ported from an earlier RLDatix calculator's admin view. Records live only in this
    browser's localStorage (per device); HubSpot remains the system of record. */
 export function AdminLeads({ onClose }) {
   const [records, setRecords] = useState(readSubmissions());

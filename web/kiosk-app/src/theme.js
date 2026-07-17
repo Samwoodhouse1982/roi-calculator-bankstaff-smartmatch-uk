@@ -1,5 +1,5 @@
 // LIGHT theme — the RLDatix web-calculator design system (deep teal + seafoam
-// on white), matching the main-branch Smart Match web build and the Galen ROI
+// on white), matching the main-branch Smart Match web build and the wider RLDatix ROI
 // suite so the calculator sits comfortably on rldatix.com. Colours only: the
 // kiosk build's dark palette lives on the smartmatch-touchscreen branch.
 export const C = {

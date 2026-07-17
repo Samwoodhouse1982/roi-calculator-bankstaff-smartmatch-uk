@@ -7,7 +7,7 @@ run `npm run package` to produce `package/smartmatch-roi-web-embed.zip` (built a
 embed snippet + client install guide). Dark navy + teal theme, en-GB (£).
 
 Differences from the kiosk build: no attract splash / idle reset / admin stats (kiosk-only chrome),
-plus a lead capture form on the results page ported from the EPR-migration/archive (Galen) ROI
+plus a lead capture form on the results page ported from an earlier RLDatix ROI
 calculator (PDF summary download + HubSpot EU1 + local backup reviewable at `#admin-leads`).
 
 ## The model

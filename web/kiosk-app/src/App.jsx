@@ -163,7 +163,7 @@ export default function App() {
   }, [resetAll]);
 
   // #admin-leads reviews locally stored lead-form submissions (ported from the
-  // Galen/EPR calculator's admin view). Hash-driven so it needs no UI affordance.
+  // an earlier RLDatix calculator's admin view). Hash-driven so it needs no UI affordance.
   useEffect(() => {
     const onHash = () => setAdminLeads(window.location.hash === '#admin-leads');
     window.addEventListener('hashchange', onHash);
