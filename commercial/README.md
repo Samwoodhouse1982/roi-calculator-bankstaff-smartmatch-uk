@@ -1,13 +1,17 @@
-# Smart Match — Workforce ROI Calculator (UK web embed)
+# Smart Match — Workforce ROI Calculator (commercial, account-manager tool)
 
-The **UK web-embed** version of the RLDatix **Smart Match** bank-staff utilisation
-ROI calculator. NHS terminology (bank/agency, AfC, Trust), pounds sterling,
-`en-GB` formatting. RLDatix corporate brand (navy + teal), built in the same
-design system as the Galen ROI calculator suite.
+The **long-form commercial** version of the RLDatix **Smart Match** bank-staff
+utilisation ROI calculator, used by **account managers in hosted conversations**
+(not public self-serve — the page is `noindex` and has no lead capture). NHS
+terminology (bank/agency, AfC, Trust), pounds sterling, `en-GB` formatting.
+RLDatix corporate brand (navy + teal), built in the same design system as the
+Galen ROI calculator suite.
 
-> This branch (`main`) holds the **single-file HTML web embed**. The
-> **touchscreen / kiosk** version (Vite + React, 1080×1920) lives on the
-> [`smartmatch-touchscreen`](../../tree/smartmatch-touchscreen) branch.
+Two modes in one page: **Quick** (single-page whole-bank view: bank size,
+optional actual agency spend, a required admin-time Yes/No, confidence level,
+and editable defaults for premium / licence / shift / on-cost) and **Detailed**
+(per-staff-group commercial model). The public self-serve product lives in
+[`../web/`](../web/); the events kiosk in [`../touchscreen/`](../touchscreen/).
 
 ## What's the calculator?
 
@@ -135,9 +139,10 @@ redirects) and serve over HTTPS.
 3. **Pilot data** — confirm permission to cite the specific pilot figures/trusts.
 4. **AfC figures** — refresh from the NHS Employers pay-scale PDF annually
    (currently 2026/27 England midpoints, +3.3% from 1 Apr 2026).
-5. **HubSpot** — confirm the SmartMatch portal ID, form GUID and GDPR consent
-   copy (the integration is scaffolded with placeholders; v1 is open-access and
-   does not gate results or the PDF).
+5. **Access** — this is an internal account-manager tool with no lead capture
+   (the public self-serve product in `../web/` handles lead-gen). The page is
+   `noindex`; add Vercel password protection or a passcode gate if the URL
+   needs to be genuinely private rather than just unlisted.
 
 ## Localisation
 
