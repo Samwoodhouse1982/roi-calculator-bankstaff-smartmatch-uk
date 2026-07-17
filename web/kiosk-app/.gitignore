@@ -1,0 +1,9 @@
+node_modules/
+dist/
+package/
+.DS_Store
+
+# Local environment / secrets (never commit real keys). .env.example is tracked.
+.env
+.env.local
+.env.*.local

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<title>Smart Match Workforce ROI Calculator: one-page overview</title>
+<style>
+  :root{
+    --navy:#1B2B4B; --navyMid:#2C4070; --teal:#0F766E; --tealMid:#14B8A6;
+    --tealLight:#CCFBF1; --navyLight:#EEF1F7; --border:#DDE0E8; --text:#1B2B4B;
+    --mid:#4A5568; --light:#8A95A8; --white:#fff;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{font-family:"Segoe UI",Helvetica,Arial,sans-serif; color:var(--text); -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  /* 16:9 slide = 13.333in x 7.5in = 1280 x 720 px at 96dpi */
+  .slide{width:1280px; height:720px; background:#fff; display:flex; flex-direction:column; overflow:hidden;}
+  header{background:var(--navy); color:#fff; padding:20px 34px 18px;}
+  .brand{font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--tealMid); font-weight:700;}
+  header h1{font-size:30px; font-weight:800; margin-top:6px; letter-spacing:-.3px;}
+  header h1 span{font-weight:400; color:#Abb6ce; font-size:30px;}
+  header .sub{font-size:13px; color:#c9d2e3; margin-top:4px;}
+  .grid{flex:1; display:grid; grid-template-columns:1fr 1fr 1fr; gap:0; padding:0;}
+  .col{padding:18px 24px; border-right:1px solid var(--border);}
+  .col:last-child{border-right:none;}
+  section{margin-bottom:16px;}
+  h2{font-size:13px; font-weight:800; color:var(--teal); text-transform:uppercase; letter-spacing:.04em; margin-bottom:8px; display:flex; align-items:center; gap:7px;}
+  h2::before{content:""; width:14px; height:3px; background:var(--tealMid); border-radius:2px;}
+  p{font-size:12.5px; line-height:1.5; color:var(--mid); margin-bottom:6px;}
+  p b{color:var(--navy);}
+  ul{list-style:none;}
+  li{font-size:12px; line-height:1.45; color:var(--mid); padding-left:14px; position:relative; margin-bottom:5px;}
+  li::before{content:""; position:absolute; left:0; top:7px; width:5px; height:5px; border-radius:50%; background:var(--tealMid);}
+  li b{color:var(--navy);}
+  .abc{width:100%; border-collapse:collapse;}
+  .abc td{font-size:11.5px; padding:7px 8px; border-bottom:1px solid var(--border); vertical-align:top; line-height:1.35;}
+  .abc tr:last-child td{border-bottom:none;}
+  .tag{display:inline-block; font-weight:800; color:#fff; border-radius:5px; padding:1px 6px; font-size:10.5px; margin-right:2px;}
+  .ta{background:var(--teal);} .tb{background:var(--navyMid);} .tc{background:var(--light);}
+  .yes{color:var(--teal); font-weight:700;} .no{color:var(--light); font-weight:700;}
+  .formula-box{background:var(--navyLight); border:1px solid var(--border); border-radius:10px; padding:12px 14px;}
+  .formula-box h2{margin-bottom:6px;}
+  code{display:block; font-family:"Consolas",ui-monospace,monospace; font-size:11.5px; color:var(--navy); background:#fff; border:1px solid var(--border); border-radius:7px; padding:8px 10px; margin-top:7px; line-height:1.4;}
+  .modes p{padding:7px 10px; background:var(--navyLight); border-radius:7px; margin-bottom:6px; border-left:3px solid var(--tealMid);}
+  footer{background:var(--navyLight); border-top:1px solid var(--border); padding:11px 34px; font-size:11px; color:var(--mid); line-height:1.5;}
+  footer b{color:var(--navy);}
+</style>
+</head>
+<body>
+<div class="slide">
+  <header>
+    <div class="brand">RLDatix &middot; Smart Match &middot; Workforce Intelligence</div>
+    <h1>Workforce ROI Calculator <span>&nbsp;background at a glance</span></h1>
+    <div class="sub">What it measures, what the numbers rest on, and why it is built this way. For the team that owns the tool.</div>
+  </header>
+
+  <div class="grid">
+    <div class="col">
+      <section>
+        <h2>What it measures</h2>
+        <table class="abc">
+          <tr><td><span class="tag ta">A</span> <b>Agency premium displaced</b><br>premium you stop paying when a shift moves agency &rarr; bank</td><td class="yes">Cash<br>the headline</td></tr>
+          <tr><td><span class="tag tb">B</span> <b>Admin time released</b><br>roster / bank time freed by self-booking</td><td class="yes">Cash by default<br>(toggle off)</td></tr>
+          <tr><td><span class="tag tc">C</span> <b>Capacity</b><br>extra duties your bank now fills</td><td class="no">Never cash<br>shown apart</td></tr>
+        </table>
+      </section>
+      <section class="formula-box">
+        <h2>The core principle</h2>
+        <p>Filling a bank shift still costs money. You save only the <b>premium</b> (agency price minus bank price), not the whole shift.</p>
+        <code>cash = agency&nbsp;spend &times; displacement &times; premium / (1 + premium)</code>
+      </section>
+    </div>
+
+    <div class="col">
+      <section>
+        <h2>What the numbers rest on</h2>
+        <ul>
+          <li><b>Pay:</b> 2026/27 NHS AfC midpoints, 1,957.5 h/yr, 8h shifts, 20% on-cost</li>
+          <li><b>Agency premium:</b> ~20% (House of Commons Library), contested, editable</li>
+          <li><b>Displacement stance:</b> Conservative ~13% (default), Pilot ~26%, Optimistic ~35%</li>
+          <li><b>Platform cost:</b> &pound;17k/yr, the ROI denominator</li>
+          <li><b>Pilot evidence:</b> 2-site data in a 4-trust programme; indicative, not solely attributable</li>
+        </ul>
+      </section>
+      <section class="modes">
+        <h2>Two modes, by audience</h2>
+        <p><b>Quick estimate:</b> three inputs (bank pool, agency fill, roster team). For operational managers and events.</p>
+        <p><b>Detailed / commercial:</b> agency spend by staff group, editable premium and levers. For finance leads and workforce directors.</p>
+      </section>
+    </div>
+
+    <div class="col">
+      <section>
+        <h2>Configurable &amp; personalised</h2>
+        <p><b>Live, no code:</b> pick an organisation type, set its size (total bank headcount and agency spend), then refine per staff group, premium, stance and optional levers. Everything recomputes instantly and is most credible on the trust's own rates.</p>
+        <p><b>In code (owner):</b> one central constants block to re-base pay each year, rebrand, re-localise (en-GB, AU-ready), edit the org templates, and wire up lead capture.</p>
+      </section>
+      <section>
+        <h2>Why it is built this way</h2>
+        <p>Defensible over impressive: conservative defaults, a transparent formula, every assumption shown with its source, and honest caveats. The same tool scales from a 30-second event estimate to a finance-grade business case.</p>
+      </section>
+    </div>
+  </div>
+
+  <footer>
+    <b>Strategic fit:</b> releasing cash and capacity from temporary staffing supports the NHS 10 Year Plan and Workforce Paper, and the Staff Health &amp; Wellbeing CQUIN. &nbsp;&middot;&nbsp; Figures are <b>indicative, conservative and editable</b>. &nbsp;&middot;&nbsp; Two formats (web embed + touchscreen kiosk) share one calculation engine, so they always agree.
+  </footer>
+</div>
+</body>
+</html>
