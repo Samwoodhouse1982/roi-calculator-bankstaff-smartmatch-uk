@@ -487,7 +487,7 @@ function simpleToInput(s, shared){
     premium:shared.premium, displacement:shared.displacement, shiftHours:shared.shiftHours, oncost:shared.oncost,
     platformCost:shared.platformCost, fillRateNow:s.agencyFillRate,
     displaceableShare: shared.displaceableShare!=null?shared.displaceableShare:DISPLACEABLE_SHARE_DEFAULT, turnover: shared.turnover,
-    admin:{ enabled:s.includeAdmin!==false, managers:num(s.numManagers), hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY },
+    admin:{ enabled:s.includeAdmin===true, managers:num(s.numManagers), hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY },
     recruit:{ enabled:false },
   };
 }
@@ -607,6 +607,54 @@ function Calibrating(){
     <div className="cal-bar" aria-hidden="true"><i></i></div></div></div>);
 }
 
+/* White RLDatix wordmark for the PDF header (base64, downscaled to w=400 so
+   jsPDF stores ~13KB of pixels instead of megabytes; ratio h/w = 0.1925).
+   The source asset is white-on-solid-black, so its background is remapped to the
+   header navy here, letting the wordmark blend seamlessly into the header band. */
+const RLDATIX_LOGO_PNG="data:image/png;base64,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";
+
+/* ===== LEAD PIPELINE =====
+   HubSpot (EU1) is the system of record; every submission is also backed up to
+   localStorage (reviewable at #admin-leads, exportable as CSV) so leads survive
+   offline/blocked-network conditions. The portal is RLDatix's; the form GUID is
+   the Galen calculator's working form — swap it for a dedicated Smart Match form
+   GUID when marketing creates one; submissions are distinguishable meanwhile via
+   the message field ("Smart Match ROI ..."). */
+const HUBSPOT_PORTAL_ID="27174408";
+const HUBSPOT_FORM_GUID="3f860858-5a58-4f1b-8419-a561af17adbe";   // Galen calculator form — replace with a Smart Match form GUID when available
+const HUBSPOT_REGION="eu1";   // EU data centre
+const LEADS_STORAGE_KEY="smartmatch-roi-calculator-submissions";
+const LEADS_MAX_RECORDS=200;
+function readSubmissions(){ try{ return JSON.parse(localStorage.getItem(LEADS_STORAGE_KEY)||"[]"); }catch(e){ return []; } }
+function saveSubmission(record){ try{ const all=readSubmissions(); all.unshift(record); localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(all.slice(0,LEADS_MAX_RECORDS))); }catch(e){ /* backup only */ } }
+
+/* #admin-leads: review + CSV-export locally stored submissions. Hash-driven so it
+   needs no UI affordance; records live only in this browser's localStorage. */
+function AdminLeads({onClose}){
+  const [records,setRecords]=useState(readSubmissions());
+  const exportCSV=()=>{ const esc=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+    const rows=[["Timestamp","Name","Email","Organisation","Mode","Net saving","Hours/week"]];
+    for(const rec of records) rows.push([rec.timestamp,rec.lead&&rec.lead.name,rec.lead&&rec.lead.email,rec.lead&&rec.lead.org,rec.mode,rec.results&&rec.results.netSaving,rec.results&&rec.results.timeSavedWeek]);
+    const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([rows.map(row=>row.map(esc).join(",")).join("\n")],{type:"text/csv"}));
+    a.download="smartmatch-roi-leads-"+new Date().toISOString().split("T")[0]+".csv"; document.body.appendChild(a); a.click(); document.body.removeChild(a); };
+  const clearAll=()=>{ if(!window.confirm("Permanently delete all "+records.length+" local lead records? This cannot be undone (HubSpot copies are unaffected).")) return;
+    try{ localStorage.removeItem(LEADS_STORAGE_KEY); }catch(e){} setRecords([]); };
+  return (<div style={{maxWidth:1000,margin:"0 auto",padding:"2rem 1rem"}}>
+    <h2 style={{color:C.navy,margin:"0 0 4px"}}>Lead form submissions ({records.length})</h2>
+    <p style={{fontSize:12,color:C.textLight,margin:"0 0 14px"}}>Stored in this browser only, as a backup; HubSpot holds the canonical copies. Remove <code>#admin-leads</code> from the URL to return.</p>
+    <div style={{display:"flex",gap:8,marginBottom:14}}>
+      <button className="btn primary" onClick={exportCSV} disabled={!records.length}>Export CSV</button>
+      <button className="btn" onClick={clearAll} disabled={!records.length}>Clear</button>
+      <button className="btn" onClick={onClose}>Close</button>
+    </div>
+    {!records.length ? <p style={{color:C.textLight,fontSize:13}}>No submissions yet. Records appear here as users complete the lead form in this browser.</p> :
+    <div className="table-wrap"><table>
+      <thead><tr>{["When","Name","Email","Organisation","Mode","Net saving","Hrs/wk"].map(h=><th key={h}>{h}</th>)}</tr></thead>
+      <tbody>{records.map((rec,i)=>(<tr key={i}><td>{new Date(rec.timestamp).toLocaleString(LOCALE)}</td><td>{(rec.lead&&rec.lead.name)||"-"}</td><td>{(rec.lead&&rec.lead.email)||"-"}</td><td>{(rec.lead&&rec.lead.org)||"-"}</td><td>{rec.mode||"-"}</td><td className="num">{rec.results&&rec.results.netSaving!=null?fmtK(rec.results.netSaving):"-"}</td><td className="num">{rec.results&&rec.results.timeSavedWeek!=null?Math.round(rec.results.timeSavedWeek):"-"}</td></tr>))}</tbody>
+    </table></div>}
+  </div>);
+}
+
 /* ===== MAIN APP ===== */
 function App(){
   const [mode,setMode] = useState("quick");           // "quick" | "detailed"
@@ -621,7 +669,7 @@ function App(){
   const [lead,setLead]=useState({name:"",email:"",org:"",consent:false,sent:false,busy:false,err:null}), [pdfBusy,setPdfBusy]=useState(false);
   // simple state: agencySpend auto-tracks bank size AND fill rate (via estimateAgencySpend)
   // until the user types their own figure, at which point it's pinned.
-  const [simple,setSimple]=useState({ bankPool:660, agencySpend:estimateAgencySpend(660,8.3), agencyFillRate:8.3, numManagers:12, includeAdmin:false });
+  const [simple,setSimple]=useState({ bankPool:660, agencySpend:estimateAgencySpend(660,8.3), agencyFillRate:8.3, numManagers:12, includeAdmin:null });   // includeAdmin null = undecided: the quick wizard requires an explicit Yes/No before calculating
   const [spendAuto,setSpendAuto]=useState(true);
   const [quickStep,setQuickStep]=useState(0);   // Quick mode is a 4-step wizard (numbers -> admin -> confidence -> check & calculate)
   useEffect(()=>{ if(spendAuto) setSimple(s=>({...s,agencySpend:estimateAgencySpend(s.bankPool,s.agencyFillRate)})); },[simple.bankPool,simple.agencyFillRate,spendAuto]);
@@ -630,7 +678,12 @@ function App(){
   const [admin,setAdmin]=useState({ enabled:false, managers:12, hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY });
   const [recruit,setRecruit]=useState({ enabled:false, workers:50, costPerWorker:RECRUIT_COST_PER_WORKER, recoveryRate:RECRUIT_RECOVERY_RATE });
 
-  function runCalc(){ setCal(true); setTimeout(()=>{ setCal(false); setCalculated(true); requestAnimationFrame(()=>{ const el=document.getElementById("results"); if(!el) return;
+  function runCalc(){
+    // Quick mode requires an explicit admin-time decision (no silent default):
+    // any calculate path (Next flow, Skip to results, Check & go) routes back
+    // to the decision step until Yes or No has been chosen.
+    if(mode==="quick" && simple.includeAdmin==null){ setQuickStep(1); return; }
+    setCal(true); setTimeout(()=>{ setCal(false); setCalculated(true); requestAnimationFrame(()=>{ const el=document.getElementById("results"); if(!el) return;
     if(EMBEDDED) hostScroll(el.getBoundingClientRect().top + (window.pageYOffset||0));
     else el.scrollIntoView({behavior:REDUCE_MOTION?"auto":"smooth",block:"start"}); }); }, REDUCE_MOTION?150:1600); }
 
@@ -655,6 +708,11 @@ function App(){
   const totalHead=groups.reduce((s,g)=>s+num(g.headcount),0), totalSpend=groups.reduce((s,g)=>s+num(g.agencySpend),0);
   const tswAnim=useCountUp(r.timeSavedWeek);
 
+  // #admin-leads reviews locally stored lead-form submissions. Hash-driven, no UI affordance.
+  const [adminLeads,setAdminLeads]=useState(typeof window!=="undefined" && window.location.hash==="#admin-leads");
+  useEffect(()=>{ const onHash=()=>setAdminLeads(window.location.hash==="#admin-leads");
+    window.addEventListener("hashchange",onHash); return ()=>window.removeEventListener("hashchange",onHash); },[]);
+
   useEffect(()=>{ if(!EMBEDDED)return;
     const post=()=>window.parent.postMessage({type:"smartmatch-roi-resize",height:document.documentElement.scrollHeight},"*");
     const ro=new ResizeObserver(post); ro.observe(document.documentElement); post();
@@ -663,15 +721,23 @@ function App(){
 
   async function submitLead(e){ e.preventDefault();
     if(!lead.consent) return;                                   // GDPR: require explicit consent before sending
-    /* HubSpot integration. TODO: set the real SmartMatch portal ID + form GUID below. */
-    const PORTAL="REPLACE_PORTAL_ID", FORM="REPLACE_FORM_GUID", REGION="eu1";
-    if(PORTAL.startsWith("REPLACE")||FORM.startsWith("REPLACE")){ setLead(l=>({...l,err:"unconfigured"})); return; }  // don't fake success until wired up
     setLead(l=>({...l,busy:true,err:null}));
+    // Calculator context travels in the message field, so submissions are
+    // self-describing in HubSpot (and distinguishable from other calculators).
+    const context="Smart Match ROI ("+(mode==="quick"?"quick":"detailed")+") | "
+      +(mode==="quick" ? "Bank workers: "+fmtNum(num(simple.bankPool))+" | Agency fill: "+simple.agencyFillRate+"%" : "Staff groups: "+groups.length+" | Bank pool: "+fmtNum(totalHead))
+      +" | Agency spend: "+fmtK(r.totSpend)+" | Confidence: "+displacement+"% ("+st.key+") | Net annual saving: "+fmtK(r.netSaving)+" | Hours/week released: "+Math.round(r.timeSavedWeek);
+    // Local backup first (reviewable at #admin-leads), so the lead survives a blocked network.
+    saveSubmission({ timestamp:new Date().toISOString(), lead:{name:lead.name,email:lead.email,org:lead.org}, mode,
+      inputs: mode==="quick"
+        ? { bankPool:num(simple.bankPool), agencyFillRate:num(simple.agencyFillRate), numManagers:num(simple.numManagers), includeAdmin:simple.includeAdmin===true, agencySpend:r.totSpend, spendAuto, displacement }
+        : { groupCount:groups.length, totalHead, totalSpend, displacement, adminEnabled:admin.enabled },
+      results:{ netSaving:r.netSaving, totSaving:r.totSaving, adminSaving:r.adminSaving, timeSavedWeek:r.timeSavedWeek, platformCost:num(platformCost), roiMultiple:r.roiMultiple, paybackMonths:r.paybackMonths } });
     try{
-      const res=await fetch(`https://forms-${REGION}.hsforms.com/submissions/v3/integration/submit/${PORTAL}/${FORM}`,{method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ fields:[{name:"firstname",value:lead.name},{name:"email",value:lead.email},{name:"company",value:lead.org}],
-          context:{pageName:"Smart Match ROI Calculator"},
-          legalConsentOptions:{ consent:{ consentToProcess:true, text:"I agree RLDatix may contact me about Smart Match." } } }) });
+      const res=await fetch(`https://forms-${HUBSPOT_REGION}.hsforms.com/submissions/v3/integration/submit/${HUBSPOT_PORTAL_ID}/${HUBSPOT_FORM_GUID}`,{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({ fields:[{name:"firstname",value:lead.name.split(" ")[0]},{name:"lastname",value:lead.name.split(" ").slice(1).join(" ")||""},{name:"email",value:lead.email},{name:"company",value:lead.org||""},{name:"message",value:context}],
+          context:{pageUri:window.location.href,pageName:"Smart Match ROI Calculator"},
+          legalConsentOptions:{ consent:{ consentToProcess:true, text:"I agree to share my name and email address so RLDatix may contact me about Smart Match." } } }) });
       if(res.ok) setLead(l=>({...l,sent:true,busy:false}));     // only confirm on a real success
       else setLead(l=>({...l,err:"failed",busy:false}));
     }catch(_){ setLead(l=>({...l,err:"failed",busy:false})); }
@@ -680,22 +746,128 @@ function App(){
   async function downloadPDF(){
     if(!(window.jspdf&&window.jspdf.jsPDF)){ alert("PDF library still loading. Please try again in a moment."); return; }
     setPdfBusy(true);
-    try{ const { jsPDF }=window.jspdf, doc=new jsPDF({unit:"mm",format:"a4"}); let y=18;
-      doc.setFillColor(15,65,70); doc.rect(0,0,210,30,"F"); doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(16);
-      doc.text("Smart Match: Workforce ROI Estimate",14,16); doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(52,222,194);
-      doc.text("RLDatix · "+new Date().toLocaleDateString(LOCALE)+" · "+(mode==="quick"?"Quick estimate":"Detailed"),14,23); y=40;
-      doc.setTextColor(15,65,70); doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.text("Headline",14,y); y+=6; doc.setFont("helvetica","normal"); doc.setFontSize(10);
-      [["Net annual cash saving",noNet?"None at these inputs (licence fee exceeds the modelled premium)":fmt(r.netSaving)],["Admin time saved / week",Math.round(r.timeSavedWeek).toLocaleString(LOCALE)+" hours"],
-       ["Gross annual benefit",fmt(r.grossBenefit)],["Payback (licence / gross)",noNet?"n/a":fmtDays(r.paybackMonths)],["Return (net / licence fee)",noNet?"n/a":fmtMult(r.roiMultiple)],
-       ["Agency premium avoided (gross)",fmt(r.totSaving)],["Admin saving",fmt(r.adminSaving)],["Re-recruitment cost avoided",fmt(r.recruitSaving)],
-       ["Total agency spend (anchor)",fmt(r.totSpend)],["Premium / confidence level",premium+"% / "+displacement+"% ("+st.key+")"],["Displaceable share of agency",Math.round(r.displaceableShare*100)+"%"],["Licence fee",fmt(platformCost)+"/yr"]
-      ].forEach(([k,v])=>{ doc.text(k,14,y); doc.text(String(v),196,y,{align:"right"}); y+=6; });
-      if(mode==="detailed" && doc.autoTable){ y+=2; doc.setFont("helvetica","bold"); doc.text("Saving by staff group",14,y);
-        doc.autoTable({ startY:y+2,
+    try{ const { jsPDF }=window.jspdf, doc=new jsPDF({unit:"mm",format:"a4",compress:true});
+      /* Branded grid layout (ported from the kiosk-web build): navy header with the
+         white wordmark top-right, two headline callouts, a KPI row (admin-time value
+         always reported, marked in/out of the cash total), a tile per confidence
+         level with the visitor's choice flagged, inputs + capacity columns and the
+         worked-out strip. Detailed mode adds its staff-group table on page 2. */
+      const NAVY=[15,65,70], TEAL=[26,138,122], SEAFOAM=[52,222,194], PALE=[238,247,242], PALE_SEA=[232,250,246], BORD=[212,224,221], MIDC=[61,90,94], MUTED=[120,130,150];
+      const M=14, W=210-2*M;
+      const paybk=res=> res.netSaving>0 && res.paybackMonths!=null ? fmtDays(res.paybackMonths) : "n/a";
+      const retn=res=> res.netSaving>0 && res.roiMultiple!=null ? (Math.round(res.roiMultiple*10)/10)+"x" : "n/a";
+      // Admin-time value is always reported: in the cash total when enabled, else as its own separately-shown figure.
+      const adminIncluded = r.adminSaving>0;
+      const adminValue = adminIncluded ? r.adminSaving
+        : (isQuick ? num(simple.numManagers)*ADMIN_HRS_PER_DAY_DEFAULT*ADMIN_WORKING_DAYS*ADMIN_LOADED_HOURLY
+                   : num(admin.managers)*num(admin.hoursPerDay)*num(admin.workingDays)*num(admin.loadedHourly));
+
+      // ── Header band ──
+      doc.setFillColor(...NAVY); doc.rect(0,0,210,34,"F");
+      doc.setFillColor(...SEAFOAM); doc.rect(0,34,210,1.4,"F");
+      doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(17);
+      doc.text("Smart Match: Workforce ROI Estimate",M,16);
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...SEAFOAM);
+      doc.text("RLDatix · "+new Date().toLocaleDateString(LOCALE)+" · "+(isQuick?"Quick estimate":"Detailed")+(lead.org?" · "+lead.org:""),M,24);
+      try{ doc.addImage(RLDATIX_LOGO_PNG,"PNG",210-M-38,9,38,7.3); }catch(e){ /* header still fine without it */ }
+
+      // ── Headline callouts ──
+      let y=42;
+      doc.setTextColor(...MUTED); doc.setFont("helvetica","bold"); doc.setFontSize(8.5);
+      doc.text("YOUR ESTIMATED ANNUAL IMPACT",M,y); y+=3;
+      const hbW=(W-4)/2, hbH=28;
+      const headlineBox=(x,big,label,sub)=>{ doc.setFillColor(...PALE_SEA); doc.setDrawColor(...TEAL);
+        doc.roundedRect(x,y,hbW,hbH,2.5,2.5,"FD");
+        doc.setTextColor(...TEAL); doc.setFont("helvetica","bold"); doc.setFontSize(21);
+        doc.text(big,x+hbW/2,y+13,{align:"center"});
+        doc.setTextColor(...NAVY); doc.setFontSize(9.5); doc.text(label,x+hbW/2,y+20,{align:"center"});
+        doc.setTextColor(...MIDC); doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.text(sub,x+hbW/2,y+24.5,{align:"center"}); };
+      headlineBox(M, noNet?"No net cash saving":fmt(Math.round(r.netSaving)), noNet?"at these inputs":"Potential annual cash saving", noNet?"licence fee exceeds the modelled premium":"after the "+fmt(num(platformCost))+"/yr licence fee");
+      headlineBox(M+hbW+4, Math.round(r.timeSavedWeek).toLocaleString(LOCALE)+" hrs", "released each week", "temporary staffing team time given back");
+      y+=hbH+6;
+
+      // ── KPI row ──
+      const kW=(W-9)/4, kH=21;
+      [["AGENCY PREMIUM AVOIDED",fmt(Math.round(r.totSaving)),"agency vs bank gap, excluding licence fee"],
+       ["ADMIN TIME VALUE",fmt(Math.round(adminValue)),adminIncluded?"included in the cash total":"shown separately, not in the cash total"],
+       ["PAYBACK",noNet?"n/a":fmtDays(r.paybackMonths),"to recover the annual licence fee"],
+       ["RETURN",retn(r),"net saving ÷ licence fee, per year"]
+      ].forEach(([label,val,sub],i)=>{ const x=M+i*(kW+3);
+        doc.setFillColor(255,255,255); doc.setDrawColor(...BORD); doc.roundedRect(x,y,kW,kH,2,2,"FD");
+        doc.setTextColor(...MUTED); doc.setFont("helvetica","bold"); doc.setFontSize(6.3); doc.text(label,x+3,y+5);
+        doc.setTextColor(...NAVY); doc.setFontSize(12.5); doc.text(String(val),x+3,y+11.5);
+        doc.setTextColor(...MIDC); doc.setFont("helvetica","normal"); doc.setFontSize(6.2); doc.text(doc.splitTextToSize(sub,kW-6),x+3,y+15.5); });
+      y+=kH+7;
+
+      // ── Confidence scenarios: every stance modelled, the chosen one flagged ──
+      const scenarios=[["Conservative",13],["Moderate",26],["Optimistic",50]].map(([key,d])=>{
+        const rr=isQuick ? calc(simpleToInput(simple,{...shared,displacement:d}))
+                         : calc({ groups, premium, displacement:d, shiftHours, oncost, platformCost, admin, recruit, fillRateNow, perGroupPremium, displaceableShare, turnover });
+        return { key, d, rr, selected:key===st.key }; });
+      doc.setTextColor(...MUTED); doc.setFont("helvetica","bold"); doc.setFontSize(8.5);
+      doc.text("SAVING BY CONFIDENCE LEVEL",M,y); y+=3;
+      const sW=(W-8)/3, sH=47;
+      scenarios.forEach((s,i)=>{ const x=M+i*(sW+4);
+        if(s.selected){ doc.setFillColor(...PALE_SEA); doc.setDrawColor(...TEAL); doc.setLineWidth(0.7); }
+        else { doc.setFillColor(255,255,255); doc.setDrawColor(...BORD); doc.setLineWidth(0.2); }
+        doc.roundedRect(x,y,sW,sH,2.5,2.5,"FD"); doc.setLineWidth(0.2);
+        doc.setTextColor(...NAVY); doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.text(s.key,x+4,y+8);
+        doc.setTextColor(...MIDC); doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.text(s.d+"% to bank",x+4,y+12.5);
+        if(s.selected){ doc.setFillColor(...TEAL); doc.roundedRect(x+sW-27,y+3.5,23,5.5,2.75,2.75,"F");
+          doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(6); doc.text("YOUR CHOICE",x+sW-15.5,y+7.2,{align:"center"}); }
+        const net=s.rr.netSaving;
+        doc.setTextColor(...TEAL); doc.setFont("helvetica","bold"); doc.setFontSize(15);
+        doc.text(net>0?fmtK(net):"No net saving",x+4,y+21);
+        doc.setTextColor(...MIDC); doc.setFont("helvetica","normal"); doc.setFontSize(6.5); doc.text("net annual cash saving",x+4,y+25);
+        doc.setDrawColor(...BORD); doc.setLineWidth(0.2); doc.line(x+4,y+27.5,x+sW-4,y+27.5);
+        let sy=y+31.5;
+        [["Agency premium avoided",fmtK(s.rr.totSaving)],["Admin time value",fmtK(adminValue)],["Payback",paybk(s.rr)],["Return on licence fee",retn(s.rr)]]
+          .forEach(([k,v])=>{ doc.setFont("helvetica","normal"); doc.setFontSize(6.8); doc.setTextColor(...MIDC); doc.text(k,x+4,sy);
+            doc.setFont("helvetica","bold"); doc.setTextColor(...NAVY); doc.text(String(v),x+sW-4,sy,{align:"right"}); sy+=4.1; }); });
+      y+=sH+7;
+
+      // ── Two columns: your inputs | capacity and wider value ──
+      const colW=(W-4)/2, colH=42;
+      const colBox=(x,title,rows,note)=>{ doc.setFillColor(...PALE); doc.setDrawColor(...BORD);
+        doc.roundedRect(x,y,colW,colH,2.5,2.5,"FD");
+        doc.setTextColor(...NAVY); doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.text(title,x+4,y+7);
+        let ry=y+13; doc.setFontSize(8);
+        rows.forEach(([k,v])=>{ doc.setTextColor(...MIDC); doc.setFont("helvetica","normal"); doc.text(k,x+4,ry);
+          doc.setTextColor(...NAVY); doc.setFont("helvetica","bold"); doc.text(String(v),x+colW-4,ry,{align:"right"}); ry+=5.1; });
+        // Anchor the note a fixed distance above the box floor so it always sits inside.
+        if(note){ doc.setTextColor(...MUTED); doc.setFont("helvetica","italic"); doc.setFontSize(6.5); doc.text(note,x+4,y+colH-3.5); } };
+      colBox(M,"Your inputs", isQuick
+        ? [["Registered bank workers",fmtNum(num(simple.bankPool))],["Current agency fill rate",(Math.round(num(simple.agencyFillRate)*10)/10)+"%"],["Temporary staffing team",fmtNum(num(simple.numManagers))],["Confidence level",displacement+"% ("+st.key+")"],["Admin time in cash total",adminIncluded?"included":"shown separately"]]
+        : [["Staff groups",r.rows.length],["Total bank pool",fmtNum(r.totHead)],["Agency premium",premium+"%"+(perGroupPremium?" (default; per-group)":"")],["Confidence level",displacement+"% ("+st.key+")"],["Admin time in cash total",adminIncluded?"included":"shown separately"]]);
+      colBox(M+colW+4,"Capacity and wider value",[
+        ["Shifts moved to bank / year",fmtNum(r.totDisplaced)],
+        ["Bank backfill cost",fmt(Math.round(r.totCapacityValue))],
+        ["Agency reliance",r.fillNow?(Math.round(r.fillNow*10)/10)+"% down to "+(Math.round(r.fillAfter*10)/10)+"%":"n/a"],
+        [(isQuick ? (spendAuto?"Est. annual agency spend (anchor)":"Your annual agency spend (anchor)") : "Total agency spend (anchor)"),fmt(r.totSpend)],
+        ["BankStaff+ licence fee",fmt(num(platformCost))+"/yr"]
+      ],"Capacity is coverage, not cash, never added to the saving.");
+      y+=colH+5;
+
+      // ── How the saving is worked out ──
+      doc.setFillColor(...PALE_SEA); doc.setDrawColor(...TEAL);
+      doc.roundedRect(M,y,W,22,2.5,2.5,"FD");
+      doc.setTextColor(...NAVY); doc.setFont("helvetica","bold"); doc.setFontSize(9.5);
+      doc.text("How the cash saving is worked out",M+4,y+7);
+      doc.setFontSize(8); doc.setFont("helvetica","normal"); doc.setTextColor(...MIDC);
+      doc.text("Your own bank "+fmt(Math.round(r.bankShiftCost))+"/shift  ·  agency, same shift "+fmt(Math.round(r.agencyShiftCost))+"/shift  ·  premium displaced "+fmt(Math.round(r.agencyShiftCost-r.bankShiftCost))+"/shift",M+4,y+12.5);
+      doc.setFont("helvetica","bold"); doc.setTextColor(...TEAL);
+      doc.text(fmt(Math.round(r.totSaving))+" premium"+(adminIncluded&&r.adminSaving>0?" + "+fmt(Math.round(r.adminSaving))+" admin time":"")+(r.recruitSaving>0?" + "+fmt(Math.round(r.recruitSaving))+" recruitment":"")+"  -  "+fmt(Math.round(num(platformCost)))+" licence fee  =  "+(noNet?"-"+fmt(Math.abs(Math.round(r.netSaving))):fmt(Math.round(r.netSaving)))+" net a year",M+4,y+18.5);
+      y+=22+6;
+
+      // ── Detailed only: the per-staff-group table gets its own page ──
+      if(!isQuick && doc.autoTable){ doc.addPage(); y=20;
+        doc.setTextColor(...NAVY); doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.text("Saving by staff group",M,y);
+        doc.autoTable({ startY:y+3,
           head:[["Staff group","Agency spend",...(perGroupPremium?["Premium"]:[]),"Duties displaced","Cash saving"]],
           body:r.rows.map(x=>[x.role,fmt(x.spend),...(perGroupPremium?[(x.premium!=null?x.premium:premium)+"%"]:[]),fmtNum(x.displaced),fmt(x.saving)]),
-          styles:{fontSize:9}, headStyles:{fillColor:[15,65,70]}, margin:{left:14,right:14} }); y=doc.lastAutoTable.finalY+8; }
-      if(y>228){ doc.addPage(); y=20; }   // autotable paginates itself; keep the explainer + disclaimer on the page too
+          styles:{fontSize:9}, headStyles:{fillColor:NAVY}, margin:{left:M,right:M} });
+        y=doc.lastAutoTable.finalY+10; }
+      if(y>240){ doc.addPage(); y=20; }   // keep the explainer + disclaimer together on one page
       // About these figures: a structured, retrospective explainer (the reader has the
       // finished PDF, not the live tool), then the legal disclaimer separated beneath.
       doc.setDrawColor(212,224,221); doc.setLineWidth(0.2); doc.line(14,y,196,y); y+=5;
@@ -713,11 +885,14 @@ function App(){
       doc.setFont("helvetica","bold"); doc.setFontSize(6.8); doc.setTextColor(120,130,150); doc.text("DISCLAIMER",14,y); y+=3.6;
       doc.setFont("helvetica","italic"); doc.setFontSize(6.8); doc.setTextColor(120,130,150);
       doc.text(doc.splitTextToSize("Indicative only, not a quote or a guarantee. Pilot-study figures are from two sites within a four-trust programme, anonymised pending client sign-off, and are not solely attributable to the platform. Validate against your organisation's own bank and agency rates before use in a business case.",182),14,y);
-      doc.save("smart-match-roi-estimate.pdf");
+      const orgSlug=lead.org?"-"+lead.org.trim().replace(/[^a-zA-Z0-9]+/g,"-").replace(/^-|-$/g,""):"";
+      doc.save("smart-match-roi-estimate"+orgSlug+".pdf");
     } finally { setPdfBusy(false); }
   }
 
   const isQuick = mode==="quick";
+
+  if(adminLeads) return <AdminLeads onClose={()=>{ window.location.hash=""; }}/>;
 
   return (
     <div>
@@ -739,14 +914,14 @@ function App(){
             focus management; aria-pressed states the on/off honestly with none of that. */}
         <div className="mode-toggle" role="group" aria-label="Calculator mode">
           <button type="button" aria-pressed={isQuick} className={isQuick?"active":""} onClick={()=>{ setSimple(s=>({...s,numManagers:num(admin.managers),includeAdmin:admin.enabled})); setMode("quick"); }}>Quick estimate<small>For operational managers</small></button>
-          <button type="button" aria-pressed={!isQuick} className={!isQuick?"active":""} onClick={()=>{ setAdmin(a=>({...a,managers:num(simple.numManagers),enabled:simple.includeAdmin!==false})); setMode("detailed"); }}>Detailed (commercial)<small>For Finance leads &amp; Workforce Directors</small></button>
+          <button type="button" aria-pressed={!isQuick} className={!isQuick?"active":""} onClick={()=>{ setAdmin(a=>({...a,managers:num(simple.numManagers),enabled:simple.includeAdmin===true})); setMode("detailed"); }}>Detailed (commercial)<small>For Finance leads &amp; Workforce Directors</small></button>
         </div>
 
         {isQuick ? (
           <div className="section">
             <div className="qsteps" role="tablist" aria-label="Quick estimate steps">
               {["Your numbers","Admin time","Confidence","Check & go"].map((t,i)=>(
-                <button key={i} type="button" role="tab" aria-selected={i===quickStep} className={"qstep"+(i===quickStep?" active":i<quickStep?" done":"")} onClick={()=>setQuickStep(i)}><span className="qn">Step {i+1}</span>{t}</button>
+                <button key={i} type="button" role="tab" aria-selected={i===quickStep} disabled={i>1 && simple.includeAdmin==null} title={i>1 && simple.includeAdmin==null ? "Answer the admin-time question first" : undefined} className={"qstep"+(i===quickStep?" active":i<quickStep?" done":"")} style={i>1 && simple.includeAdmin==null ? {opacity:.45,cursor:"not-allowed"} : undefined} onClick={()=>setQuickStep(i)}><span className="qn">Step {i+1}</span>{t}</button>
               ))}
             </div>
             {quickStep===0 && <>
@@ -755,7 +930,7 @@ function App(){
             <div className="card">
               <div>
                 <SliderField label="Registered bank workers" value={simple.bankPool} min={0} max={12000} step={10} format={fmtNum} onChange={v=>setSimple(s=>({...s,bankPool:num(v)}))} hint="Your whole bank register, not just bank-only staff (see i). Slide, or tap the number to type." info="Count EVERYONE on your bank register, including substantive staff who also pick up bank shifts, not just dedicated bank-only workers. Worked example: a trust with 150 bank-only workers plus 350 substantive staff who occasionally do bank shifts has 500 registered bank workers, not 150. This wider count is what the ~£2,700/worker agency-spend estimate is calibrated to (using bank-only would understate it ~3×). Scales for large systems (e.g. Leeds ~5,000, Sussex ~10,000); sets the estimated agency spend, licence tier and duty-count narrative (2026/27 AfC band-mix rate, ~£34k blended)."/>
-                <SliderField label="Annual agency spend" prefix="£" value={simple.agencySpend} min={0} max={Math.max(num(simple.bankPool)*15000,5000000)} step={100000} format={fmtNum} onChange={v=>{ setSimple(s=>({...s,agencySpend:num(v)})); setSpendAuto(false); }} hint={spendAuto?"Estimated from your bank size · slide or tap the number to enter your actual spend":"Your figure · the anchor for the saving"} info="Your organisation's total annual agency spend (all staff groups: medical, nursing, AHP, admin), the anchor for the saving, and a board-reported figure your finance team will know. Estimated from your bank size using FY2025/26 national averages (~£2,700 per registered bank worker) until you enter your actual spend, which makes the result far more credible. National agency spend is falling fast (£3bn→£1.2bn since 2023/24), so prefer your latest figure."/>
+                <SliderField label="Annual agency spend" prefix="£" value={simple.agencySpend} min={0} max={Math.min(50000000,Math.max(num(simple.bankPool)*15000,5000000))} step={100000} format={fmtNum} onChange={v=>{ setSimple(s=>({...s,agencySpend:num(v)})); setSpendAuto(false); }} hint={spendAuto?"Estimated from your bank size · slide or tap the number to enter your actual spend":"Your figure · the anchor for the saving"} info="Your organisation's total annual agency spend (all staff groups: medical, nursing, AHP, admin), the anchor for the saving, and a board-reported figure your finance team will know. Estimated from your bank size using FY2025/26 national averages (~£2,700 per registered bank worker) until you enter your actual spend, which makes the result far more credible. National agency spend is falling fast (£3bn→£1.2bn since 2023/24), so prefer your latest figure."/>
                 <SliderField label="Current agency fill rate" suffix="%" value={simple.agencyFillRate} min={0} max={30} step={0.1} format={v=>String(Math.round(num(v)*10)/10)} onChange={v=>setSimple(s=>({...s,agencyFillRate:num(v)}))} hint={spendAuto?"Share of temp duties on agency (avg 8.3%), scales the estimate above":"Share of temp duties on agency (national avg 8.3%)"} info="The % of temporary duties currently filled by agency (national average 8.3%, RLDatix data). While agency spend is estimated, a higher fill rate scales that estimate up proportionally (twice the national average ≈ twice the agency exposure per bank worker). Once you enter your actual agency spend, this drives the agency-reliance reduction story only. A pilot study recorded a move from 8.1% to 6.0% at one site."/>
                 <SliderField label="Temporary staffing team" value={simple.numManagers} min={0} max={60} step={1} format={fmtNum} onChange={v=>setSimple(s=>({...s,numManagers:num(v)}))} hint="Bank/temp staffing coordinators & admins" info="The people who do the day-to-day booking, chasing and reconciling of temporary shifts. Drives the time-saved-per-week and admin saving."/>
               </div>
@@ -766,10 +941,11 @@ function App(){
             <div className="step-label"><div className="step-num">2</div><h2>Include admin time saving?</h2></div>
             <p className="step-sub">Smart Match automates booking and matching, giving your temporary-staffing team hours back each week. Those hours are always shown, do you also want their cash value added to the headline saving?</p>
             <div className="card">
-              <div className="yesno">
-                <button type="button" className={"yn"+(simple.includeAdmin!==true?" active":"")} onClick={()=>setSimple(s=>({...s,includeAdmin:false}))}>No, show the hours only<small>Recommended. Keeps the headline to hard agency cash savings; the hours released are still shown on their own.</small></button>
-                <button type="button" className={"yn"+(simple.includeAdmin===true?" active":"")} onClick={()=>setSimple(s=>({...s,includeAdmin:true}))}>Yes, add the £ value too<small>Adds a conservative 1.0 h/day at a loaded £18/h across your team to the cash saving.</small></button>
+              <div className="yesno" role="radiogroup" aria-label="Include admin time saving in the cash total?">
+                <button type="button" role="radio" aria-checked={simple.includeAdmin===false} className={"yn"+(simple.includeAdmin===false?" active":"")} onClick={()=>setSimple(s=>({...s,includeAdmin:false}))}>No, show the hours only<small>Recommended. Keeps the headline to hard agency cash savings; the hours released are still shown on their own.</small></button>
+                <button type="button" role="radio" aria-checked={simple.includeAdmin===true} className={"yn"+(simple.includeAdmin===true?" active":"")} onClick={()=>setSimple(s=>({...s,includeAdmin:true}))}>Yes, add the £ value too<small>Adds a conservative 1.0 h/day at a loaded £18/h across your team to the cash saving.</small></button>
               </div>
+              {simple.includeAdmin==null && <p className="hint" style={{marginTop:10}}>Choose Yes or No to continue: neither is assumed for you.</p>}
             </div>
             </>}
 
@@ -803,7 +979,7 @@ function App(){
               <div style={{flex:1}}/>
               {quickStep<3 && <button type="button" className="skip-link" onClick={runCalc} title="Calculate now with these values and the default assumptions">Skip to results</button>}
               {quickStep<3
-                ? <button type="button" className="btn primary" onClick={()=>setQuickStep(s=>Math.min(3,s+1))}>Next →</button>
+                ? <button type="button" className="btn primary" disabled={quickStep===1 && simple.includeAdmin==null} style={quickStep===1 && simple.includeAdmin==null ? {opacity:.5,cursor:"not-allowed"} : undefined} onClick={()=>setQuickStep(s=>Math.min(3,s+1))}>Next →</button>
                 : <button type="button" className="btn primary" style={{fontSize:15}} onClick={runCalc}>{calculated?"Update results →":"Calculate my savings →"}</button>}
             </div>
           </div>
@@ -964,7 +1140,7 @@ function App(){
             {/* How the cash saving is worked out: bank vs agency rate vs the premium gap (the defensible basis) */}
             <div className="panel">
               <h3 className="panel-title">How the cash saving is worked out</h3>
-              <p style={{fontSize:12.5,color:C.textMid,lineHeight:1.6,margin:"0 0 .6rem"}}>We only ever bank the <b>gap</b> between an agency shift and the same shift on your own bank, never the whole agency cost, and only on the shifts you realistically move to bank (the {Math.round(r.displaceableShare*100)}% displaceable share × your confidence level).</p>
+              <p style={{fontSize:12.5,color:C.textMid,lineHeight:1.6,margin:"0 0 .6rem"}}>The saving is the <b>extra</b> an agency charges for a shift, over what the same shift would cost on your own bank: the premium, not the whole agency bill. We only count it on the shifts you can realistically move from agency to your bank (the {Math.round(r.displaceableShare*100)}% displaceable share × your confidence level).</p>
               {(()=>{ const hrs=r.shiftHours||8, bankHr=r.bankShiftCost/hrs, agHr=r.agencyShiftCost/hrs, gapS=r.agencyShiftCost-r.bankShiftCost, gapHr=gapS/hrs, m2=v=>"£"+(v||0).toFixed(2);
                 const rate=(s,h)=>(<>{fmt(s)} <small style={{color:C.textLight,fontWeight:400}}>/shift · {m2(h)}/hr</small></>);
                 // Round each term first so the displayed premium - licence = net equation adds up exactly.
@@ -1044,7 +1220,6 @@ function App(){
               </div>
               <label className="consent" style={{display:"flex",alignItems:"flex-start",gap:8,cursor:"pointer",marginTop:".6rem"}}><input type="checkbox" required checked={!!lead.consent} onChange={e=>setLead(l=>({...l,consent:e.target.checked}))} style={{marginTop:3}}/><span>I agree to share my name and email address so RLDatix may contact me about Smart Match; details are processed in line with RLDatix's privacy notice.</span></label>
               {lead.err==="failed" && <p className="consent" style={{color:C.rose}}>Sorry, that didn't send. Please try again, or contact your RLDatix representative.</p>}
-              {lead.err==="unconfigured" && <p className="consent" style={{color:C.rose}}>Lead capture isn't switched on yet. Your RLDatix contact can enable it (HubSpot portal + form ID).</p>}
               </form>}
             </div>
 
