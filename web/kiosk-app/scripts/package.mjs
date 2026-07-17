@@ -30,7 +30,7 @@ const readme = `<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><t
 <p>This package contains the RLDatix <strong>Smart Match</strong> (BankStaff+) workforce ROI calculator as a self-contained web app, ready to embed in your website via an iframe. It runs entirely in the visitor's browser — no server code, database or build step required.</p>
 <h2>1. Host the calculator</h2>
 <ol>
-<li>Upload the <code>calculator/</code> folder to your web hosting (any static hosting works: your WordPress server, S3/CloudFront, Netlify…). Example final URL: <code>https://your-domain.com/smartmatch-roi/index.html</code>.</li>
+<li>Upload the <code>calculator/</code> folder to your web hosting (any static hosting works: your WordPress server, S3/CloudFront, or a CDN…). Example final URL: <code>https://your-domain.com/smartmatch-roi/index.html</code>.</li>
 <li>Serve it over <strong>HTTPS</strong>. No other server configuration is needed — all asset paths are relative.</li>
 </ol>
 <h2>2. Embed it in your page</h2>

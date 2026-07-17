@@ -48,16 +48,10 @@ Outputs a fully static, offline-capable bundle to `dist/`.
 
 ## Deploy
 
-**Netlify — drag & drop:** run `npm run build`, then drag the `dist/` folder to [app.netlify.com/drop](https://app.netlify.com/drop).
+**Vercel — Git deploy:** the Vercel project builds from `main` with Root Directory `touchscreen`;
+build settings come from that folder's `vercel.json` (`cd kiosk-app && npm run build`, output `kiosk-app/dist`).
 
-**Netlify / Vercel — Git deploy:** push this folder to a repo and connect it. Build settings are in
-`netlify.toml` and `vercel.json` (auto-detected).
-
-**Netlify CLI:**
-```bash
-npm run build
-npx netlify-cli deploy --prod --dir=dist
-```
+**Any static host:** run `npm run build` and upload `dist/` — the bundle is fully static and self-contained.
 
 ## Architecture
 
