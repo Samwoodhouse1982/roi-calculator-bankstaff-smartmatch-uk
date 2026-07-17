@@ -20,7 +20,7 @@
   :root {
     --navy:#0F4146; --navy-dark:#0A2F31; --navy-mid:#1A5459; --navy-light:#E8FAF6;
     --teal:#0F4146; --teal-light:#D6F7EE; --teal-mid:#1A8A7A; --seafoam:#34DEC2;
-    --mid-grey:#EEF6F4; --border:#D4E0DD; --text:#0F4146; --text-mid:#3D5A5E; --text-light:#5F787C; /* 4.7:1 on white (WCAG AA), matches JS C.textLight */
+    --mid-grey:#EEF7F2; /* family-wide page wash, matches web + touchscreen */ --border:#D4E0DD; --text:#0F4146; --text-mid:#3D5A5E; --text-light:#5F787C; /* 4.7:1 on white (WCAG AA), matches JS C.textLight */
     --white:#fff; --radius:14px; --radius-sm:8px; --shadow:0 1px 3px rgba(15,65,70,.07),0 8px 28px rgba(15,65,70,.06);
   }
   html { -webkit-text-size-adjust:100%; }
@@ -110,16 +110,8 @@
   .hint { font-size:11px; color:var(--text-light); line-height:1.5; }
   .adv-toggle { background:none; border:none; color:var(--navy-mid); font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; padding:6px 0 0; text-decoration:underline; }
 
-  /* QUICK WIZARD: step indicator, nav, yes/no */
-  .qsteps { display:flex; gap:6px; margin-bottom:1.5rem; }
-  .qstep { flex:1; text-align:center; font-family:inherit; font-size:11.5px; font-weight:600; color:var(--text-light); background:none; border:none; border-top:3px solid var(--border); padding:9px 4px 0; cursor:pointer; line-height:1.35; transition:.15s; }
-  .qstep .qn { display:block; font-size:10px; font-weight:700; opacity:.7; margin-bottom:1px; }
-  .qstep:hover { color:var(--navy-mid); }
-  .qstep.done { color:var(--teal-mid); border-top-color:var(--teal-mid); }
-  .qstep.active { color:var(--navy); border-top-color:var(--teal); }
+  /* QUICK (single page): calculate row + yes/no decision */
   .qnav { display:flex; align-items:center; gap:10px; margin-top:1.5rem; }
-  .skip-link { background:none; border:none; color:var(--text-light); font-family:inherit; font-size:12.5px; font-weight:600; cursor:pointer; padding:6px 2px; text-decoration:underline; }
-  .skip-link:hover { color:var(--navy-mid); }
   .yesno { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   @media (max-width:520px){ .yesno{ grid-template-columns:1fr; } }
   .yn { text-align:left; font-family:inherit; background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:1rem 1.1rem; cursor:pointer; font-size:14px; font-weight:600; color:var(--navy); transition:.15s; }
@@ -218,15 +210,6 @@
   .btn.primary:hover { background:var(--teal-mid); }
   .btn:disabled { opacity:.6; cursor:wait; }
 
-  .lead { margin:1.25rem 1.5rem; padding:1.25rem; border:1px dashed var(--border); border-radius:var(--radius); background:#fcfdff; }
-  .lead h4 { font-family:'DM Serif Display',Georgia,serif; font-weight:400; color:var(--navy); font-size:1.05rem; margin-bottom:.25rem; }
-  .lead p.sub { font-size:12px; color:var(--text-light); margin-bottom:.85rem; }
-  .lead-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  @media (max-width:560px){ .lead-grid{ grid-template-columns:1fr; } }
-  .lead input { border:1px solid var(--border); border-radius:var(--radius-sm); padding:9px 11px; font-family:inherit; font-size:14px; width:100%; background:#fff; }
-  .lead input:focus { outline:none; border-color:var(--teal); }
-  .lead .consent { font-size:11px; color:var(--text-light); margin-top:.6rem; line-height:1.5; }
-
   .cal-overlay { position:fixed; inset:0; background:rgba(10,47,49,.55); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; z-index:1000; animation:fadeIn .3s; }
   .cal-card { background:#fff; border-radius:16px; padding:2rem 2.5rem; max-width:380px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.3); }
   .cal-dots { display:flex; gap:5px; justify-content:center; height:32px; align-items:center; margin-bottom:1rem; }
@@ -245,7 +228,7 @@
     *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
   }
   @media (max-width:480px){ header,main{ padding-left:1.25rem; padding-right:1.25rem; } .roi-co{ gap:1.5rem; } }
-  @media print { .cal-overlay,.actions,.lead,.adv-toggle,.mode-toggle,.qnav,.qsteps,header p{ display:none !important; } body{ background:#fff; font-size:11pt; } .results-box{ box-shadow:none; } }
+  @media print { .cal-overlay,.actions,.adv-toggle,.mode-toggle,.qnav,header p{ display:none !important; } body{ background:#fff; font-size:11pt; } .results-box{ box-shadow:none; } }
 </style>
 </head>
 <body>
@@ -337,7 +320,6 @@ const AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP = 2700;   // FY2025-26 basis, 
    average carries ~twice the agency exposure per bank worker, so the fill-rate slider
    drives the estimate (bounded, not the old hyperbolic 1/(1-fill)). A user-entered actual
    agency spend still overrides it entirely. */
-const NATIONAL_AVG_FILL_PCT = 8.3;
 const RECRUIT_COST_PER_WORKER = 1000;     // recruit + onboard a bank worker
 const RECRUIT_RECOVERY_RATE = 0.10;       // share recovered by activating idle capacity
 /* [Benchmark brief §4] Displaceable share: only part of agency spend can realistically move to bank
@@ -631,7 +613,7 @@ function App(){
   const [simple,setSimple]=useState({ bankPool:660, agencySpend:null, agencyFillRate:8.3, numManagers:12, includeAdmin:null });
   const spendAuto = simple.agencySpend==null;
   // detailed state
-  const [groups,setGroups]=useState(()=>buildOrg("acute")); const [preset,setPreset]=useState("acute"); const [fillRateNow,setFill]=useState(8);
+  const [groups,setGroups]=useState(()=>buildOrg("acute")); const [preset,setPreset]=useState("acute"); const [fillRateNow,setFill]=useState(8.3);   // same national-average default as Quick
   const [admin,setAdmin]=useState({ enabled:false, managers:12, hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY });
   const [recruit,setRecruit]=useState({ enabled:false, workers:50, costPerWorker:RECRUIT_COST_PER_WORKER, recoveryRate:RECRUIT_RECOVERY_RATE });
 
@@ -824,7 +806,7 @@ function App(){
       {calibrating && <Calibrating/>}
 
       <header><div className="wrap">
-        <div className="logo"><b>RLDatix</b><span className="divider">·</span>BankStaff+<span className="divider">·</span>Smart Match</div>
+        <div className="logo" style={{display:"flex",alignItems:"center",flexWrap:"wrap",gap:8}}><b>RLDatix</b><span className="divider">·</span>BankStaff+<span className="divider">·</span>Smart Match<span style={{marginLeft:"auto",fontSize:10.5,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.28)",color:"rgba(255,255,255,.85)",padding:"4px 12px",borderRadius:999}}>Internal · account manager tool</span></div>
         <h1>Measure your ROI from<br/><em>Smart Match AI</em></h1>
         <p><strong>Smart Match</strong>, a feature of RLDatix <strong>BankStaff+</strong>, helps NHS organisations fill more shifts from their own staff bank and rely less on agency. This tool gives you an indicative overview of two things: the <strong>potential cash savings</strong> from reducing agency reliance, and the <strong>administrative time and staffing capacity</strong> that better bank management could release. The figures draw on real data from a pilot study and are deliberately conservative, a starting point for a conversation, not a fixed quote.</p>
       </div></header>
@@ -838,7 +820,7 @@ function App(){
         {/* Toggle buttons, not tabs: a real tabs pattern needs tabpanel roles + arrow-key
             focus management; aria-pressed states the on/off honestly with none of that. */}
         <div className="mode-toggle" role="group" aria-label="Calculator mode">
-          <button type="button" aria-pressed={isQuick} className={isQuick?"active":""} onClick={()=>{ setSimple(s=>({...s,numManagers:num(admin.managers),includeAdmin:admin.enabled})); setMode("quick"); }}>Quick estimate<small>Fast whole-bank view, one page</small></button>
+          <button type="button" aria-pressed={isQuick} className={isQuick?"active":""} onClick={()=>{ setSimple(s=>({...s,numManagers:num(admin.managers),includeAdmin: s.includeAdmin==null ? (admin.enabled?true:null) : admin.enabled})); setMode("quick"); }}>Quick estimate<small>Fast whole-bank view, one page</small></button>{/* undecided stays undecided: only an actual decision (detailed ticked, or quick already answered) syncs across, so mode-hopping can never silently answer the admin question */}
           <button type="button" aria-pressed={!isQuick} className={!isQuick?"active":""} onClick={()=>{ setAdmin(a=>({...a,managers:num(simple.numManagers),enabled:simple.includeAdmin===true})); setMode("detailed"); }}>Detailed (commercial)<small>Per-staff-group model</small></button>
         </div>
 
@@ -883,8 +865,8 @@ function App(){
               <div className="field">
                 <span className="flabel">Confidence level: {displacement}% · {st.key} <InfoTip text="Share of current agency usage that improved bank utilisation moves to bank, applied to the 80% displaceable share (so Moderate 26% ≈ 21% of all agency). Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; defaults to Conservative."/></span>
                 <div className="stance-btns">{[["Conservative",13],["Moderate",26],["Optimistic",50]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
-                <input type="range" min="8" max="50" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Confidence level, percent" aria-valuetext={displacement+"%, "+st.key}/>
-                <div className="slider-ctx"><span>8% conservative</span><span>26% moderate</span><span>50% optimistic</span></div>
+                <input type="range" min="13" max="50" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Confidence level, percent" aria-valuetext={displacement+"%, "+st.key}/>
+                <div className="slider-ctx"><span>13% conservative</span><span>26% moderate</span><span>50% optimistic</span></div>
               </div>
               <div style={{alignSelf:"center"}}><div className="disp-note" style={{marginTop:0,background:st.bg,color:st.color}}>{st.note}</div></div>
             </div>
@@ -963,8 +945,8 @@ function App(){
               <div className="field">
                 <span className="flabel">Confidence level: {displacement}% · {st.key} <InfoTip text="Share of your baseline agency usage that improved bank utilisation moves to bank, applied to the displaceable share only (default 80%, so Moderate 26% ≈ 21% of all agency). Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; the commercial variant can show the Moderate case with a rep to frame the caveats."/></span>
                 <div className="stance-btns">{[["Conservative",13],["Moderate",26],["Optimistic",50]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
-                <input type="range" min="8" max="50" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Confidence level, percent" aria-valuetext={displacement+"%, "+st.key}/>
-                <div className="slider-ctx"><span>8% conservative</span><span>26% moderate</span><span>50% optimistic</span></div>
+                <input type="range" min="13" max="50" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Confidence level, percent" aria-valuetext={displacement+"%, "+st.key}/>
+                <div className="slider-ctx"><span>13% conservative</span><span>26% moderate</span><span>50% optimistic</span></div>
               </div>
             </div>
             <div className="disp-note" style={{background:st.bg,color:st.color}}>{st.note}</div>
@@ -1022,7 +1004,7 @@ function App(){
           <div className="step-label"><div className="step-num">{isQuick?2:3}</div><h2>Your potential impact</h2></div>
           <div className="results-box">
             <div className="roi-header">
-              <div className="roi-eyebrow">Estimated annual impact (indicative)</div>
+              <div className="roi-eyebrow">Estimated annual impact</div>
               <div className="roi-co">
                 {noNet ? (
                 <div><div className="roi-hero"><AnimNum v={r.totDisplaced}/><small> shifts</small></div><div className="roi-cap">Shifts you could move off agency each year</div><div className="roi-desc" style={{marginTop:6}}>At this size the value is <b>released capacity and staff time</b> rather than net cash: the {fmtK(r.totSaving)} agency premium you'd displace is below the {fmt(platformCost)}/yr licence. The cash case builds as your bank grows, at higher agency reliance, or once you enter your trust's actual agency spend.</div></div>
@@ -1166,7 +1148,7 @@ function App(){
         )}
       </main>
 
-      <footer><p>Built by <strong>RLDatix Smart Match</strong> · Cash saving = agency premium displaced (not gross shift value) · 2026/27 NHS AfC pay scales · Figures are <strong>indicative</strong>, conservative and editable · validate with your organisation's own rates · Pilot study = 2-site data within a 4-trust programme, anonymised pending client sign-off; outcomes vary and are not solely attributable to the platform. · <span style={{opacity:.7}}>v1.5.0</span></p></footer>
+      <footer><p>Built by <strong>RLDatix Smart Match</strong> · Cash saving = agency premium displaced (not gross shift value) · 2026/27 NHS AfC pay scales · Figures are <strong>indicative</strong>, conservative and editable · validate with your organisation's own rates · Pilot study = 2-site data within a 4-trust programme, anonymised pending client sign-off; outcomes vary and are not solely attributable to the platform. · <span style={{opacity:.7}}>v1.6.0</span></p></footer>
     </div>
   );
 }
