@@ -683,7 +683,7 @@ function App(){
     try{ const { jsPDF }=window.jspdf, doc=new jsPDF({unit:"mm",format:"a4"}); let y=18;
       doc.setFillColor(15,65,70); doc.rect(0,0,210,30,"F"); doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(16);
       doc.text("Smart Match: Workforce ROI Estimate",14,16); doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(52,222,194);
-      doc.text("RLDatix · indicative · "+new Date().toLocaleDateString(LOCALE)+" · "+(mode==="quick"?"Quick estimate":"Detailed"),14,23); y=40;
+      doc.text("RLDatix · "+new Date().toLocaleDateString(LOCALE)+" · "+(mode==="quick"?"Quick estimate":"Detailed"),14,23); y=40;
       doc.setTextColor(15,65,70); doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.text("Headline",14,y); y+=6; doc.setFont("helvetica","normal"); doc.setFontSize(10);
       [["Net annual cash saving",noNet?"None at these inputs (licence fee exceeds the modelled premium)":fmt(r.netSaving)],["Admin time saved / week",Math.round(r.timeSavedWeek).toLocaleString(LOCALE)+" hours"],
        ["Gross annual benefit",fmt(r.grossBenefit)],["Payback (licence / gross)",noNet?"n/a":fmtDays(r.paybackMonths)],["Return (net / licence fee)",noNet?"n/a":fmtMult(r.roiMultiple)],
@@ -695,9 +695,24 @@ function App(){
           head:[["Staff group","Agency spend",...(perGroupPremium?["Premium"]:[]),"Duties displaced","Cash saving"]],
           body:r.rows.map(x=>[x.role,fmt(x.spend),...(perGroupPremium?[(x.premium!=null?x.premium:premium)+"%"]:[]),fmtNum(x.displaced),fmt(x.saving)]),
           styles:{fontSize:9}, headStyles:{fillColor:[15,65,70]}, margin:{left:14,right:14} }); y=doc.lastAutoTable.finalY+8; }
-      if(y>265){ doc.addPage(); y=20; }   // autotable paginates itself; keep the disclaimer on the page too
-      doc.setFontSize(8); doc.setTextColor(120,130,150);
-      doc.text(doc.splitTextToSize("Indicative only. Cash saving = agency premium displaced when improved bank utilisation moves duties off agency; it excludes the cost of the bank shifts themselves (capacity, shown separately). 2026/27 NHS AfC midpoints; conservative, editable assumptions. Pilot-study figures are from 2 sites in a 4-trust programme, anonymised pending client sign-off, and are not solely attributable to the platform.",182),14,y);
+      if(y>228){ doc.addPage(); y=20; }   // autotable paginates itself; keep the explainer + disclaimer on the page too
+      // About these figures: a structured, retrospective explainer (the reader has the
+      // finished PDF, not the live tool), then the legal disclaimer separated beneath.
+      doc.setDrawColor(212,224,221); doc.setLineWidth(0.2); doc.line(14,y,196,y); y+=5;
+      doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(120,130,150); doc.text("ABOUT THESE FIGURES",14,y); y+=5;
+      doc.setFontSize(7.5);
+      [["Cash saving","the agency premium displaced when better bank utilisation moves duties off agency onto your own bank. It excludes the cost of the bank shifts themselves; that is capacity, shown separately, and never added to the saving."],
+       ["Assumptions","based on 2026/27 NHS Agenda for Change pay midpoints and deliberately conservative throughout. The 20% agency premium reflects figures cited in House of Commons Library research."],
+       ["Agency spend", mode==="quick"
+         ? (spendAuto ? "was estimated from your bank size using FY2025/26 national averages (~£2,700 per registered bank worker); a figure based on your own agency book would give a more accurate result." : "was the annual agency figure you supplied, which anchors the cash saving directly.")
+         : "was taken from the per-staff-group figures in the detailed model, which anchor the cash saving."]
+      ].forEach(([term,def])=>{ const label=term+": "; doc.setFont("helvetica","bold"); doc.setTextColor(15,65,70); doc.text(label,14,y);
+        const lw=doc.getTextWidth(label); doc.setFont("helvetica","normal"); doc.setTextColor(61,90,94);
+        const lines=doc.splitTextToSize(def,182-lw); doc.text(lines,14+lw,y); y+=lines.length*3.3+1.3; });
+      y+=2; doc.setDrawColor(212,224,221); doc.line(14,y,196,y); y+=4.5;
+      doc.setFont("helvetica","bold"); doc.setFontSize(6.8); doc.setTextColor(120,130,150); doc.text("DISCLAIMER",14,y); y+=3.6;
+      doc.setFont("helvetica","italic"); doc.setFontSize(6.8); doc.setTextColor(120,130,150);
+      doc.text(doc.splitTextToSize("Indicative only, not a quote or a guarantee. Pilot-study figures are from two sites within a four-trust programme, anonymised pending client sign-off, and are not solely attributable to the platform. Validate against your organisation's own bank and agency rates before use in a business case.",182),14,y);
       doc.save("smart-match-roi-estimate.pdf");
     } finally { setPdfBusy(false); }
   }
@@ -798,7 +813,7 @@ function App(){
             <h3>How to use the detailed calculator</h3>
             <div className="inst-steps">
               <div className="inst-step"><div className="inst-num">1</div><p><strong>Pick your organisation type, or build your own.</strong> Set each group's headcount, <strong>annual agency spend</strong> (the anchor for the saving) and pay; add or remove staff groups as needed.</p></div>
-              <div className="inst-step"><div className="inst-num">2</div><p><strong>Set the agency premium</strong> (default 20%, the official average, contested, so use your own; tick to set it <strong>per group</strong>) and pick a <strong>confidence level</strong> (Conservative / Moderate / Optimistic). Optionally add admin and recruitment levers.</p></div>
+              <div className="inst-step"><div className="inst-num">2</div><p><strong>Set the agency premium</strong> (default 20%, reflecting figures cited in House of Commons Library research; contested, so use your own; tick to set it <strong>per group</strong>) and pick a <strong>confidence level</strong> (Conservative / Moderate / Optimistic). Optionally add admin and recruitment levers.</p></div>
               <div className="inst-step"><div className="inst-num">3</div><p><strong>Read the co-headlines:</strong> net annual cash saving and admin time saved per week, with payback. Capacity (temp duties filled) is shown separately and excluded from the saving.</p></div>
             </div>
           </div>
@@ -846,8 +861,8 @@ function App(){
             <div className="step-label"><div className="step-num">2</div><h2>Agency parameters</h2></div>
             <div className="params-grid">
               <div>
-                <Field label={perGroupPremium?"Default agency premium (%)":"Agency premium over bank (%)"} value={premium} min="0" max="150" step={1} onChange={v=>setPremium(num(v))} info="A single agency-over-bank premium (House of Commons Library ~20% average). Contested at shift level; REC data show NHS bank can cost more than capped agency in hard-to-fill roles. Use your organisation's actual rate where possible; applies across all groups unless you override per group." hint={perGroupPremium?"Default for any group you don't override below":"Default 20% · official average · editable · contested"}/>
-                <div style={{display:"flex",alignItems:"center",gap:7,marginTop:8}}><label style={{display:"flex",alignItems:"center",gap:7,fontSize:12,fontWeight:600,color:C.navy,cursor:"pointer"}}><input type="checkbox" checked={perGroupPremium} onChange={e=>setPGP(e.target.checked)}/> Set the agency premium per staff group</label> <InfoTip text="Off by default, one official ~20% premium across all groups (the defensible business-case default). Tick to override the premium per column, e.g. higher for medics, where you have organisation-specific agency rates."/></div>
+                <Field label={perGroupPremium?"Default agency premium (%)":"Agency premium over bank (%)"} value={premium} min="0" max="150" step={1} onChange={v=>setPremium(num(v))} info="A single agency-over-bank premium (~20%, reflecting figures cited in House of Commons Library research). Contested at shift level; REC data show NHS bank can cost more than capped agency in hard-to-fill roles. Use your organisation's actual rate where possible; applies across all groups unless you override per group." hint={perGroupPremium?"Default for any group you don't override below":"Default 20% · cited in House of Commons Library research · editable · contested"}/>
+                <div style={{display:"flex",alignItems:"center",gap:7,marginTop:8}}><label style={{display:"flex",alignItems:"center",gap:7,fontSize:12,fontWeight:600,color:C.navy,cursor:"pointer"}}><input type="checkbox" checked={perGroupPremium} onChange={e=>setPGP(e.target.checked)}/> Set the agency premium per staff group</label> <InfoTip text="Off by default, one ~20% premium across all groups (the defensible business-case default). Tick to override the premium per column, e.g. higher for medics, where you have organisation-specific agency rates."/></div>
               </div>
               <div className="field">
                 <span className="flabel">Confidence level: {displacement}% · {st.key} <InfoTip text="Share of your baseline agency usage that improved bank utilisation moves to bank, applied to the displaceable share only (default 80%, so Moderate 26% ≈ 21% of all agency). Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; the commercial variant can show the Moderate case with a rep to frame the caveats."/></span>
@@ -963,7 +978,7 @@ function App(){
                     <b style={{color:C.navy}}>{fmt(grossR)}</b> premium{adminR>0?<> + <b style={{color:C.navy}}>{fmt(adminR)}</b> admin time</>:""}{recR>0?<> + <b style={{color:C.navy}}>{fmt(recR)}</b> recruitment</>:""} − <b style={{color:C.navy}}>{fmt(licR)}</b> licence fee = <b style={{color:netR>0?C.teal:"#8A6508"}}>{netR>=0?fmt(netR):"−"+fmt(-netR)}</b> net{netR>0?", the headline saving shown at the top.":", so the licence fee is larger than the premium at these inputs."}
                   </p>
                 </>; })()}
-              <p style={{fontSize:11.5,color:C.textLight,marginTop:".6rem",lineHeight:1.6}}>Bank rate = 2026/27 AfC blended midpoint, already including the employer on-cost (default 20%, employer NI + pension), so on-costs are counted once, not added on top. Premium defaults to the official ~20% House of Commons Library average, deliberately conservative and contested at shift level (nursing ~35–50%, medics ~80–120%). Set your own premium and every figure updates.{isQuick?<> Quick mode anchors on your annual agency spend ({fmtK(r.totSpend)}{spendAuto?", estimated from your bank size using FY2025/26 national averages, enter your actual agency spend for accurate results":""}), for a per-staff-group model, switch to Detailed.</>:""}</p>
+              <p style={{fontSize:11.5,color:C.textLight,marginTop:".6rem",lineHeight:1.6}}>Bank rate = 2026/27 AfC blended midpoint, already including the employer on-cost (default 20%, employer NI + pension), so on-costs are counted once, not added on top. Premium defaults to ~20%, reflecting figures cited in House of Commons Library research, deliberately conservative and contested at shift level (nursing ~35-50%, medics ~80-120%). Set your own premium and every figure updates.{isQuick?<> Quick mode anchors on your annual agency spend ({fmtK(r.totSpend)}{spendAuto?", estimated from your bank size using FY2025/26 national averages, enter your actual agency spend for accurate results":""}), for a per-staff-group model, switch to Detailed.</>:""}</p>
             </div>
 
             {/* Single annual steady-state (Rev D: ramp removed) */}
@@ -1019,7 +1034,7 @@ function App(){
 
             <div className="lead">
               <h4>Want a copy, or to pressure-test these numbers?</h4>
-              <p className="sub">Optional: the calculator and PDF are open to everyone. Leave your details and a Smart Match specialist can validate the figures against your organisation's own bank and agency rates.</p>
+              <p className="sub">Leave your details and an RLDatix BankStaff specialist can validate the figures against your organisation's own bank and agency rates.</p>
               {lead.sent ? <p style={{color:C.navy,fontWeight:600,fontSize:14}}>Thanks, we'll be in touch. 👋</p> :
               <form onSubmit={submitLead}><div className="lead-grid">
                 <input aria-label="Name" autoComplete="name" placeholder="Name" value={lead.name} onChange={e=>setLead(l=>({...l,name:e.target.value}))}/>
@@ -1027,7 +1042,7 @@ function App(){
                 <input aria-label="Trust or organisation" autoComplete="organization" placeholder="Trust / organisation" value={lead.org} onChange={e=>setLead(l=>({...l,org:e.target.value}))}/>
                 <button className="btn primary" type="submit" disabled={!lead.consent||lead.busy}>{lead.busy?"Sending…":"Send to a specialist"}</button>
               </div>
-              <label className="consent" style={{display:"flex",alignItems:"flex-start",gap:8,cursor:"pointer",marginTop:".6rem"}}><input type="checkbox" required checked={!!lead.consent} onChange={e=>setLead(l=>({...l,consent:e.target.checked}))} style={{marginTop:3}}/><span>I agree RLDatix may contact me about Smart Match and process these details in line with the RLDatix privacy notice.</span></label>
+              <label className="consent" style={{display:"flex",alignItems:"flex-start",gap:8,cursor:"pointer",marginTop:".6rem"}}><input type="checkbox" required checked={!!lead.consent} onChange={e=>setLead(l=>({...l,consent:e.target.checked}))} style={{marginTop:3}}/><span>I agree to share my name and email address so RLDatix may contact me about Smart Match; details are processed in line with RLDatix's privacy notice.</span></label>
               {lead.err==="failed" && <p className="consent" style={{color:C.rose}}>Sorry, that didn't send. Please try again, or contact your RLDatix representative.</p>}
               {lead.err==="unconfigured" && <p className="consent" style={{color:C.rose}}>Lead capture isn't switched on yet. Your RLDatix contact can enable it (HubSpot portal + form ID).</p>}
               </form>}
