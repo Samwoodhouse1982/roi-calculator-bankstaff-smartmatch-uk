@@ -26,6 +26,15 @@ unchanged under a Root Directory).
   `touchscreen/kiosk-app`, `web/kiosk-app` and inline in
   `commercial/roi-calculator.html`. Run each product's tests after.
 
+## Credits
+
+Product direction, ROI methodology decisions, UK/NHS domain expertise, copy
+and design sign-off: **Sam Woodhouse**. Every calculator behaviour in this
+suite — the confidence stances, the conservative defaults, the honest-framing
+rules (capacity never added to the saving, admin time opt-in, sourced
+assumptions) — was specified and reviewed by Sam. Implementation was
+AI-assisted (built with Claude Code under Sam's direction).
+
 ## Tests
 
 ```bash
