@@ -1196,7 +1196,7 @@ function App(){
               <div className="cap-grid">
                 <div className="cap-item"><div className="cv"><AnimNum v={r.totDisplaced}/></div><div className="cl">more shifts filled from your own bank each year (off agency)</div></div>
                 <div className="cap-item"><div className="cv">{fmtK(r.totCapacityValue)}</div><div className="cl">bank backfill cost to deliver them <b>(spend, not saving)</b></div></div>
-                <div className="cap-item"><div className="cv">{r.fillNow?pct(r.fillNow)+" → "+r.fillAfter.toFixed(1)+"%":"n/a"}</div><div className="cl">illustrative agency reliance reduction</div></div>
+                <div className="cap-item"><div className="cv">{r.fillNow?(Math.round(r.fillNow*10)/10)+"% → "+(Math.round(r.fillAfter*10)/10)+"%":"n/a"}</div><div className="cl">illustrative agency reliance reduction</div></div>
               </div>
               <p style={{fontSize:11.5,color:C.textLight,marginTop:".85rem",lineHeight:1.6}}>Filling more shifts from your own bank is real operational value: steadier rosters, better continuity of care and less last-minute agency reliance. It is deliberately kept separate from the cash saving above and never added to it.</p>
               {!r.zeroPay && r.totBaseline>0 && <div style={{marginTop:".6rem"}}><Method your={<>

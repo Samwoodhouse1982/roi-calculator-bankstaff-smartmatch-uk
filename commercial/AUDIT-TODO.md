@@ -40,8 +40,8 @@ Nothing below is committed-to; each needs a review decision first.
 - [ ] All-zero state renders "the £0 premium you'd displace is below the
   £0/yr licence" (and the PDF equivalent) — special-case zero-vs-zero; also
   the noNet copy says "premium" when admin is included in the comparison.
-- [ ] Capacity panel shows "8% → 6.6%" (whole number vs one decimal) — use one
-  decimal on both sides (the PDF already does).
+- [x] Capacity panel shows "8% → 6.6%" (whole number vs one decimal) — fixed:
+  one decimal both sides, matching the PDF.
 - [ ] PDF worked-out equation can be £1 off — round each term first, as the
   on-screen version already does (`netR` construction).
 - [ ] With a zero-pay group the "£x/hr × N shifts = £gross" sentence no longer
