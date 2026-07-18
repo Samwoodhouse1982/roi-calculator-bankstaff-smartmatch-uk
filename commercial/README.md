@@ -76,9 +76,11 @@ turnover** input sets *agency intensity* (agency % of turnover) and tailors the 
 **1–4%** typical (lead with the cash premium), **> 4%** high reliance (rate arbitrage
 dominates). Treat agency spend as a current, **declining** figure and prefer the trust's own.
 
-**Guardrails:** the cash saving can never exceed total agency spend; the tool
-leads with **net annual saving + payback** (shown in days, not a giant ROI %)
-and flags implausibly high returns (>40× the licence fee).
+**Guardrails:** the saving identity itself keeps the cash saving structurally
+below total agency spend (an `exceedsSpend` belt-and-braces check also exists
+but is unreachable from the UI); the tool leads with **net annual saving +
+payback** (shown in days, not a giant ROI %) and flags returns above **100×**
+the licence fee as likely input errors.
 
 ## Files
 
@@ -89,6 +91,7 @@ and flags implausibly high returns (>40× the licence fee).
 | `vercel.json` | Deploy routing + cache/security headers. |
 | `embed-snippet.html` | Reference snippet for embedding via iframe (auto-resize + host-page scrolling via `postMessage`). |
 | `test/engine.web.test.mjs` | Engine regression tests — golden numbers, guardrails, kiosk parity. |
+| `test/jsx-parse.test.mjs` | Whole-block JSX parse check (Babel from CDN / local; skips offline). |
 | `README.md` | This file. |
 
 ## Tests
@@ -98,6 +101,14 @@ package.json). The suite extracts the pure calc engine from
 `roi-calculator.html` and pins it to the same golden numbers as the kiosk's
 `test/engine.test.mjs`, so the two builds cannot drift silently. If you
 intentionally change a default or constant, update **both** test files.
+
+`test/jsx-parse.test.mjs` additionally transforms the whole `text/babel`
+block with `@babel/standalone` (pinned 7.26.4, classic runtime) and
+syntax-checks the output, so a JSX error can't ship silently. Babel is
+fetched from the page's own CDN at test time (or from
+`$BABEL_STANDALONE_PATH` / `test/vendor/babel.min.js` offline); with no
+network and no local copy the test skips with a warning — run it somewhere
+with network before releasing.
 
 ## How it deploys (Vercel)
 
@@ -116,8 +127,9 @@ Use `embed-snippet.html` as the host-page reference. The calculator posts three
 (auto-height), `smartmatch-roi-scroll-top` (the "↑ Adjust inputs" button) and
 `smartmatch-roi-scroll` (scrolls the host page to the results after
 "Calculate") — in-iframe scrolling is a no-op once the iframe is full height,
-so the host does it. Point `src` at `/roi-calculator.html` (not `/`, which
-redirects) and serve over HTTPS. Framing is explicitly allowed:
+so the host does it. Point `src` at `/roi-calculator` (not `/`, which
+redirects, and not `/roi-calculator.html`, which `cleanUrls` 308-redirects
+to the extensionless path) and serve over HTTPS. Framing is explicitly allowed:
 `vercel.json` sends `Content-Security-Policy: frame-ancestors *` (and no
 `X-Frame-Options`), so the calculator can be embedded on any host page.
 
@@ -144,7 +156,7 @@ redirects) and serve over HTTPS. Framing is explicitly allowed:
 ## Open items to confirm (from the research brief)
 
 1. **Platform cost** used as the ROI denominator — now **scales with organisation
-   size** (~£10k–£20k by bank headcount via `platformCostFor`, fully editable);
+   size** (~£9.5k–£29k by bank headcount via `platformCostFor`, fully editable);
    confirm the banding and that it includes implementation, not licence alone.
 2. **Displacement and admin defaults** — health-economist validation before
    publication.

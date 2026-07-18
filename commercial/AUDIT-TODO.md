@@ -46,25 +46,25 @@ Nothing below is committed-to; each needs a review decision first.
 - [x] `SliderField.commit` stores the round-tripped display value and clamps
   percent fields to 100 (£/count fields stay uncapped by design).
 
-## Copy / config drift
+## Copy / config drift — DONE (July 2026)
 
-- [ ] README licence-cost range says "~£10k–£20k"; the G-Cloud table spans
-  £9,486.54–£29,101.79 — update to "~£9.5k–£29k".
-- [ ] embed-snippet says point at `/roi-calculator.html` "to avoid a
-  redirect", but `cleanUrls: true` makes exactly that URL 308-redirect —
-  point the snippet at `/roi-calculator` instead.
-- [ ] Band 2/3 pay £25,900 isn't the midpoint of the quoted Band 2 (£25,272)
-  and Band 3 (£26,618) figures (£25,945) — confirm intent or align.
-- [ ] "Update results →" implies stale results, but results update live — it's
-  really a scroll-to-results affordance; consider relabelling.
-- [ ] `exceedsSpend` guardrail is mathematically unreachable from the UI
-  (identity caps the saving at ~30% of spend) — README oversells it as an
-  active check; reword as structural.
-- [ ] Dead `C.rose` colour constant; stale "no wizard" code comment in the
-  Quick section.
-- [ ] Reliability: no automated JSX-parse check — the engine tests exercise
-  only the pure-JS block, so a JSX syntax error would ship silently. Consider
-  a CI step or devDependency-based parse test (repo is otherwise no-deps).
-- [ ] Threshold parity: the `implausibleRoi` 100× change (fix 3) applies to
-  this product only; the kiosk/web engines keep 40× (their defaults are
-  Conservative, where 40× holds). Decide whether to harmonise.
+- [x] README licence-cost range corrected to ~£9.5k–£29k.
+- [x] embed-snippet (and the README embedding note) now point at
+  `/roi-calculator` — the extensionless path serves directly; `cleanUrls`
+  308-redirects the `.html` form.
+- [x] Band 2/3 pay aligned to £25,945, the midpoint of the quoted Band 2
+  (£25,272) and Band 3 (£26,618) figures. Cash goldens are pay-independent so
+  tests are unaffected. **Cross-product note:** the kiosk/web engines still
+  carry £25,900 — mirror there on the next methodology sweep.
+- [x] "Update results →" relabelled "See updated results →" (results update
+  live; the button is a scroll affordance).
+- [x] README guardrails paragraph rewords `exceedsSpend` as structural (the
+  identity caps the saving) and states the 100× input-error flag.
+- [x] Dead `C.rose` constant removed; stale "no wizard" comment updated.
+- [x] `test/jsx-parse.test.mjs` added: transforms the whole `text/babel`
+  block with pinned Babel (CDN / `$BABEL_STANDALONE_PATH` / optional
+  `test/vendor` copy; skips offline) and syntax-checks the output. Verified
+  it catches an injected JSX error.
+- [x] Threshold parity — DECIDED: keep per-product. 100× here (Moderate
+  default makes stock presets reach ~45×); kiosk/web keep 40× (Conservative
+  defaults, where 40× still holds). Revisit only if their defaults change.

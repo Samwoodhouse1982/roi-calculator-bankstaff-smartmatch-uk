@@ -280,7 +280,7 @@
 const { useState, useMemo, useEffect, useRef, useId } = React;
 
 /* ===== THEME: RLDatix suite (deep teal + seafoam) ===== */
-const C = { navy:"#0F4146", navyMid:"#1A5459", navyLight:"#E8FAF6", teal:"#0F4146", tealMid:"#1A8A7A", tealLight:"#D6F7EE", seafoam:"#34DEC2", border:"#D4E0DD", text:"#0F4146", textMid:"#3D5A5E", textLight:"#5F787C", rose:"#93405A" };  // textLight + rose darkened to >=4.5:1 on white (WCAG AA)
+const C = { navy:"#0F4146", navyMid:"#1A5459", navyLight:"#E8FAF6", teal:"#0F4146", tealMid:"#1A8A7A", tealLight:"#D6F7EE", seafoam:"#34DEC2", border:"#D4E0DD", text:"#0F4146", textMid:"#3D5A5E", textLight:"#5F787C" };  // textLight darkened to >=4.5:1 on white (WCAG AA)
 const RAMP = ["#0F4146","#1A8A7A","#34DEC2","#73D2E1","#8FB3AE"];
 
 /* ===== FORMATTERS: en-GB / £ (AU-ready: swap LOCALE + SYMBOL) ===== */
@@ -367,20 +367,20 @@ const ORG_TYPES = {
     G("rn","Registered nurses","Band 5",35558,900,6500000),
     G("sn","Senior nurses","Band 6",44038,350,2500000),
     G("ahp","AHPs (physio / OT)","Band 5/6",39798,300,1500000),
-    G("hca","Healthcare assistants","Band 2/3",25900,550,500000),
+    G("hca","Healthcare assistants","Band 2/3",25945,550,500000),
     G("doc","Medics (locum / SAS)","SAS / ST3+",60000,100,4000000),
   ]},
   community: { label:"Community / specialist", desc:"~700 bank · ~£7m agency", turnover:235000000, groups:[
     G("cn","Community / district nurses","Band 6",44038,200,2500000),
     G("rn","Registered nurses","Band 5",35558,180,1800000),
     G("ahp","AHPs (physio / OT / SLT)","Band 5/6",39798,200,2000000),
-    G("hca","Healthcare assistants","Band 2/3",25900,100,400000),
+    G("hca","Healthcare assistants","Band 2/3",25945,100,400000),
     G("doc","Medics (locum / SAS)","SAS / ST3+",60000,20,300000),
   ]},
   mental: { label:"Mental health trust", desc:"~1,000 bank · ~£10m agency", turnover:235000000, groups:[
     G("rmn","Mental health nurses (RMN)","Band 5",35558,450,4500000),
     G("sn","Senior nurses","Band 6",44038,150,2000000),
-    G("hca","Healthcare assistants","Band 2/3",25900,300,1500000),
+    G("hca","Healthcare assistants","Band 2/3",25945,300,1500000),
     G("ahp","AHPs (OT / psychology)","Band 5/6",39798,50,500000),
     G("doc","Medics (locum psych)","SAS / ST3+",60000,50,1500000),
   ]},
@@ -395,11 +395,11 @@ const ORG_TYPES = {
     G("rn","Registered nurses","Band 5",35558,1900,12000000),
     G("sn","Senior nurses","Band 6",44038,900,5000000),
     G("ahp","AHPs","Band 5/6",39798,800,4000000),
-    G("hca","Healthcare assistants","Band 2/3",25900,1200,2000000),
+    G("hca","Healthcare assistants","Band 2/3",25945,1200,2000000),
     G("doc","Medics (locum / SAS)","SAS / ST3+",60000,200,7000000),
   ]},
 };
-const AFC_BANDS = [["Band 2",25272],["Band 2/3",25900],["Band 3",26618],["Band 5",35558],["Band 5/6",39798],["Band 6",44038],["SAS / ST3+",60000]];   // ascending pay order for the dropdown
+const AFC_BANDS = [["Band 2",25272],["Band 2/3",25945],["Band 3",26618],["Band 5",35558],["Band 5/6",39798],["Band 6",44038],["SAS / ST3+",60000]];   // ascending pay order for the dropdown
 const buildOrg = key => (ORG_TYPES[key]||ORG_TYPES.acute).groups.map(g=>({ ...g }));
 function scaleGroupsTo(groups,key,target){
   const vals=groups.map(g=>num(g[key])); const cur=vals.reduce((a,b)=>a+b,0);
@@ -934,8 +934,8 @@ function App(){
 
         {!choosing && (isQuick ? (
           <div className="section">
-            {/* Single-page quick flow (account-manager hosted conversations): all inputs
-                visible at once, no wizard. Mirrors the short web product's methodology
+            {/* Staged quick flow (account-manager hosted conversations): sections unlock
+                in order via qStep. Mirrors the short web product's methodology
                 (flat spend estimate, optional actual-spend override, required admin
                 decision) while keeping the editable defaults an AM needs mid-meeting. */}
             <div className="qsec">
@@ -1000,7 +1000,7 @@ function App(){
 
             <div className="qnav">
               <div style={{flex:1}}/>
-              <button type="button" className="btn primary" disabled={includeAdmin==null} title={includeAdmin==null?"Answer the admin-time question (section 2) first":undefined} style={{fontSize:15,...(includeAdmin==null?{opacity:.5,cursor:"not-allowed"}:{})}} onClick={runCalc}>{calculated?"Update results →":"Calculate my savings →"}</button>
+              <button type="button" className="btn primary" disabled={includeAdmin==null} title={includeAdmin==null?"Answer the admin-time question (section 2) first":undefined} style={{fontSize:15,...(includeAdmin==null?{opacity:.5,cursor:"not-allowed"}:{})}} onClick={runCalc}>{calculated?"See updated results →":"Calculate my savings →"}</button>
             </div>
             </div>
           </div>
