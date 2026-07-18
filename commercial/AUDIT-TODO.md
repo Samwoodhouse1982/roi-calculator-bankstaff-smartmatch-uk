@@ -4,20 +4,14 @@ Open items from the July 2026 full audit (methodology, reliability, evidence,
 UI, accessibility). Fixes 1–10 from that audit are done (commit `767b4e9`).
 Nothing below is committed-to; each needs a review decision first.
 
-## Methodology disclosures (one honest line each, Assumptions panel + PDF)
+## Methodology disclosures — DONE (content review pass, July 2026)
 
-- [ ] **VAT / commission basis of the premium.** The saving applies
-  `premium/(1+premium)` to invoiced agency spend (commission and often
-  unrecoverable VAT included); whether the 20% premium is measured on that
-  same basis is never stated. The licence is flagged "ex VAT"; the numerator
-  basis isn't.
-- [ ] **No bank-rate escalation.** The model holds the AfC-midpoint bank rate
-  fixed as volume moves to bank; hard-to-fill shifts often need enhanced bank
-  rates, shrinking the realised premium. Say so.
-- [ ] **Bank-spend cap counterargument.** The Medium Term Planning Framework
-  that mandates the agency cuts also caps bank spend (−7.5–15% over three
-  years). One line noting that displacing the premium cuts *total* temporary
-  staffing spend would pre-empt the obvious FD rebuttal to "move it to bank".
+- [x] **VAT / commission basis of the premium.** Now disclosed in the
+  Assumptions panel ("Premium basis & bank-rate caveat") and the PDF
+  ("Basis notes").
+- [x] **No bank-rate escalation.** Same rows as above.
+- [x] **Bank-spend cap counterargument.** Assumptions panel row
+  "Bank spend is also capped".
 
 ## Accessibility cluster
 
