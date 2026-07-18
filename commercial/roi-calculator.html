@@ -28,6 +28,11 @@
   #root { min-height:100vh; }
   #root > div { min-height:100vh; display:flex; flex-direction:column; } /* short pages (the opening screen) keep the footer at the bottom */
   #root > div > main { flex:1; width:100%; }
+  /* Embedded (iframe): 100vh equals the CURRENT iframe height, so any min-height:100vh
+     makes the reported scrollHeight monotonically non-decreasing and the auto-resized
+     iframe can grow but never shrink back (e.g. returning to the short start screen).
+     The host sizes the iframe to fit, so no minimum is needed at all. */
+  html.embedded #root, html.embedded #root > div { min-height:0; }
   .wrap { max-width:900px; margin:0 auto; }
 
   @keyframes fadeIn { from{opacity:0} to{opacity:1} }
@@ -252,6 +257,7 @@
      deployment, prepend a same-origin "./vendor/<lib>.js" to each list below. -->
 <script>
 (function(){
+  if(window.self!==window.top){ document.documentElement.className+=" embedded"; }   // before first paint: disables the min-height:100vh rules that stop an auto-resized iframe from ever shrinking
   var V={
     react:["https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js","https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js","https://unpkg.com/react@18.3.1/umd/react.production.min.js"],
     reactDom:["https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js","https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js","https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"],
@@ -408,12 +414,15 @@ function scaleGroupsTo(groups,key,target){
   return groups.map((g,i)=>({...g,[key]:fl[i]*unit}));
 }
 
-/* Stance notes state the EFFECTIVE whole-book rate (stance % × 80% displaceable share),
-   not just the nominal %, so the labels match what the engine actually applies (M2). */
-function stance(d){
-  if (d<=18) return { key:"Conservative", color:C.navy, bg:C.navyLight, note:"Conservative: 13% of the displaceable share ≈ 10% of all agency, well under half the pilot effect. Recommended default for public/self-serve use: defensible without organisation-specific evidence." };
-  if (d<=30) return { key:"Moderate", color:C.navyMid, bg:C.navyLight, note:"Moderate: 26% of the displaceable share ≈ 21% of all agency, just under the effect measured at one community site (agency fill 8.1%→6.0%, a 26% relative fall). Single-site and partly attributable, so best used in a guided commercial conversation." };
-  return { key:"Optimistic", color:C.teal, bg:C.tealLight, note:"Optimistic: at or beyond the pilot effect once applied to the displaceable share, the higher the setting, the bolder the assumption. Use only with strong, organisation-specific evidence." };
+/* Stance notes state the EFFECTIVE whole-book rate (the LIVE slider % × the LIVE
+   displaceable share), so the note always matches what the engine actually applies -
+   hardcoded preset numbers misstated in-between slider values and edited shares (M2,
+   audit fix 5). */
+function stance(d, ds=DISPLACEABLE_SHARE_DEFAULT){
+  const eff = Math.round(d*ds), lead = `${d}% of the displaceable share ≈ ${eff}% of all agency`;
+  if (d<=18) return { key:"Conservative", color:C.navy, bg:C.navyLight, note:`Conservative: ${lead}, comfortably below the pilot effect. Recommended for public/self-serve use: defensible without organisation-specific evidence.` };
+  if (d<=30) return { key:"Moderate", color:C.navyMid, bg:C.navyLight, note:`Moderate: ${lead}, broadly in line with the effect measured at one community site (agency fill 8.1%→6.0%, a 26% relative fall). Single-site and partly attributable, so best used in a guided commercial conversation.` };
+  return { key:"Optimistic", color:C.teal, bg:C.tealLight, note:`Optimistic: ${lead}, at or beyond the pilot effect - the higher the setting, the bolder the assumption. Use only with strong, organisation-specific evidence.` };
 }
 
 /* ===== PURE CALC ENGINE (shared by Quick + Detailed + the kiosk variant) ===== */
@@ -454,7 +463,7 @@ function calc(input){
   const exceedsSpend = totSaving>totSpend && totSpend>0;
   const zeroPay = rows.some(x=>x.spend>0 && !(num(x.bankPay)>0));   // cash still counted; duty counts unavailable
   const adminOnly = totSaving<=0 && (adminSaving>0 || recruitSaving>0);   // reachable sanity check: saving is admin time only
-  const implausibleRoi = roiPct!=null && roiPct>4000;   // >40x: the ICS default (~32x) is legitimate scale, not an input error
+  const implausibleRoi = roiPct!=null && roiPct>10000;   // >100x: catches input errors (e.g. a typo'd licence fee) while the largest legitimate stock case (ICS preset at Optimistic, ~87x) stays under (audit fix 3)
   const fillNow=num(fillRateNow), fillAfter=fillNow*(1-ds*d);   // reduction on the displaceable share only, consistent with the modelled shift counts
   const reg = agencyRegime(totSpend, input.turnover);
   return { rows, totSpend, totSaving, totDisplaced, totBaseline, totHead, totCapacityValue,
@@ -528,7 +537,7 @@ function Field({label, value, onChange, min, max, step=1, prefix, info, hint}){
   const blur=()=>{ focused.current=false;
     let n = (txt.trim()===""||isNaN(parseFloat(txt))) ? num(value) : num(txt);
     if(min!=null&&min!=="") n=Math.max(Number(min),n); if(max!=null&&max!=="") n=Math.min(Number(max),n);
-    setTxt(String(n)); onChange(String(n)); };
+    setTxt(String(n)); if(n!==num(value)) onChange(String(n)); };   // no-op blur must not fire onChange: some onChange handlers have side effects (e.g. the licence fee disables its auto-scaling)
   return (<div className="field">
     <span className="flabel"><label htmlFor={id}>{label}</label>{info && <InfoTip text={info}/>}</span>
     <div style={{position:"relative",display:"flex",alignItems:"center"}}>
@@ -573,7 +582,10 @@ function SizeField({label, value, prefix, hint, info, onCommit, allowZero}){
   const focused=useRef(false);
   useEffect(()=>{ if(!focused.current) setTxt(show(value)); },[value]);
   const commit=()=>{ focused.current=false; const n=num(txt);
-    if(n>0 || (allowZero && n===0)){ onCommit(n); setTxt(show(n)); } else setTxt(show(value)); };
+    // onCommit may return false when the model rejected the value (e.g. rescaling a
+    // total across all-zero groups is a no-op) - revert the display so the field
+    // never shows a figure the model isn't using.
+    if(n>0 || (allowZero && n===0)){ const accepted=onCommit(n); setTxt(accepted===false ? show(value) : show(n)); } else setTxt(show(value)); };
   const id="sf_"+useId();
   return (<div className="field">
     <span className="flabel"><label htmlFor={id}>{label}</label>{info && <InfoTip text={info}/>}</span>
@@ -622,8 +634,13 @@ function App(){
   const [orgName,setOrgName]=useState(""), [pdfBusy,setPdfBusy]=useState(false);   // orgName: shown in the PDF header + filename (internal tool, no lead capture)
   // simple state: agencySpend null = use the flat £2,700/registered-worker estimate;
   // an account manager ticks "I know our annual agency spend" to pin the real figure.
-  // includeAdmin null = undecided: an explicit Yes/No is required before calculating.
-  const [simple,setSimple]=useState({ bankPool:660, agencySpend:null, agencyFillRate:8.3, numManagers:12, includeAdmin:null });
+  const [simple,setSimple]=useState({ bankPool:660, agencySpend:null, agencyFillRate:8.3 });
+  // The admin-time decision and team size are SHARED across both flows (one logical
+  // question), not synced copies - copy-sync silently overwrote a flow's answer with
+  // the other flow's untouched default on re-entry (audit fix 1).
+  // includeAdmin null = undecided: an explicit Yes/No is required before Quick calculates.
+  const [includeAdmin,setIncludeAdmin]=useState(null);
+  const [teamSize,setTeamSize]=useState(12);
   const spendAuto = simple.agencySpend==null;
   // Quick-mode progression: sections unlock in order (1 numbers → 2 admin → 3 confidence
   // → 4 defaults + calculate). qStep = highest unlocked section; never re-locks on edit.
@@ -635,7 +652,8 @@ function App(){
   const dUnlock = n => setDStep(s=>Math.max(s,n));
   // detailed state
   const [groups,setGroups]=useState(()=>buildOrg("acute")); const [preset,setPreset]=useState("acute"); const [fillRateNow,setFill]=useState(8.3);   // same national-average default as Quick
-  const [admin,setAdmin]=useState({ enabled:false, managers:12, hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY });
+  const [admin,setAdmin]=useState({ hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY });   // enabled + managers live in the shared includeAdmin/teamSize state
+  const adminInput={ ...admin, enabled:includeAdmin===true, managers:teamSize };
   // enabled null = undecided: like Quick's admin question, an explicit Yes/No is
   // required before Detailed can calculate (the engine treats null as excluded).
   const [recruit,setRecruit]=useState({ enabled:null, workers:50, costPerWorker:RECRUIT_COST_PER_WORKER, recoveryRate:RECRUIT_RECOVERY_RATE });
@@ -644,7 +662,7 @@ function App(){
     // Explicit decisions are required before calculating (no silent defaults):
     // Quick needs the admin-time Yes/No, Detailed the re-recruitment Yes/No.
     // The Calculate buttons are disabled until then, this is a backstop.
-    if(mode==="quick" && simple.includeAdmin==null) return;
+    if(mode==="quick" && includeAdmin==null) return;
     if(mode==="detailed" && recruit.enabled==null) return;
     setCal(true); setTimeout(()=>{ setCal(false); setCalculated(true); setCalcFlow(mode); requestAnimationFrame(()=>{ const el=document.getElementById("results"); if(!el) return;
     if(EMBEDDED) hostScroll(el.getBoundingClientRect().top + (window.pageYOffset||0));
@@ -652,9 +670,9 @@ function App(){
 
   const shared={ premium, displacement, platformCost, shiftHours, oncost, displaceableShare };
   const r = useMemo(()=>{
-    if(mode==="quick") return calc(simpleToInput(simple, shared));
-    return calc({ groups, premium, displacement, shiftHours, oncost, platformCost, admin, recruit, fillRateNow, perGroupPremium, displaceableShare, turnover });
-  },[mode,simple,groups,premium,displacement,platformCost,shiftHours,oncost,admin,recruit,fillRateNow,perGroupPremium,displaceableShare,turnover]);
+    if(mode!=="detailed") return calc(simpleToInput({...simple, numManagers:teamSize, includeAdmin}, shared));
+    return calc({ groups, premium, displacement, shiftHours, oncost, platformCost, admin:adminInput, recruit, fillRateNow, perGroupPremium, displaceableShare, turnover });
+  },[mode,simple,teamSize,includeAdmin,groups,premium,displacement,platformCost,shiftHours,oncost,admin,recruit,fillRateNow,perGroupPremium,displaceableShare,turnover]);
 
   useEffect(()=>{ if(!pcAuto) return; const h = mode==="quick" ? num(simple.bankPool) : groups.reduce((a,g)=>a+num(g.headcount),0); setPC(platformCostFor(h)); },[mode,simple.bankPool,groups,pcAuto]);
   // role + band are strings; coercing them through num() wiped a typed group name to "0"
@@ -663,7 +681,7 @@ function App(){
   const choosePreset=key=>{ setPreset(key); setGroups(buildOrg(key)); setPcAuto(true); setTurnover(ORG_TYPES[key].turnover); };
   const addGroup=()=>setGroups(gs=>[...gs,{ id:"g"+Date.now()+Math.random().toString(36).slice(2,6), role:"New staff group", band:"Band 5", bankPay:35558, headcount:50, agencySpend:500000 }]);
   const removeGroup=i=>setGroups(gs=>gs.length>1?gs.filter((_,j)=>j!==i):gs);
-  const st=stance(displacement);
+  const st=stance(displacement, displaceableShare);
   // At a very small bank / low agency book the licence fee can exceed the modelled
   // premium, so net saving goes <= 0. Reframe rather than show a negative headline.
   const noNet = r.netSaving<=0;
@@ -672,8 +690,12 @@ function App(){
   const tswAnim=useCountUp(r.timeSavedWeek);
 
   useEffect(()=>{ if(!EMBEDDED)return;
-    const post=()=>window.parent.postMessage({type:"smartmatch-roi-resize",height:document.documentElement.scrollHeight},"*");
-    const ro=new ResizeObserver(post); ro.observe(document.documentElement); post();
+    // Measure #root, not documentElement.scrollHeight: scrollHeight is defined as
+    // at-least-viewport-height, so inside an auto-resized iframe it can only ever
+    // ratchet UP - the iframe could grow but never shrink back (audit fix 8).
+    const el=document.getElementById("root")||document.documentElement;
+    const post=()=>window.parent.postMessage({type:"smartmatch-roi-resize",height:Math.ceil(el.getBoundingClientRect().height)},"*");
+    const ro=new ResizeObserver(post); ro.observe(el); post();
     window.addEventListener("load",post);   // catches late fonts/images; RO covers everything else, so no polling interval
     return ()=>{ro.disconnect();window.removeEventListener("load",post);}; },[]);   // run once: avoid rebuilding the observer every render
 
@@ -693,8 +715,8 @@ function App(){
       // Admin-time value is always reported: in the cash total when enabled, else as its own separately-shown figure.
       const adminIncluded = r.adminSaving>0;
       const adminValue = adminIncluded ? r.adminSaving
-        : (isQuick ? num(simple.numManagers)*ADMIN_HRS_PER_DAY_DEFAULT*ADMIN_WORKING_DAYS*ADMIN_LOADED_HOURLY
-                   : num(admin.managers)*num(admin.hoursPerDay)*num(admin.workingDays)*num(admin.loadedHourly));
+        : (isQuick ? num(teamSize)*ADMIN_HRS_PER_DAY_DEFAULT*ADMIN_WORKING_DAYS*ADMIN_LOADED_HOURLY
+                   : num(teamSize)*num(admin.hoursPerDay)*num(admin.workingDays)*num(admin.loadedHourly));
 
       // ── Header band ──
       doc.setFillColor(...NAVY); doc.rect(0,0,210,34,"F");
@@ -733,11 +755,16 @@ function App(){
         doc.setTextColor(...MIDC); doc.setFont("helvetica","normal"); doc.setFontSize(6.2); doc.text(doc.splitTextToSize(sub,kW-6),x+3,y+15.5); });
       y+=kH+7;
 
-      // ── Confidence scenarios: every stance modelled, the chosen one flagged ──
+      // ── Confidence scenarios: every stance modelled, the chosen one flagged.
+      //    A non-preset slider value (e.g. 20%) replaces its stance bucket's tile with
+      //    the user's ACTUAL setting, so the flagged tile always matches the headline
+      //    (audit fix 2: previously the 26% tile was stamped YOUR CHOICE at 20%). ──
       const scenarios=[["Conservative",13],["Moderate",26],["Optimistic",50]].map(([key,d])=>{
-        const rr=isQuick ? calc(simpleToInput(simple,{...shared,displacement:d}))
-                         : calc({ groups, premium, displacement:d, shiftHours, oncost, platformCost, admin, recruit, fillRateNow, perGroupPremium, displaceableShare, turnover });
-        return { key, d, rr, selected:key===st.key }; });
+        const isChoice = key===st.key;
+        const dUsed = isChoice ? displacement : d;
+        const rr=isQuick ? calc(simpleToInput({...simple, numManagers:teamSize, includeAdmin},{...shared,displacement:dUsed}))
+                         : calc({ groups, premium, displacement:dUsed, shiftHours, oncost, platformCost, admin:adminInput, recruit, fillRateNow, perGroupPremium, displaceableShare, turnover });
+        return { key, d:dUsed, rr, selected:isChoice, custom:isChoice && dUsed!==d }; });
       doc.setTextColor(...MUTED); doc.setFont("helvetica","bold"); doc.setFontSize(8.5);
       doc.text("SAVING BY CONFIDENCE LEVEL",M,y); y+=3;
       const sW=(W-8)/3, sH=47;
@@ -746,7 +773,7 @@ function App(){
         else { doc.setFillColor(255,255,255); doc.setDrawColor(...BORD); doc.setLineWidth(0.2); }
         doc.roundedRect(x,y,sW,sH,2.5,2.5,"FD"); doc.setLineWidth(0.2);
         doc.setTextColor(...NAVY); doc.setFont("helvetica","bold"); doc.setFontSize(9.5); doc.text(s.key,x+4,y+8);
-        doc.setTextColor(...MIDC); doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.text(s.d+"% to bank",x+4,y+12.5);
+        doc.setTextColor(...MIDC); doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.text(s.d+"% to bank"+(s.custom?" (your setting)":""),x+4,y+12.5);
         if(s.selected){ doc.setFillColor(...TEAL); doc.roundedRect(x+sW-27,y+3.5,23,5.5,2.75,2.75,"F");
           doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(6); doc.text("YOUR CHOICE",x+sW-15.5,y+7.2,{align:"center"}); }
         const net=s.rr.netSaving;
@@ -771,7 +798,7 @@ function App(){
         // Anchor the note a fixed distance above the box floor so it always sits inside.
         if(note){ doc.setTextColor(...MUTED); doc.setFont("helvetica","italic"); doc.setFontSize(6.5); doc.text(note,x+4,y+colH-3.5); } };
       colBox(M,"Your inputs", isQuick
-        ? [["Registered bank workers",fmtNum(num(simple.bankPool))],["Current agency fill rate",(Math.round(num(simple.agencyFillRate)*10)/10)+"%"],["Temporary staffing team",fmtNum(num(simple.numManagers))],["Confidence level",displacement+"% ("+st.key+")"],["Admin time in cash total",adminIncluded?"included":"shown separately"]]
+        ? [["Registered bank workers",fmtNum(num(simple.bankPool))],["Current agency fill rate",(Math.round(num(simple.agencyFillRate)*10)/10)+"%"],["Temporary staffing team",fmtNum(num(teamSize))],["Confidence level",displacement+"% ("+st.key+")"],["Admin time in cash total",adminIncluded?"included":"shown separately"]]
         : [["Staff groups",r.rows.length],["Total bank pool",fmtNum(r.totHead)],["Agency premium",premium+"%"+(perGroupPremium?" (default; per-group)":"")],["Confidence level",displacement+"% ("+st.key+")"],["Admin time in cash total",adminIncluded?"included":"shown separately"]]);
       colBox(M+colW+4,"Capacity and wider value",[
         ["Shifts moved to bank / year",fmtNum(r.totDisplaced)],
@@ -808,7 +835,7 @@ function App(){
       doc.setFont("helvetica","bold"); doc.setFontSize(8); doc.setTextColor(120,130,150); doc.text("ABOUT THESE FIGURES",14,y); y+=5;
       doc.setFontSize(7.5);
       [["Cash saving","the agency premium displaced when better bank utilisation moves duties off agency onto your own bank. It excludes the cost of the bank shifts themselves; that is capacity, shown separately, and never added to the saving."],
-       ["Assumptions","based on 2026/27 NHS Agenda for Change pay midpoints and deliberately conservative throughout. The 20% agency premium reflects figures cited in House of Commons Library research."],
+       ["Assumptions","based on 2026/27 NHS Agenda for Change pay midpoints, with deliberately conservative rate assumptions; the confidence level applied is "+displacement+"% ("+st.key+"). The 20% agency premium reflects figures cited in House of Commons Library research."],
        ["Agency spend", mode==="quick"
          ? (spendAuto ? "was estimated from your bank size using FY2025/26 national averages (~£2,700 per registered bank worker); a figure based on your own agency book would give a more accurate result." : "was the annual agency figure you supplied, which anchors the cash saving directly.")
          : "was taken from the per-staff-group figures in the detailed model, which anchor the cash saving."]
@@ -826,13 +853,11 @@ function App(){
 
   const isQuick = mode==="quick", choosing = mode==="choose";
   const toTop = () => { if(EMBEDDED) hostScroll(null); else window.scrollTo({top:0,behavior:"auto"}); };
-  // Entering a flow from the opening page. Decisions sync across flows exactly as the
-  // old in-page toggle did (an undecided admin question stays undecided), and results
-  // calculated in ONE flow never silently carry over into the other.
+  // Entering a flow from the opening page. The admin decision and team size are shared
+  // state, so no copy-sync is needed; results calculated in ONE flow never silently
+  // carry over into the other.
   const chooseFlow = m => {
     if(calculated && calcFlow!==m) setCalculated(false);
-    if(m==="quick") setSimple(s=>({...s,numManagers:num(admin.managers),includeAdmin: s.includeAdmin==null ? (admin.enabled?true:null) : admin.enabled}));
-    else setAdmin(a=>({...a,managers:num(simple.numManagers),enabled:simple.includeAdmin===true}));
     setMode(m); toTop();
   };
   const backToStart = () => { setMode("choose"); toTop(); };
@@ -847,7 +872,7 @@ function App(){
       <header><div className="wrap">
         {logoRow}
         <h1>Measure your ROI from<br/><em>Smart Match AI</em></h1>
-        <p><strong>Smart Match</strong>, a feature of RLDatix <strong>BankStaff+</strong>, helps NHS organisations fill more shifts from their own staff bank and rely less on agency. This tool gives you an indicative overview of two things: the <strong>potential cash savings</strong> from reducing agency reliance, and the <strong>administrative time and staffing capacity</strong> that better bank management could release. The figures draw on real data from a pilot study and are deliberately conservative, a starting point for a conversation, not a fixed quote.</p>
+        <p><strong>Smart Match</strong>, a feature of RLDatix <strong>BankStaff+</strong>, helps NHS organisations fill more shifts from their own staff bank and rely less on agency. This tool gives you an indicative overview of two things: the <strong>potential cash savings</strong> from reducing agency reliance, and the <strong>administrative time and staffing capacity</strong> that better bank management could release. The figures draw on real data from a pilot study, built on deliberately conservative rate assumptions with an adjustable confidence level, a starting point for a conversation, not a fixed quote.</p>
       </div></header>
       ) : (
       <header style={{padding:"1.75rem 2rem 1.5rem"}}><div className="wrap">
@@ -903,7 +928,7 @@ function App(){
                     : <SliderField label="Your total annual agency spend" prefix="£" value={simple.agencySpend} min={0} max={Math.min(50000000,Math.max(num(simple.bankPool)*15000,5000000))} step={100000} format={fmtNum} onChange={v=>setSimple(s=>({...s,agencySpend:num(v)}))} hint="The anchor for the saving · slide, or tap the number to type an exact figure (beyond the slider's £50m if needed)"/>}
                 </div>
                 <SliderField label="Current agency fill rate" suffix="%" value={simple.agencyFillRate} min={0} max={30} step={0.1} format={v=>String(Math.round(num(v)*10)/10)} onChange={v=>setSimple(s=>({...s,agencyFillRate:num(v)}))} hint="Share of temp duties on agency (national avg 8.3%) · drives the reliance narrative, not the cash" info="The % of temporary duties currently filled by agency (national average 8.3%, RLDatix data). This drives the agency-reliance reduction shown on the results; the cash saving is anchored to agency spend, premium and confidence level, not to this rate. A pilot study recorded a move from 8.1% to 6.0% at one site."/>
-                <SliderField label="Temporary staffing team" value={simple.numManagers} min={0} max={60} step={1} format={fmtNum} onChange={v=>setSimple(s=>({...s,numManagers:num(v)}))} hint="Bank/temp staffing coordinators & admins" info="The people who do the day-to-day booking, chasing and reconciling of temporary shifts. Drives the time-saved-per-week and admin saving."/>
+                <SliderField label="Temporary staffing team" value={teamSize} min={0} max={60} step={1} format={fmtNum} onChange={v=>setTeamSize(num(v))} hint="Bank/temp staffing coordinators & admins" info="The people who do the day-to-day booking, chasing and reconciling of temporary shifts. Drives the time-saved-per-week and admin saving."/>
               </div>
             </div>
             {qStep===1 && <div className="qnav" style={{marginTop:4}}><div style={{flex:1}}/><button type="button" className="btn primary" onClick={()=>unlock(2)}>These numbers look right →</button></div>}
@@ -914,10 +939,10 @@ function App(){
             <p className="step-sub">Smart Match automates booking and matching, giving the temporary-staffing team hours back each week. Those hours are always shown, should their cash value also be added to the headline saving?</p>
             <div className="card">
               <div className="yesno" role="radiogroup" aria-label="Include admin time saving in the cash total?">
-                <button type="button" role="radio" aria-checked={simple.includeAdmin===false} className={"yn"+(simple.includeAdmin===false?" active":"")} onClick={()=>{ setSimple(s=>({...s,includeAdmin:false})); unlock(3); }}>No, show the hours only<small>Recommended. Keeps the headline to hard agency cash savings; the hours released are still shown on their own.</small></button>
-                <button type="button" role="radio" aria-checked={simple.includeAdmin===true} className={"yn"+(simple.includeAdmin===true?" active":"")} onClick={()=>{ setSimple(s=>({...s,includeAdmin:true})); unlock(3); }}>Yes, add the £ value too<small>Adds a conservative 1.0 h/day at a loaded £18/h across your team to the cash saving.</small></button>
+                <button type="button" role="radio" aria-checked={includeAdmin===false} className={"yn"+(includeAdmin===false?" active":"")} onClick={()=>{ setIncludeAdmin(false); unlock(3); }}>No, show the hours only<small>Recommended. Keeps the headline to hard agency cash savings; the hours released are still shown on their own.</small></button>
+                <button type="button" role="radio" aria-checked={includeAdmin===true} className={"yn"+(includeAdmin===true?" active":"")} onClick={()=>{ setIncludeAdmin(true); unlock(3); }}>Yes, add the £ value too<small>Adds a conservative 1.0 h/day at a loaded £18/h across your team to the cash saving.</small></button>
               </div>
-              {simple.includeAdmin==null && <p className="hint" style={{marginTop:10}}>Choose Yes or No: neither is assumed, and the next step unlocks once you decide.</p>}
+              {includeAdmin==null && <p className="hint" style={{marginTop:10}}>Choose Yes or No: neither is assumed, and the next step unlocks once you decide.</p>}
             </div>
             </div>
 
@@ -926,7 +951,7 @@ function App(){
             <p className="step-sub">How much of today's agency work do you expect to move onto your own bank? Defaults to Moderate.</p>
             <div className="params-grid">
               <div className="field">
-                <span className="flabel">Confidence level: {displacement}% · {st.key} <InfoTip text="Share of current agency usage that improved bank utilisation moves to bank, applied to the 80% displaceable share (so Moderate 26% ≈ 21% of all agency). Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; defaults to Moderate for this guided account-manager tool."/></span>
+                <span className="flabel">Confidence level: {displacement}% · {st.key} <InfoTip text={"Share of current agency usage that improved bank utilisation moves to bank, applied to the "+Math.round(displaceableShare*100)+"% displaceable share (so "+displacement+"% ≈ "+Math.round(displacement*displaceableShare)+"% of all agency). Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; defaults to Moderate for this guided account-manager tool."}/></span>
                 <div className="stance-btns">{[["Conservative",13],["Moderate",26],["Optimistic",50]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
                 <input type="range" min="13" max="50" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Confidence level, percent" aria-valuetext={displacement+"%, "+st.key}/>
                 <div className="slider-ctx"><span>13% conservative</span><span>26% moderate</span><span>50% optimistic</span></div>
@@ -942,13 +967,14 @@ function App(){
             <div className="params-grid">
               <Field label="Agency premium over bank (%)" value={premium} min="0" max="150" step={1} onChange={v=>setPremium(num(v))} info="Default 20%, reflecting figures cited in House of Commons Library research; contested at shift level, use the organisation's own rate." />
               <Field label="BankStaff+ licence fee (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v)); setPcAuto(false); }} info="Auto-set from your bank size using G-Cloud pricing (ex VAT); fully editable. This is the ROI denominator: licence only (ex VAT); add implementation and change costs if material for your business case."/>
+              <Field label="Displaceable share of agency (%)" value={Math.round(displaceableShare*100)} min="0" max="100" step={5} onChange={v=>setDS(Math.min(1,Math.max(0,num(v)/100)))} info="Only part of agency spend can realistically move to bank: excludes break-glass / safety-critical cover and hard-to-fill specialist roles bank can't cover. The confidence level applies to this share only (benchmark default 80%). Shared with the Detailed flow." hint="Benchmark default 80% · editable"/>
               <Field label="Shift length (hours)" value={shiftHours} min="1" step={0.5} onChange={v=>setSH(num(v))}/>
               <Field label="Bank on-cost (%)" value={oncost} min="0" step={1} onChange={v=>setOncost(num(v))} info="Employer NI + pension on bank pay, already included in the bank rate (default 20%, below the full ~30% NHS employer rate because bank-only workers often opt out of the pension; set your local loaded rate). It changes duty counts, not the cash saving, and is counted once, never added on top."/>
             </div>
 
             <div className="qnav">
               <div style={{flex:1}}/>
-              <button type="button" className="btn primary" disabled={simple.includeAdmin==null} title={simple.includeAdmin==null?"Answer the admin-time question (section 2) first":undefined} style={{fontSize:15,...(simple.includeAdmin==null?{opacity:.5,cursor:"not-allowed"}:{})}} onClick={runCalc}>{calculated?"Update results →":"Calculate my savings →"}</button>
+              <button type="button" className="btn primary" disabled={includeAdmin==null} title={includeAdmin==null?"Answer the admin-time question (section 2) first":undefined} style={{fontSize:15,...(includeAdmin==null?{opacity:.5,cursor:"not-allowed"}:{})}} onClick={runCalc}>{calculated?"Update results →":"Calculate my savings →"}</button>
             </div>
             </div>
           </div>
@@ -957,8 +983,8 @@ function App(){
           <div className="instructions">
             <h3>How to use the detailed calculator</h3>
             <div className="inst-steps">
-              <div className="inst-step"><div className="inst-num">1</div><p><strong>Pick your organisation type, or build your own.</strong> Set each group's headcount, <strong>annual agency spend</strong> (the anchor for the saving) and pay; add or remove staff groups as needed.</p></div>
-              <div className="inst-step"><div className="inst-num">2</div><p><strong>Set the agency premium</strong> (default 20%, reflecting figures cited in House of Commons Library research; contested, so use your own; tick to set it <strong>per group</strong>) and pick a <strong>confidence level</strong> (Conservative / Moderate / Optimistic). Optionally add admin and recruitment levers.</p></div>
+              <div className="inst-step"><div className="inst-num">1</div><p><strong>Pick your organisation type, or build your own.</strong> Set each group's headcount, <strong>annual agency spend</strong> (the anchor for the saving) and pay; add or remove staff groups as needed. Sections unlock in order: confirm your profile to reveal the agency parameters.</p></div>
+              <div className="inst-step"><div className="inst-num">2</div><p><strong>Set the agency premium</strong> (default 20%, reflecting figures cited in House of Commons Library research; contested, so use your own; tick to set it <strong>per group</strong>) and pick a <strong>confidence level</strong> (Conservative / Moderate / Optimistic; defaults to Moderate). The admin lever is optional; the <strong>re-recruitment question must be answered Yes or No</strong> before Calculate unlocks.</p></div>
               <div className="inst-step"><div className="inst-num">3</div><p><strong>Read the co-headlines:</strong> net annual cash saving and admin time saved per week, with payback. Capacity (temp duties filled) is shown separately and excluded from the saving.</p></div>
             </div>
           </div>
@@ -974,8 +1000,8 @@ function App(){
                 <InfoTip text="Set your size and we rescale the staff-group mix to match. Both figures stay editable, and you can fine-tune each group below."/>
               </div>
               <div className="inputs-grid">
-                <SizeField label="Total bank headcount" value={totalHead} hint="Across all staff groups; rescales the mix" onCommit={v=>setGroups(scaleGroupsTo(groups,"headcount",v))}/>
-                <SizeField label="Total annual agency spend" prefix="£" value={totalSpend} info="Your organisation's total yearly agency spend. This is the anchor for the saving; we rescale each group's spend proportionally, then fine-tune per group below. Prefer your own figure; national agency spend is falling, so use latest-year." hint="The anchor for the saving" onCommit={v=>setGroups(scaleGroupsTo(groups,"agencySpend",v))}/>
+                <SizeField label="Total bank headcount" value={totalHead} hint="Across all staff groups; rescales the mix" onCommit={v=>{ const next=scaleGroupsTo(groups,"headcount",v); setGroups(next); return next!==groups; }}/>
+                <SizeField label="Total annual agency spend" prefix="£" value={totalSpend} info="Your organisation's total yearly agency spend. This is the anchor for the saving; we rescale each group's spend proportionally, then fine-tune per group below. Prefer your own figure; national agency spend is falling, so use latest-year." hint="The anchor for the saving" onCommit={v=>{ const next=scaleGroupsTo(groups,"agencySpend",v); setGroups(next); return next!==groups; }}/>
                 <SizeField label="Annual turnover (£, optional)" prefix="£" value={turnover} info="Your organisation's annual operating turnover (optional). Used to gauge agency intensity, agency as a % of turnover, which tailors the headline framing. You can also estimate a typical agency spend from it." hint="Sets agency intensity & framing · clear to omit" onCommit={v=>setTurnover(num(v))} allowZero/>
               </div>
               {turnover>0 && (()=>{ const {pct,key}=agencyRegime(totalSpend,turnover); const lbl={low:"low-agency / mature bank",typical:"typical reliance",high:"high reliance"}[key]; return (
@@ -1011,7 +1037,7 @@ function App(){
                 <div style={{display:"flex",alignItems:"center",gap:7,marginTop:8}}><label style={{display:"flex",alignItems:"center",gap:7,fontSize:12,fontWeight:600,color:C.navy,cursor:"pointer"}}><input type="checkbox" checked={perGroupPremium} onChange={e=>setPGP(e.target.checked)}/> Set the agency premium per staff group</label> <InfoTip text="Off by default, one ~20% premium across all groups (the defensible business-case default). Tick to override the premium per column, e.g. higher for medics, where you have organisation-specific agency rates."/></div>
               </div>
               <div className="field">
-                <span className="flabel">Confidence level: {displacement}% · {st.key} <InfoTip text="Share of your baseline agency usage that improved bank utilisation moves to bank, applied to the displaceable share only (default 80%, so Moderate 26% ≈ 21% of all agency). Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; the commercial variant can show the Moderate case with a rep to frame the caveats."/></span>
+                <span className="flabel">Confidence level: {displacement}% · {st.key} <InfoTip text={"Share of your baseline agency usage that improved bank utilisation moves to bank, applied to the displaceable share only (currently "+Math.round(displaceableShare*100)+"%, so "+displacement+"% ≈ "+Math.round(displacement*displaceableShare)+"% of all agency). Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; the commercial variant can show the Moderate case with a rep to frame the caveats."}/></span>
                 <div className="stance-btns">{[["Conservative",13],["Moderate",26],["Optimistic",50]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
                 <input type="range" min="13" max="50" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Confidence level, percent" aria-valuetext={displacement+"%, "+st.key}/>
                 <div className="slider-ctx"><span>13% conservative</span><span>26% moderate</span><span>50% optimistic</span></div>
@@ -1033,12 +1059,12 @@ function App(){
             <div className="card" style={{marginTop:12}}>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
                 <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600,color:C.navy,cursor:"pointer"}}>
-                  <input type="checkbox" checked={admin.enabled} onChange={e=>setAdmin(a=>({...a,enabled:e.target.checked}))}/> Include admin time saving in cash (off by default)
+                  <input type="checkbox" checked={includeAdmin===true} onChange={e=>setIncludeAdmin(e.target.checked)}/> Include admin time saving in cash (off by default)
                 </label>
                 <InfoTip text="Off by default, treated as a secondary recommendation. Time released for your temporary staffing team: bank/temp coordinators, officers and administrators, via self-booking automation. Time-saved-per-week is always shown; tick to add its cash value to the saving total."/>
               </div>
               <div className="inputs-grid" style={{marginTop:12}}>
-                <Field label="Temporary staffing team" value={admin.managers} min="0" onChange={v=>setAdmin(a=>({...a,managers:num(v)}))} info="Your temporary staffing team: bank/temp coordinators, officers and administrators."/>
+                <Field label="Temporary staffing team" value={teamSize} min="0" onChange={v=>setTeamSize(num(v))} info="Your temporary staffing team: bank/temp coordinators, officers and administrators."/>
                 <Field label="Hours saved / day each" value={admin.hoursPerDay} min="0" step={0.25} onChange={v=>setAdmin(a=>({...a,hoursPerDay:num(v)}))} info="Some teams report up to 2.5 h/day, that's optimistic (a third of every day). Default is a conservative 1.0; validate locally."/>
                 <Field label="Working days / year" value={admin.workingDays} min="0" onChange={v=>setAdmin(a=>({...a,workingDays:num(v)}))}/>
                 <Field label="Loaded hourly rate (£)" prefix="£" value={admin.loadedHourly} min="0" onChange={v=>setAdmin(a=>({...a,loadedHourly:num(v)}))}/>
@@ -1075,7 +1101,7 @@ function App(){
         {!choosing && calculated && (
         <div className="section" id="results">
           <p className="sr-only" role="status">Results ready. Your estimated annual impact is shown below and updates live as you adjust inputs.</p>
-          <div className="step-label"><div className="step-num">{isQuick?2:3}</div><h2>Your potential impact</h2></div>
+          <div className="step-label"><div className="step-num">{isQuick?5:3}</div><h2>Your potential impact</h2></div>
           <div className="results-box">
             <div className="roi-header">
               <div className="roi-eyebrow">Estimated annual impact</div>
@@ -1099,7 +1125,7 @@ function App(){
             <div className="summary-grid">
               <div className="s-card hl"><div className="s-lbl">Net annual saving</div><div className="s-val">{noNet?"n/a":<AnimMoney v={r.netSaving}/>}</div><div className="s-sub">{noNet?"licence fee exceeds the modelled premium":<>after {fmt(platformCost)} licence fee</>}</div></div>
               <div className="s-card"><div className="s-lbl">Agency premium avoided</div><div className="s-val"><AnimMoney v={r.totSaving}/></div><div className="s-sub">agency vs bank gap, before licence</div></div>
-              {r.adminSaving>0 && (()=>{ const aM=isQuick?num(simple.numManagers):num(admin.managers), aH=isQuick?ADMIN_HRS_PER_DAY_DEFAULT:num(admin.hoursPerDay), aD=isQuick?ADMIN_WORKING_DAYS:num(admin.workingDays), aR=isQuick?ADMIN_LOADED_HOURLY:num(admin.loadedHourly);
+              {r.adminSaving>0 && (()=>{ const aM=num(teamSize), aH=isQuick?ADMIN_HRS_PER_DAY_DEFAULT:num(admin.hoursPerDay), aD=isQuick?ADMIN_WORKING_DAYS:num(admin.workingDays), aR=isQuick?ADMIN_LOADED_HOURLY:num(admin.loadedHourly);
                 return <div className="s-card"><div className="s-lbl">Admin saving <InfoTip text={aM+" "+(aM===1?"person":"people")+" × "+aH+" h/day × "+aD+" working days × £"+aR+"/h (loaded) = "+fmt(r.adminSaving)}/></div><div className="s-val"><AnimMoney v={r.adminSaving}/></div><div className="s-sub">modelled, conservative</div></div>; })()}
               <div className="s-card"><div className="s-lbl">Time saved / week</div><div className="s-val">{Math.round(r.timeSavedWeek).toLocaleString(LOCALE)}<span style={{fontSize:13}}> hrs</span></div><div className="s-sub">across the temporary staffing team</div></div>
             </div>
@@ -1111,7 +1137,7 @@ function App(){
             {r.exceedsSpend && <div className="callout navy"><p className="title">⚠ Check your inputs</p><p>The modelled saving exceeds total agency spend, which isn't possible. Lower the premium or displacement, or check the agency-spend figures.</p></div>}
             {r.adminOnly && !noNet && <div className="callout navy"><p className="title">Admin time only</p><p>No agency premium saving is modelled (agency spend is zero). This figure is the admin-time value on its own. Add your agency spend to model the agency-displacement saving.</p></div>}
             {r.zeroPay && <div className="callout navy"><p className="title">⚠ Check bank pay</p><p>A staff group has agency spend but no bank pay rate. Its cash saving still counts (the saving is anchored to agency spend and premium, not pay), but its duty counts and capacity value can't be modelled: set a bank pay rate or pick an AfC band.</p></div>}
-            {r.implausibleRoi && !noNet && <div className="callout navy"><p className="title">⚠ Unusually high return</p><p>At these inputs the modelled saving is more than 40 times the licence fee, which usually reflects a very large bank or agency book. Sense-check against your organisation's real agency spend before quoting it.</p></div>}
+            {r.implausibleRoi && !noNet && <div className="callout navy"><p className="title">⚠ Unusually high return</p><p>At these inputs the modelled return is more than 100 times the licence fee, which usually reflects an input error (often a mistyped licence fee or agency spend). Sense-check against your organisation's real agency spend before quoting it.</p></div>}
 
             {/* How the cash saving is worked out: bank vs agency rate vs the premium gap (the defensible basis) */}
             <div className="panel">
