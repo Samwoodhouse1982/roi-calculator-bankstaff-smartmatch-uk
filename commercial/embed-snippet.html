@@ -15,7 +15,9 @@
   no inner scrollbar.
 
   Notes:
-  - Point `src` at /roi-calculator.html (NOT / which redirects).
+  - Point `src` at /roi-calculator (NOT / which redirects, and NOT
+    /roi-calculator.html, which Vercel's cleanUrls 308-redirects to
+    /roi-calculator anyway - the extensionless path serves directly).
   - Serve over HTTPS. The calculator loads React, Babel and jsPDF
     from public CDNs inside the iframe (its own origin).
   - The host page CSP must allow the calculator's domain in
@@ -25,7 +27,7 @@
 
 <iframe
   id="smartmatch-roi"
-  src="https://YOUR-DOMAIN/roi-calculator.html"
+  src="https://YOUR-DOMAIN/roi-calculator"
   title="Smart Match Workforce ROI Calculator"
   scrolling="no"
   loading="lazy"

@@ -7,10 +7,20 @@ terminology (bank/agency, AfC, Trust), pounds sterling, `en-GB` formatting.
 RLDatix corporate brand (navy + teal), built in the same design system as the
 wider RLDatix ROI calculator suite.
 
-Two modes in one page: **Quick** (single-page whole-bank view: bank size,
-optional actual agency spend, a required admin-time Yes/No, confidence level,
-and editable defaults for premium / licence / shift / on-cost) and **Detailed**
-(per-staff-group commercial model). The public self-serve product lives in
+The page opens on a **start screen** carrying all the preamble (hero,
+strategic context) and a choice of two separate flows — no in-page mode
+toggle, so nobody swaps between the simple and complicated versions
+mid-conversation: **Quick** (single-page whole-bank view: bank size, optional
+actual agency spend, a required admin-time Yes/No, confidence level, and
+editable defaults for premium / licence / shift / on-cost; sections unlock
+**in order** — each stays greyed out and inert until the one before is
+completed) and **Detailed** (per-staff-group commercial model, staged the
+same way — organisation profile → agency parameters → Calculate, with a
+required re-recruitment Yes/No before Calculate unlocks). A back link returns to the start
+screen; entered figures survive the switch, but results calculated in one
+flow never carry over into the other. The confidence level defaults to
+**Moderate (26%)** in this guided account-manager tool; the public
+self-serve product keeps the Conservative default. The public self-serve product lives in
 [`../web/`](../web/); the events kiosk in [`../touchscreen/`](../touchscreen/).
 
 ## What's the calculator?
@@ -66,9 +76,11 @@ turnover** input sets *agency intensity* (agency % of turnover) and tailors the 
 **1–4%** typical (lead with the cash premium), **> 4%** high reliance (rate arbitrage
 dominates). Treat agency spend as a current, **declining** figure and prefer the trust's own.
 
-**Guardrails:** the cash saving can never exceed total agency spend; the tool
-leads with **net annual saving + payback** (shown in days, not a giant ROI %)
-and flags implausibly high returns (>40× the licence fee).
+**Guardrails:** the saving identity itself keeps the cash saving structurally
+below total agency spend (an `exceedsSpend` belt-and-braces check also exists
+but is unreachable from the UI); the tool leads with **net annual saving +
+payback** (shown in days, not a giant ROI %) and flags returns above **100×**
+the licence fee as likely input errors.
 
 ## Files
 
@@ -79,6 +91,7 @@ and flags implausibly high returns (>40× the licence fee).
 | `vercel.json` | Deploy routing + cache/security headers. |
 | `embed-snippet.html` | Reference snippet for embedding via iframe (auto-resize + host-page scrolling via `postMessage`). |
 | `test/engine.web.test.mjs` | Engine regression tests — golden numbers, guardrails, kiosk parity. |
+| `test/jsx-parse.test.mjs` | Whole-block JSX parse check (Babel from CDN / local; skips offline). |
 | `README.md` | This file. |
 
 ## Tests
@@ -88,6 +101,14 @@ package.json). The suite extracts the pure calc engine from
 `roi-calculator.html` and pins it to the same golden numbers as the kiosk's
 `test/engine.test.mjs`, so the two builds cannot drift silently. If you
 intentionally change a default or constant, update **both** test files.
+
+`test/jsx-parse.test.mjs` additionally transforms the whole `text/babel`
+block with `@babel/standalone` (pinned 7.26.4, classic runtime) and
+syntax-checks the output, so a JSX error can't ship silently. Babel is
+fetched from the page's own CDN at test time (or from
+`$BABEL_STANDALONE_PATH` / `test/vendor/babel.min.js` offline); with no
+network and no local copy the test skips with a warning — run it somewhere
+with network before releasing.
 
 ## How it deploys (Vercel)
 
@@ -106,8 +127,11 @@ Use `embed-snippet.html` as the host-page reference. The calculator posts three
 (auto-height), `smartmatch-roi-scroll-top` (the "↑ Adjust inputs" button) and
 `smartmatch-roi-scroll` (scrolls the host page to the results after
 "Calculate") — in-iframe scrolling is a no-op once the iframe is full height,
-so the host does it. Point `src` at `/roi-calculator.html` (not `/`, which
-redirects) and serve over HTTPS.
+so the host does it. Point `src` at `/roi-calculator` (not `/`, which
+redirects, and not `/roi-calculator.html`, which `cleanUrls` 308-redirects
+to the extensionless path) and serve over HTTPS. Framing is explicitly allowed:
+`vercel.json` sends `Content-Security-Policy: frame-ancestors *` (and no
+`X-Frame-Options`), so the calculator can be embedded on any host page.
 
 ## Editing notes
 
@@ -132,7 +156,7 @@ redirects) and serve over HTTPS.
 ## Open items to confirm (from the research brief)
 
 1. **Platform cost** used as the ROI denominator — now **scales with organisation
-   size** (~£10k–£20k by bank headcount via `platformCostFor`, fully editable);
+   size** (~£9.5k–£29k by bank headcount via `platformCostFor`, fully editable);
    confirm the banding and that it includes implementation, not licence alone.
 2. **Displacement and admin defaults** — health-economist validation before
    publication.
