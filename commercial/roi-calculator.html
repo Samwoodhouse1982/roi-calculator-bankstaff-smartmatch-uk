@@ -629,6 +629,10 @@ function App(){
   // → 4 defaults + calculate). qStep = highest unlocked section; never re-locks on edit.
   const [qStep,setQStep]=useState(1);
   const unlock = n => setQStep(s=>Math.max(s,n));
+  // Detailed-flow progression, same pattern: 1 organisation profile → 2 agency
+  // parameters → 3 calculate. Never re-locks on edit.
+  const [dStep,setDStep]=useState(1);
+  const dUnlock = n => setDStep(s=>Math.max(s,n));
   // detailed state
   const [groups,setGroups]=useState(()=>buildOrg("acute")); const [preset,setPreset]=useState("acute"); const [fillRateNow,setFill]=useState(8.3);   // same national-average default as Quick
   const [admin,setAdmin]=useState({ enabled:false, managers:12, hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY });
@@ -958,7 +962,7 @@ function App(){
               <div className="inst-step"><div className="inst-num">3</div><p><strong>Read the co-headlines:</strong> net annual cash saving and admin time saved per week, with payback. Capacity (temp duties filled) is shown separately and excluded from the saving.</p></div>
             </div>
           </div>
-          <div className="section">
+          <div className="section qsec">
             <div className="step-label"><div className="step-num">1</div><h2>Your organisation profile</h2></div>
             <p className="step-sub">Pick the closest profile, set your size, then fine-tune each staff group. Agency spend is the anchor for the saving, so get that right first.</p>
             <div className="presets">{Object.entries(ORG_TYPES).map(([k,p])=>(
@@ -997,8 +1001,9 @@ function App(){
             ))}
             </div>
             <button type="button" className="add-group" onClick={addGroup}>+ Add a staff group</button>
+            {dStep===1 && <div className="qnav"><div style={{flex:1}}/><button type="button" className="btn primary" onClick={()=>dUnlock(2)}>These numbers look right →</button></div>}
           </div>
-          <div className="section">
+          <div className={"section qsec"+(dStep<2?" locked":"")} inert={dStep<2?"":undefined} aria-disabled={dStep<2}>
             <div className="step-label"><div className="step-num">2</div><h2>Agency parameters</h2></div>
             <div className="params-grid">
               <div>
@@ -1046,8 +1051,8 @@ function App(){
                 <InfoTip text="Under-utilised bank workers lapse and must be replaced. Activating idle capacity avoids part of that future re-recruitment and onboarding cost (already-spent recruitment cost is sunk and is not counted). Conservative either way; nothing is assumed, choose Yes or No."/>
               </div>
               <div className="yesno" role="radiogroup" aria-label="Include avoided re-recruitment cost in the cash saving?">
-                <button type="button" role="radio" aria-checked={recruit.enabled===false} className={"yn"+(recruit.enabled===false?" active":"")} onClick={()=>setRecruit(a=>({...a,enabled:false}))}>No, leave it out<small>Recommended. Keeps the headline to the agency premium (plus any admin time you've included); there is no strong public benchmark for this lever.</small></button>
-                <button type="button" role="radio" aria-checked={recruit.enabled===true} className={"yn"+(recruit.enabled===true?" active":"")} onClick={()=>setRecruit(a=>({...a,enabled:true}))}>Yes, include it<small>Adds the future recruit + onboarding cost avoided by activating under-utilised bank workers (conservative 10% share by default).</small></button>
+                <button type="button" role="radio" aria-checked={recruit.enabled===false} className={"yn"+(recruit.enabled===false?" active":"")} onClick={()=>{ setRecruit(a=>({...a,enabled:false})); dUnlock(3); }}>No, leave it out<small>Recommended. Keeps the headline to the agency premium (plus any admin time you've included); there is no strong public benchmark for this lever.</small></button>
+                <button type="button" role="radio" aria-checked={recruit.enabled===true} className={"yn"+(recruit.enabled===true?" active":"")} onClick={()=>{ setRecruit(a=>({...a,enabled:true})); dUnlock(3); }}>Yes, include it<small>Adds the future recruit + onboarding cost avoided by activating under-utilised bank workers (conservative 10% share by default).</small></button>
               </div>
               {recruit.enabled==null && <p className="hint" style={{marginTop:10}}>Choose Yes or No: neither is assumed, and Calculate unlocks once you decide.</p>}
               {recruit.enabled===true && <div className="inputs-grid" style={{marginTop:12}}>
@@ -1062,7 +1067,7 @@ function App(){
 
         {/* RESULTS (shared). Quick mode has its own Calculate on the wizard's last step. */}
         {!choosing && !calculated && !isQuick && (
-          <div className="section" style={{textAlign:"center",padding:"1.5rem 0 0"}}>
+          <div className={"section qsec"+(dStep<3?" locked":"")} inert={dStep<3?"":undefined} aria-disabled={dStep<3} style={{textAlign:"center",padding:"1.5rem 0 0"}}>
             <button className="btn primary" disabled={recruit.enabled==null} title={recruit.enabled==null?"Answer the re-recruitment question (section 2) first":undefined} style={{fontSize:16,padding:"14px 34px",...(recruit.enabled==null?{opacity:.5,cursor:"not-allowed"}:{})}} onClick={runCalc}>Calculate my savings →</button>
             <p className="step-sub" style={{margin:"12px 0 0"}}>{recruit.enabled==null?"Answer the re-recruitment question above (Yes or No) to unlock Calculate.":"We'll model your bank pool and agency exposure, then adjust anything and the report updates live."}</p>
           </div>

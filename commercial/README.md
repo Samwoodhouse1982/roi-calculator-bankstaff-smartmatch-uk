@@ -14,8 +14,9 @@ mid-conversation: **Quick** (single-page whole-bank view: bank size, optional
 actual agency spend, a required admin-time Yes/No, confidence level, and
 editable defaults for premium / licence / shift / on-cost; sections unlock
 **in order** — each stays greyed out and inert until the one before is
-completed) and **Detailed** (per-staff-group commercial model, with a required
-re-recruitment Yes/No before Calculate). A back link returns to the start
+completed) and **Detailed** (per-staff-group commercial model, staged the
+same way — organisation profile → agency parameters → Calculate, with a
+required re-recruitment Yes/No before Calculate unlocks). A back link returns to the start
 screen; entered figures survive the switch, but results calculated in one
 flow never carry over into the other. The confidence level defaults to
 **Moderate (26%)** in this guided account-manager tool; the public
