@@ -623,12 +623,16 @@ function App(){
   // detailed state
   const [groups,setGroups]=useState(()=>buildOrg("acute")); const [preset,setPreset]=useState("acute"); const [fillRateNow,setFill]=useState(8.3);   // same national-average default as Quick
   const [admin,setAdmin]=useState({ enabled:false, managers:12, hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY });
-  const [recruit,setRecruit]=useState({ enabled:false, workers:50, costPerWorker:RECRUIT_COST_PER_WORKER, recoveryRate:RECRUIT_RECOVERY_RATE });
+  // enabled null = undecided: like Quick's admin question, an explicit Yes/No is
+  // required before Detailed can calculate (the engine treats null as excluded).
+  const [recruit,setRecruit]=useState({ enabled:null, workers:50, costPerWorker:RECRUIT_COST_PER_WORKER, recoveryRate:RECRUIT_RECOVERY_RATE });
 
   function runCalc(){
-    // Quick mode requires an explicit admin-time decision (no silent default);
-    // the Calculate button is disabled until Yes or No is chosen, this is a backstop.
+    // Explicit decisions are required before calculating (no silent defaults):
+    // Quick needs the admin-time Yes/No, Detailed the re-recruitment Yes/No.
+    // The Calculate buttons are disabled until then, this is a backstop.
     if(mode==="quick" && simple.includeAdmin==null) return;
+    if(mode==="detailed" && recruit.enabled==null) return;
     setCal(true); setTimeout(()=>{ setCal(false); setCalculated(true); requestAnimationFrame(()=>{ const el=document.getElementById("results"); if(!el) return;
     if(EMBEDDED) hostScroll(el.getBoundingClientRect().top + (window.pageYOffset||0));
     else el.scrollIntoView({behavior:REDUCE_MOTION?"auto":"smooth",block:"start"}); }); }, REDUCE_MOTION?150:1600); }
@@ -996,13 +1000,16 @@ function App(){
             </div>
 
             <div className="card" style={{marginTop:12}}>
-              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600,color:C.navy,cursor:"pointer"}}>
-                  <input type="checkbox" checked={recruit.enabled} onChange={e=>setRecruit(a=>({...a,enabled:e.target.checked}))}/> Include avoided re-recruitment cost (optional)
-                </label>
-                <InfoTip text="Under-utilised bank workers lapse and must be replaced. Activating idle capacity avoids part of that future re-recruitment and onboarding cost (already-spent recruitment cost is sunk and is not counted). Conservative and off by default."/>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                <strong style={{fontSize:13,color:C.navy}}>Include avoided re-recruitment cost in the cash saving?</strong>
+                <InfoTip text="Under-utilised bank workers lapse and must be replaced. Activating idle capacity avoids part of that future re-recruitment and onboarding cost (already-spent recruitment cost is sunk and is not counted). Conservative either way; nothing is assumed, choose Yes or No."/>
               </div>
-              {recruit.enabled && <div className="inputs-grid" style={{marginTop:12}}>
+              <div className="yesno" role="radiogroup" aria-label="Include avoided re-recruitment cost in the cash saving?">
+                <button type="button" role="radio" aria-checked={recruit.enabled===false} className={"yn"+(recruit.enabled===false?" active":"")} onClick={()=>setRecruit(a=>({...a,enabled:false}))}>No, leave it out<small>Recommended. Keeps the headline to the agency premium (plus any admin time you've included); there is no strong public benchmark for this lever.</small></button>
+                <button type="button" role="radio" aria-checked={recruit.enabled===true} className={"yn"+(recruit.enabled===true?" active":"")} onClick={()=>setRecruit(a=>({...a,enabled:true}))}>Yes, include it<small>Adds the future recruit + onboarding cost avoided by activating under-utilised bank workers (conservative 10% share by default).</small></button>
+              </div>
+              {recruit.enabled==null && <p className="hint" style={{marginTop:10}}>Choose Yes or No: neither is assumed, and Calculate unlocks once you decide.</p>}
+              {recruit.enabled===true && <div className="inputs-grid" style={{marginTop:12}}>
                 <Field label="Under-utilised bank workers" value={recruit.workers} min="0" onChange={v=>setRecruit(a=>({...a,workers:num(v)}))}/>
                 <Field label="Recruit + onboard cost each (£)" prefix="£" value={recruit.costPerWorker} min="0" step={100} onChange={v=>setRecruit(a=>({...a,costPerWorker:num(v)}))}/>
                 <Field label="Share avoided" value={recruit.recoveryRate} min="0" max="1" step={0.05} onChange={v=>setRecruit(a=>({...a,recoveryRate:num(v)}))} info="Fraction of that future re-recruitment cost avoided (e.g. 0.10 = 10%). Keep conservative."/>
@@ -1015,8 +1022,8 @@ function App(){
         {/* RESULTS (shared). Quick mode has its own Calculate on the wizard's last step. */}
         {!calculated && !isQuick && (
           <div className="section" style={{textAlign:"center",padding:"1.5rem 0 0"}}>
-            <button className="btn primary" style={{fontSize:16,padding:"14px 34px"}} onClick={runCalc}>Calculate my savings →</button>
-            <p className="step-sub" style={{margin:"12px 0 0"}}>We'll model your bank pool and agency exposure, then adjust anything and the report updates live.</p>
+            <button className="btn primary" disabled={recruit.enabled==null} title={recruit.enabled==null?"Answer the re-recruitment question (section 2) first":undefined} style={{fontSize:16,padding:"14px 34px",...(recruit.enabled==null?{opacity:.5,cursor:"not-allowed"}:{})}} onClick={runCalc}>Calculate my savings →</button>
+            <p className="step-sub" style={{margin:"12px 0 0"}}>{recruit.enabled==null?"Answer the re-recruitment question above (Yes or No) to unlock Calculate.":"We'll model your bank pool and agency exposure, then adjust anything and the report updates live."}</p>
           </div>
         )}
         {calculated && (
