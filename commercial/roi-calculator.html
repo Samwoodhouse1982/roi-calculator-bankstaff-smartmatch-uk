@@ -26,6 +26,8 @@
   html { -webkit-text-size-adjust:100%; }
   body { font-family:'DM Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; background:var(--mid-grey); color:var(--text); line-height:1.6; font-size:15px; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
   #root { min-height:100vh; }
+  #root > div { min-height:100vh; display:flex; flex-direction:column; } /* short pages (the opening screen) keep the footer at the bottom */
+  #root > div > main { flex:1; width:100%; }
   .wrap { max-width:900px; margin:0 auto; }
 
   @keyframes fadeIn { from{opacity:0} to{opacity:1} }
@@ -54,12 +56,16 @@
   .step-label h2 { font-family:'DM Serif Display',Georgia,serif; font-size:1.3rem; font-weight:400; color:var(--navy); }
   .step-sub { font-size:13px; color:var(--text-light); margin:-.4rem 0 1rem 38px; }
 
-  /* MODE TOGGLE */
-  .mode-toggle { display:inline-flex; background:var(--navy-light); border:1px solid var(--border); border-radius:999px; padding:4px; margin-bottom:1.5rem; }
-  .mode-toggle button { font-family:inherit; font-size:13px; font-weight:600; border:none; background:none; color:var(--text-mid); padding:8px 18px; border-radius:999px; cursor:pointer; transition:.15s; display:flex; flex-direction:column; align-items:center; gap:2px; line-height:1.25; }
-  .mode-toggle button.active { background:var(--teal); color:#fff; }
-  .mode-toggle button small { font-size:10px; font-weight:500; opacity:.9; } /* .65 fell to ~3:1 on the pill background */
-  .mode-toggle button.active small { opacity:.85; }
+  /* FLOW CHOICE (opening page): pick Quick or Detailed, then enter that flow */
+  .flow-choice { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:1.25rem 0 2rem; }
+  @media (max-width:640px){ .flow-choice{ grid-template-columns:1fr; } }
+  .flow-card { text-align:left; font-family:inherit; background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:1.5rem; cursor:pointer; transition:.15s; display:flex; flex-direction:column; gap:8px; }
+  .flow-card:hover { border-color:var(--teal-mid); box-shadow:var(--shadow); transform:translateY(-1px); }
+  .flow-card .fc-eyebrow { font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--teal-mid); }
+  .flow-card h3 { font-family:'DM Serif Display',Georgia,serif; font-size:1.35rem; font-weight:400; color:var(--navy); }
+  .flow-card p { font-size:13px; color:var(--text-mid); line-height:1.6; flex:1; margin:0; }
+  .flow-card .fc-cta { font-size:13.5px; font-weight:700; color:var(--teal-mid); }
+  .back-link { background:none; border:none; color:var(--navy-mid); font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; padding:0; text-decoration:underline; margin-bottom:1.5rem; display:inline-block; }
 
   .instructions { background:var(--navy-light); border:1px solid #C8D0E0; border-radius:var(--radius); padding:1.5rem; margin-bottom:2rem; }
   .instructions h3 { font-family:'DM Serif Display',Georgia,serif; font-size:1.05rem; font-weight:400; color:var(--navy); margin-bottom:1rem; }
@@ -232,7 +238,7 @@
     *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
   }
   @media (max-width:480px){ header,main{ padding-left:1.25rem; padding-right:1.25rem; } .roi-co{ gap:1.5rem; } }
-  @media print { .cal-overlay,.actions,.adv-toggle,.mode-toggle,.qnav,header p{ display:none !important; } body{ background:#fff; font-size:11pt; } .results-box{ box-shadow:none; } }
+  @media print { .cal-overlay,.actions,.adv-toggle,.back-link,.qnav,header p{ display:none !important; } body{ background:#fff; font-size:11pt; } .results-box{ box-shadow:none; } }
 </style>
 </head>
 <body>
@@ -601,7 +607,10 @@ const RLDATIX_LOGO_PNG="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAABNCA
 
 /* ===== MAIN APP ===== */
 function App(){
-  const [mode,setMode] = useState("quick");           // "quick" | "detailed"
+  // "choose" = the opening page (preamble + flow choice); the two flows are then
+  // separate screens, so nobody is swapping between simple and complicated mid-page.
+  const [mode,setMode] = useState("choose");          // "choose" | "quick" | "detailed"
+  const [calcFlow,setCalcFlow] = useState(null);      // which flow the visible results were calculated in
   // shared parameters
   const [premium,setPremium]=useState(20), [displacement,setDisp]=useState(26), [platformCost,setPC]=useState(platformCostFor(660)), [pcAuto,setPcAuto]=useState(true);   // displacement defaults to Moderate (26%): this is a guided account-manager tool; the public self-serve product keeps Conservative
   const [perGroupPremium,setPGP]=useState(false);
@@ -633,7 +642,7 @@ function App(){
     // The Calculate buttons are disabled until then, this is a backstop.
     if(mode==="quick" && simple.includeAdmin==null) return;
     if(mode==="detailed" && recruit.enabled==null) return;
-    setCal(true); setTimeout(()=>{ setCal(false); setCalculated(true); requestAnimationFrame(()=>{ const el=document.getElementById("results"); if(!el) return;
+    setCal(true); setTimeout(()=>{ setCal(false); setCalculated(true); setCalcFlow(mode); requestAnimationFrame(()=>{ const el=document.getElementById("results"); if(!el) return;
     if(EMBEDDED) hostScroll(el.getBoundingClientRect().top + (window.pageYOffset||0));
     else el.scrollIntoView({behavior:REDUCE_MOTION?"auto":"smooth",block:"start"}); }); }, REDUCE_MOTION?150:1600); }
 
@@ -811,32 +820,64 @@ function App(){
     } finally { setPdfBusy(false); }
   }
 
-  const isQuick = mode==="quick";
+  const isQuick = mode==="quick", choosing = mode==="choose";
+  const toTop = () => { if(EMBEDDED) hostScroll(null); else window.scrollTo({top:0,behavior:"auto"}); };
+  // Entering a flow from the opening page. Decisions sync across flows exactly as the
+  // old in-page toggle did (an undecided admin question stays undecided), and results
+  // calculated in ONE flow never silently carry over into the other.
+  const chooseFlow = m => {
+    if(calculated && calcFlow!==m) setCalculated(false);
+    if(m==="quick") setSimple(s=>({...s,numManagers:num(admin.managers),includeAdmin: s.includeAdmin==null ? (admin.enabled?true:null) : admin.enabled}));
+    else setAdmin(a=>({...a,managers:num(simple.numManagers),enabled:simple.includeAdmin===true}));
+    setMode(m); toTop();
+  };
+  const backToStart = () => { setMode("choose"); toTop(); };
 
   return (
     <div>
       {calibrating && <Calibrating/>}
 
-      <header><div className="wrap">
+      {(()=>{ const logoRow = (
         <div className="logo" style={{display:"flex",alignItems:"center",flexWrap:"wrap",gap:8}}><b>RLDatix</b><span className="divider">·</span>BankStaff+<span className="divider">·</span>Smart Match<span style={{marginLeft:"auto",fontSize:10.5,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.28)",color:"rgba(255,255,255,.85)",padding:"4px 12px",borderRadius:999}}>Internal · account manager tool</span></div>
+      ); return choosing ? (
+      <header><div className="wrap">
+        {logoRow}
         <h1>Measure your ROI from<br/><em>Smart Match AI</em></h1>
         <p><strong>Smart Match</strong>, a feature of RLDatix <strong>BankStaff+</strong>, helps NHS organisations fill more shifts from their own staff bank and rely less on agency. This tool gives you an indicative overview of two things: the <strong>potential cash savings</strong> from reducing agency reliance, and the <strong>administrative time and staffing capacity</strong> that better bank management could release. The figures draw on real data from a pilot study and are deliberately conservative, a starting point for a conversation, not a fixed quote.</p>
       </div></header>
+      ) : (
+      <header style={{padding:"1.75rem 2rem 1.5rem"}}><div className="wrap">
+        {logoRow}
+        <h1 style={{fontSize:"1.55rem",marginBottom:0}}>{isQuick?"Quick estimate":"Detailed commercial model"}</h1>
+      </div></header>
+      ); })()}
 
-      <div className="strategy"><div className="wrap">
+      {choosing && <div className="strategy"><div className="wrap">
         <strong>Strategic context:</strong> NHS England has <strong>mandated agency reductions</strong>, roughly −30% in 2026/27, −25% in 2027/28, heading toward near-zero by 2029/30. The question is no longer <em>whether</em> to cut agency but <em>how</em> to do it without losing shifts: Smart Match is the mechanism, moving temporary work onto your own bank so you hit the target while keeping wards covered. This also supports the <strong>NHS 10 Year Plan</strong> and its Workforce Paper, and the staff time released aligns with the <strong>Staff Health &amp; Wellbeing CQUIN</strong>. Staff-experience benefits are a separate qualitative story, kept out of the financial figures below.
-      </div></div>
+      </div></div>}
 
       <main className="wrap">
-        <p className="intro-advice"><strong>Enter your own figures for the most credible result.</strong> Choose a Quick estimate or the Detailed commercial model to begin.</p>
-        {/* Toggle buttons, not tabs: a real tabs pattern needs tabpanel roles + arrow-key
-            focus management; aria-pressed states the on/off honestly with none of that. */}
-        <div className="mode-toggle" role="group" aria-label="Calculator mode">
-          <button type="button" aria-pressed={isQuick} className={isQuick?"active":""} onClick={()=>{ setSimple(s=>({...s,numManagers:num(admin.managers),includeAdmin: s.includeAdmin==null ? (admin.enabled?true:null) : admin.enabled})); setMode("quick"); }}>Quick estimate<small>Fast whole-bank view, one page</small></button>{/* undecided stays undecided: only an actual decision (detailed ticked, or quick already answered) syncs across, so mode-hopping can never silently answer the admin question */}
-          <button type="button" aria-pressed={!isQuick} className={!isQuick?"active":""} onClick={()=>{ setAdmin(a=>({...a,managers:num(simple.numManagers),enabled:simple.includeAdmin===true})); setMode("detailed"); }}>Detailed (commercial)<small>Per-staff-group model</small></button>
-        </div>
+        {choosing && <>
+          <p className="intro-advice"><strong>Enter your own figures for the most credible result.</strong> Choose the version that fits the conversation; you can come back to this page and switch at any time.</p>
+          <div className="flow-choice">
+            <button type="button" className="flow-card" onClick={()=>chooseFlow("quick")}>
+              <span className="fc-eyebrow">A few minutes · whole bank</span>
+              <h3>Quick estimate</h3>
+              <p>A fast whole-bank view on one page: bank size, agency spend (yours or estimated), an admin-time decision and a confidence level. Best for a first conversation.</p>
+              <span className="fc-cta">Start the quick estimate →</span>
+            </button>
+            <button type="button" className="flow-card" onClick={()=>chooseFlow("detailed")}>
+              <span className="fc-eyebrow">Longer · per staff group</span>
+              <h3>Detailed commercial model</h3>
+              <p>The full model: headcount, agency spend and pay for each staff group, per-group premiums, plus admin and re-recruitment levers. Best for building a business case.</p>
+              <span className="fc-cta">Start the detailed model →</span>
+            </button>
+          </div>
+        </>}
 
-        {isQuick ? (
+        {!choosing && <button type="button" className="back-link" onClick={backToStart}>← Back to start (switch between Quick and Detailed)</button>}
+
+        {!choosing && (isQuick ? (
           <div className="section">
             {/* Single-page quick flow (account-manager hosted conversations): all inputs
                 visible at once, no wizard. Mirrors the short web product's methodology
@@ -844,7 +885,7 @@ function App(){
                 decision) while keeping the editable defaults an AM needs mid-meeting. */}
             <div className="qsec">
             <div className="step-label"><div className="step-num">1</div><h2>Your numbers</h2></div>
-            <p className="step-sub">Work down the page one step at a time: slide, or tap any number to type it. Switch to <b>Detailed</b> to model spend by staff group.</p>
+            <p className="step-sub">Work down the page one step at a time: slide, or tap any number to type it. For a per-staff-group model, go back to the start and choose <b>Detailed</b>.</p>
             <div className="card">
               <div>
                 <SliderField label="Registered bank workers" value={simple.bankPool} min={0} max={12000} step={10} format={fmtNum} onChange={v=>setSimple(s=>({...s,bankPool:num(v)}))} hint="Your whole bank register, not just bank-only staff (see i). Slide, or tap the number to type." info="Count EVERYONE on your bank register, including substantive staff who also pick up bank shifts, not just dedicated bank-only workers. Worked example: a trust with 150 bank-only workers plus 350 substantive staff who occasionally do bank shifts has 500 registered bank workers, not 150. This wider count is what the ~£2,700/worker agency-spend estimate is calibrated to (using bank-only would understate it ~3×). Scales for large systems (e.g. Leeds ~5,000, Sussex ~10,000); sets the estimated agency spend, licence tier and duty-count narrative (2026/27 AfC band-mix rate, ~£34k blended)."/>
@@ -1017,16 +1058,16 @@ function App(){
             </div>
           </div>
         </>
-        )}
+        ))}
 
         {/* RESULTS (shared). Quick mode has its own Calculate on the wizard's last step. */}
-        {!calculated && !isQuick && (
+        {!choosing && !calculated && !isQuick && (
           <div className="section" style={{textAlign:"center",padding:"1.5rem 0 0"}}>
             <button className="btn primary" disabled={recruit.enabled==null} title={recruit.enabled==null?"Answer the re-recruitment question (section 2) first":undefined} style={{fontSize:16,padding:"14px 34px",...(recruit.enabled==null?{opacity:.5,cursor:"not-allowed"}:{})}} onClick={runCalc}>Calculate my savings →</button>
             <p className="step-sub" style={{margin:"12px 0 0"}}>{recruit.enabled==null?"Answer the re-recruitment question above (Yes or No) to unlock Calculate.":"We'll model your bank pool and agency exposure, then adjust anything and the report updates live."}</p>
           </div>
         )}
-        {calculated && (
+        {!choosing && calculated && (
         <div className="section" id="results">
           <p className="sr-only" role="status">Results ready. Your estimated annual impact is shown below and updates live as you adjust inputs.</p>
           <div className="step-label"><div className="step-num">{isQuick?2:3}</div><h2>Your potential impact</h2></div>
@@ -1084,7 +1125,7 @@ function App(){
                     <b style={{color:C.navy}}>{fmt(grossR)}</b> premium{adminR>0?<> + <b style={{color:C.navy}}>{fmt(adminR)}</b> admin time</>:""}{recR>0?<> + <b style={{color:C.navy}}>{fmt(recR)}</b> recruitment</>:""} − <b style={{color:C.navy}}>{fmt(licR)}</b> licence fee = <b style={{color:netR>0?C.teal:"#8A6508"}}>{netR>=0?fmt(netR):"−"+fmt(-netR)}</b> net{netR>0?", the headline saving shown at the top.":", so the licence fee is larger than the premium at these inputs."}
                   </p>
                 </>; })()}
-              <p style={{fontSize:11.5,color:C.textLight,marginTop:".6rem",lineHeight:1.6}}>Bank rate = 2026/27 AfC blended midpoint, already including the employer on-cost (default 20%, employer NI + pension), so on-costs are counted once, not added on top. Premium defaults to ~20%, reflecting figures cited in House of Commons Library research, deliberately conservative and contested at shift level (nursing ~35-50%, medics ~80-120%). Set your own premium and every figure updates.{isQuick?<> Quick mode anchors on your annual agency spend ({fmtK(r.totSpend)}{spendAuto?", estimated from your bank size using FY2025/26 national averages, enter your actual agency spend for accurate results":""}), for a per-staff-group model, switch to Detailed.</>:""}</p>
+              <p style={{fontSize:11.5,color:C.textLight,marginTop:".6rem",lineHeight:1.6}}>Bank rate = 2026/27 AfC blended midpoint, already including the employer on-cost (default 20%, employer NI + pension), so on-costs are counted once, not added on top. Premium defaults to ~20%, reflecting figures cited in House of Commons Library research, deliberately conservative and contested at shift level (nursing ~35-50%, medics ~80-120%). Set your own premium and every figure updates.{isQuick?<> Quick mode anchors on your annual agency spend ({fmtK(r.totSpend)}{spendAuto?", estimated from your bank size using FY2025/26 national averages, enter your actual agency spend for accurate results":""}), for a per-staff-group model, go back to the start and choose Detailed.</>:""}</p>
             </div>
 
             {/* Single annual steady-state (Rev D: ramp removed) */}
