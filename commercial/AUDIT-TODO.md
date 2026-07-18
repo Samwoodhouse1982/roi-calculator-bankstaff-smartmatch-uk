@@ -27,28 +27,24 @@ Nothing below is committed-to; each needs a review decision first.
 - [x] Remove-group button: `aria-label="Remove this staff group"`.
 - [x] "Annual agency spend" heading no longer labels the checkbox.
 
-## Diagnostics & small correctness
+## Diagnostics & small correctness — DONE (July 2026)
 
-- [ ] "Admin time only" callout says "agency spend is zero" even when the real
-  cause is premium = 0 or displaceable share = 0 — branch the message.
-- [ ] All-zero state renders "the £0 premium you'd displace is below the
-  £0/yr licence" (and the PDF equivalent) — special-case zero-vs-zero; also
-  the noNet copy says "premium" when admin is included in the comparison.
+- [x] "Admin time only" callout now names the actual zero factor (spend,
+  premium, or displaceable share).
+- [x] noNet copy compares the modelled **benefit** (premium + included levers)
+  and special-cases the zero-benefit / zero-licence state, on screen and in
+  the PDF/summary strings.
 - [x] Capacity panel shows "8% → 6.6%" (whole number vs one decimal) — fixed:
   one decimal both sides, matching the PDF.
-- [ ] PDF worked-out equation can be £1 off — round each term first, as the
-  on-screen version already does (`netR` construction).
-- [ ] With a zero-pay group the "£x/hr × N shifts = £gross" sentence no longer
-  multiplies out — suppress or caveat it when `zeroPay`.
-- [ ] `pcAuto` effect runs on the "choose" screen using Detailed's groups —
-  first paint after re-entering Quick can briefly show the wrong licence fee.
-  Guard with `if(mode==="choose") return;`.
-- [ ] Keyboard users can navigate away during the 1.6s "Calibrating" overlay,
-  leaving a phantom `calculated` state — guard the timeout or disable nav
-  while calibrating.
-- [ ] `SliderField.commit` stores the unrounded value but displays the rounded
-  one (type 8.35 → shows 8.4, models 8.35), and `commit` never clamps to max —
-  fine for £ (intended) but lets a 300% fill rate through.
+- [x] PDF worked-out equation rounds each term first (netR construction),
+  matching the on-screen version.
+- [x] zeroPay now replaces the per-shift identity sentence with a caveat (and
+  the capacity worked example already hid itself).
+- [x] `pcAuto` effect skips the "choose" screen.
+- [x] The calibrating timeout drops the pending calculation if the user
+  navigated away mid-pause.
+- [x] `SliderField.commit` stores the round-tripped display value and clamps
+  percent fields to 100 (£/count fields stay uncapped by design).
 
 ## Copy / config drift
 
