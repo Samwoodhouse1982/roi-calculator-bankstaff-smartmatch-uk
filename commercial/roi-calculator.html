@@ -112,6 +112,10 @@
 
   /* QUICK (single page): calculate row + yes/no decision */
   .qnav { display:flex; align-items:center; gap:10px; margin-top:1.5rem; }
+  /* Progressive sections: each stays greyed out (and inert) until the one before is done */
+  .qsec + .qsec { margin-top:1.5rem; }
+  .qsec { transition:opacity .3s; }
+  .qsec.locked { opacity:.45; pointer-events:none; user-select:none; }
   .yesno { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   @media (max-width:520px){ .yesno{ grid-template-columns:1fr; } }
   .yn { text-align:left; font-family:inherit; background:var(--white); border:1px solid var(--border); border-radius:var(--radius); padding:1rem 1.1rem; cursor:pointer; font-size:14px; font-weight:600; color:var(--navy); transition:.15s; }
@@ -599,7 +603,7 @@ const RLDATIX_LOGO_PNG="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAABNCA
 function App(){
   const [mode,setMode] = useState("quick");           // "quick" | "detailed"
   // shared parameters
-  const [premium,setPremium]=useState(20), [displacement,setDisp]=useState(13), [platformCost,setPC]=useState(platformCostFor(660)), [pcAuto,setPcAuto]=useState(true);
+  const [premium,setPremium]=useState(20), [displacement,setDisp]=useState(26), [platformCost,setPC]=useState(platformCostFor(660)), [pcAuto,setPcAuto]=useState(true);   // displacement defaults to Moderate (26%): this is a guided account-manager tool; the public self-serve product keeps Conservative
   const [perGroupPremium,setPGP]=useState(false);
   const [displaceableShare,setDS]=useState(DISPLACEABLE_SHARE_DEFAULT);   // benchmark §4: editable
   const [turnover,setTurnover]=useState(ORG_TYPES.acute.turnover);        // benchmark §1/§5: agency intensity
@@ -612,6 +616,10 @@ function App(){
   // includeAdmin null = undecided: an explicit Yes/No is required before calculating.
   const [simple,setSimple]=useState({ bankPool:660, agencySpend:null, agencyFillRate:8.3, numManagers:12, includeAdmin:null });
   const spendAuto = simple.agencySpend==null;
+  // Quick-mode progression: sections unlock in order (1 numbers → 2 admin → 3 confidence
+  // → 4 defaults + calculate). qStep = highest unlocked section; never re-locks on edit.
+  const [qStep,setQStep]=useState(1);
+  const unlock = n => setQStep(s=>Math.max(s,n));
   // detailed state
   const [groups,setGroups]=useState(()=>buildOrg("acute")); const [preset,setPreset]=useState("acute"); const [fillRateNow,setFill]=useState(8.3);   // same national-average default as Quick
   const [admin,setAdmin]=useState({ enabled:false, managers:12, hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY });
@@ -830,8 +838,9 @@ function App(){
                 visible at once, no wizard. Mirrors the short web product's methodology
                 (flat spend estimate, optional actual-spend override, required admin
                 decision) while keeping the editable defaults an AM needs mid-meeting. */}
+            <div className="qsec">
             <div className="step-label"><div className="step-num">1</div><h2>Your numbers</h2></div>
-            <p className="step-sub">Everything on one page: slide, or tap any number to type it. Switch to <b>Detailed</b> to model spend by staff group.</p>
+            <p className="step-sub">Work down the page one step at a time: slide, or tap any number to type it. Switch to <b>Detailed</b> to model spend by staff group.</p>
             <div className="card">
               <div>
                 <SliderField label="Registered bank workers" value={simple.bankPool} min={0} max={12000} step={10} format={fmtNum} onChange={v=>setSimple(s=>({...s,bankPool:num(v)}))} hint="Your whole bank register, not just bank-only staff (see i). Slide, or tap the number to type." info="Count EVERYONE on your bank register, including substantive staff who also pick up bank shifts, not just dedicated bank-only workers. Worked example: a trust with 150 bank-only workers plus 350 substantive staff who occasionally do bank shifts has 500 registered bank workers, not 150. This wider count is what the ~£2,700/worker agency-spend estimate is calibrated to (using bank-only would understate it ~3×). Scales for large systems (e.g. Leeds ~5,000, Sussex ~10,000); sets the estimated agency spend, licence tier and duty-count narrative (2026/27 AfC band-mix rate, ~£34k blended)."/>
@@ -848,29 +857,37 @@ function App(){
                 <SliderField label="Temporary staffing team" value={simple.numManagers} min={0} max={60} step={1} format={fmtNum} onChange={v=>setSimple(s=>({...s,numManagers:num(v)}))} hint="Bank/temp staffing coordinators & admins" info="The people who do the day-to-day booking, chasing and reconciling of temporary shifts. Drives the time-saved-per-week and admin saving."/>
               </div>
             </div>
+            {qStep===1 && <div className="qnav" style={{marginTop:4}}><div style={{flex:1}}/><button type="button" className="btn primary" onClick={()=>unlock(2)}>These numbers look right →</button></div>}
+            </div>
 
+            <div className={"qsec"+(qStep<2?" locked":"")} inert={qStep<2?"":undefined} aria-disabled={qStep<2}>
             <div className="step-label"><div className="step-num">2</div><h2>Include admin time in the cash saving?</h2></div>
             <p className="step-sub">Smart Match automates booking and matching, giving the temporary-staffing team hours back each week. Those hours are always shown, should their cash value also be added to the headline saving?</p>
             <div className="card">
               <div className="yesno" role="radiogroup" aria-label="Include admin time saving in the cash total?">
-                <button type="button" role="radio" aria-checked={simple.includeAdmin===false} className={"yn"+(simple.includeAdmin===false?" active":"")} onClick={()=>setSimple(s=>({...s,includeAdmin:false}))}>No, show the hours only<small>Recommended. Keeps the headline to hard agency cash savings; the hours released are still shown on their own.</small></button>
-                <button type="button" role="radio" aria-checked={simple.includeAdmin===true} className={"yn"+(simple.includeAdmin===true?" active":"")} onClick={()=>setSimple(s=>({...s,includeAdmin:true}))}>Yes, add the £ value too<small>Adds a conservative 1.0 h/day at a loaded £18/h across your team to the cash saving.</small></button>
+                <button type="button" role="radio" aria-checked={simple.includeAdmin===false} className={"yn"+(simple.includeAdmin===false?" active":"")} onClick={()=>{ setSimple(s=>({...s,includeAdmin:false})); unlock(3); }}>No, show the hours only<small>Recommended. Keeps the headline to hard agency cash savings; the hours released are still shown on their own.</small></button>
+                <button type="button" role="radio" aria-checked={simple.includeAdmin===true} className={"yn"+(simple.includeAdmin===true?" active":"")} onClick={()=>{ setSimple(s=>({...s,includeAdmin:true})); unlock(3); }}>Yes, add the £ value too<small>Adds a conservative 1.0 h/day at a loaded £18/h across your team to the cash saving.</small></button>
               </div>
-              {simple.includeAdmin==null && <p className="hint" style={{marginTop:10}}>Choose Yes or No: neither is assumed, and Calculate unlocks once you decide.</p>}
+              {simple.includeAdmin==null && <p className="hint" style={{marginTop:10}}>Choose Yes or No: neither is assumed, and the next step unlocks once you decide.</p>}
+            </div>
             </div>
 
+            <div className={"qsec"+(qStep<3?" locked":"")} inert={qStep<3?"":undefined} aria-disabled={qStep<3}>
             <div className="step-label"><div className="step-num">3</div><h2>Confidence level</h2></div>
-            <p className="step-sub">How much of today's agency work do you expect to move onto your own bank? Defaults to Conservative.</p>
+            <p className="step-sub">How much of today's agency work do you expect to move onto your own bank? Defaults to Moderate.</p>
             <div className="params-grid">
               <div className="field">
-                <span className="flabel">Confidence level: {displacement}% · {st.key} <InfoTip text="Share of current agency usage that improved bank utilisation moves to bank, applied to the 80% displaceable share (so Moderate 26% ≈ 21% of all agency). Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; defaults to Conservative."/></span>
+                <span className="flabel">Confidence level: {displacement}% · {st.key} <InfoTip text="Share of current agency usage that improved bank utilisation moves to bank, applied to the 80% displaceable share (so Moderate 26% ≈ 21% of all agency). Driven by a Smart Match pilot study: agency fill 8.1%→6.0% at one community site (26% relative). Single-site and partly attributable; defaults to Moderate for this guided account-manager tool."/></span>
                 <div className="stance-btns">{[["Conservative",13],["Moderate",26],["Optimistic",50]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
                 <input type="range" min="13" max="50" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Confidence level, percent" aria-valuetext={displacement+"%, "+st.key}/>
                 <div className="slider-ctx"><span>13% conservative</span><span>26% moderate</span><span>50% optimistic</span></div>
               </div>
               <div style={{alignSelf:"center"}}><div className="disp-note" style={{marginTop:0,background:st.bg,color:st.color}}>{st.note}</div></div>
             </div>
+            {qStep===3 && <div className="qnav" style={{marginTop:12}}><div style={{flex:1}}/><button type="button" className="btn primary" onClick={()=>unlock(4)}>Happy with this level →</button></div>}
+            </div>
 
+            <div className={"qsec"+(qStep<4?" locked":"")} inert={qStep<4?"":undefined} aria-disabled={qStep<4}>
             <div className="step-label"><div className="step-num">4</div><h2>Adjust the defaults</h2></div>
             <p className="step-sub">Conservative, sourced defaults: leave them as they are, or set the organisation's own rates.</p>
             <div className="params-grid">
@@ -883,6 +900,7 @@ function App(){
             <div className="qnav">
               <div style={{flex:1}}/>
               <button type="button" className="btn primary" disabled={simple.includeAdmin==null} title={simple.includeAdmin==null?"Answer the admin-time question (section 2) first":undefined} style={{fontSize:15,...(simple.includeAdmin==null?{opacity:.5,cursor:"not-allowed"}:{})}} onClick={runCalc}>{calculated?"Update results →":"Calculate my savings →"}</button>
+            </div>
             </div>
           </div>
         ) : (
@@ -1130,7 +1148,7 @@ function App(){
               <div className="arow"><span>Displaceable share of agency</span><span>{Math.round(r.displaceableShare*100)}%</span></div>
               <div className="arow explain"><span className="albl">Source: displaceable share</span><span className="adesc">Only part of agency spend can realistically move to bank: excludes break-glass / safety-critical cover and specialist roles bank can't fill. Displacement applies to this share only (benchmark default 80%, editable in Detailed).</span></div>
               <div className="arow"><span>Confidence level</span><span>{displacement}%, {st.key}</span></div>
-              <div className="arow explain"><span className="albl">Source: displacement <span className="conf low">low</span></span><span className="adesc">Conservative by default. The stance % applies to the displaceable share only, so the effective whole-book rate is lower (e.g. Moderate 26% × 80% ≈ 21% of all agency). The programme saw agency fill fall 8.1%→6.0% at one community site (26% relative), the observed upper end, single-site, partly attributable to wider scheduling/engagement changes. Health-economist validation pending.</span></div>
+              <div className="arow explain"><span className="albl">Source: displacement <span className="conf low">low</span></span><span className="adesc">Moderate by default in this guided account-manager tool (the public self-serve product defaults to Conservative). The stance % applies to the displaceable share only, so the effective whole-book rate is lower (e.g. Moderate 26% × 80% ≈ 21% of all agency). The programme saw agency fill fall 8.1%→6.0% at one community site (26% relative), the observed upper end, single-site, partly attributable to wider scheduling/engagement changes. Health-economist validation pending.</span></div>
               <div className="arow"><span>Bank-utilisation programme signal</span><span>+17% (one site)</span></div>
               <div className="arow explain"><span className="albl">Source: programme (4 trusts; 2-site data) <span className="conf low">low–mod</span></span><span className="adesc">Utilisation +17% at one community site (170→199 workers); the other reporting site was ~+1.75% (a "13%" figure in the client doc is a known error). Temp duties filled +17% (351→411) / +16%. Self-booking +26% / +15%. Engagement/coverage measures, not payroll uplift; they inform the stance, not the saving. Anonymised pending client sign-off.</span></div>
               <div className="arow"><span>Pay scale</span><span>2026/27 NHS AfC midpoints <span className="conf high">high</span></span></div>

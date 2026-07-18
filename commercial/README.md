@@ -9,8 +9,11 @@ wider RLDatix ROI calculator suite.
 
 Two modes in one page: **Quick** (single-page whole-bank view: bank size,
 optional actual agency spend, a required admin-time Yes/No, confidence level,
-and editable defaults for premium / licence / shift / on-cost) and **Detailed**
-(per-staff-group commercial model). The public self-serve product lives in
+and editable defaults for premium / licence / shift / on-cost; sections unlock
+**in order** — each stays greyed out and inert until the one before is
+completed) and **Detailed** (per-staff-group commercial model). The confidence
+level defaults to **Moderate (26%)** in this guided account-manager tool; the
+public self-serve product keeps the Conservative default. The public self-serve product lives in
 [`../web/`](../web/); the events kiosk in [`../touchscreen/`](../touchscreen/).
 
 ## What's the calculator?
@@ -107,7 +110,9 @@ Use `embed-snippet.html` as the host-page reference. The calculator posts three
 `smartmatch-roi-scroll` (scrolls the host page to the results after
 "Calculate") — in-iframe scrolling is a no-op once the iframe is full height,
 so the host does it. Point `src` at `/roi-calculator.html` (not `/`, which
-redirects) and serve over HTTPS.
+redirects) and serve over HTTPS. Framing is explicitly allowed:
+`vercel.json` sends `Content-Security-Policy: frame-ancestors *` (and no
+`X-Frame-Options`), so the calculator can be embedded on any host page.
 
 ## Editing notes
 
