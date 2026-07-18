@@ -239,6 +239,7 @@
   footer strong { color:var(--seafoam); }
 
   .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  [tabindex="-1"]:focus { outline:none; } /* programmatic focus targets (section headings on unlock) need no visible ring */
   @media (prefers-reduced-motion: reduce){
     *, *::before, *::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
   }
@@ -513,11 +514,13 @@ function useCountUp(target, ms=900){
 const AnimMoney = ({v}) => fmt(useCountUp(v));
 const AnimNum   = ({v}) => fmtNum(useCountUp(v));
 
-function InfoTip({text}){
+function InfoTip({text,label}){
   const [open,setOpen]=useState(false);
   const tipId="tip_"+useId();
+  // Accessible name is a short "More info about X", not the whole tooltip body
+  // (some tips run 80+ words); the body is exposed via aria-describedby when open.
   return (<span style={{position:"relative",display:"inline-flex"}}>
-    <button type="button" aria-label={"More info: "+text} aria-expanded={open} aria-describedby={open?tipId:undefined}
+    <button type="button" aria-label={label?"More info about "+label:"More information"} aria-expanded={open} aria-describedby={open?tipId:undefined}
       onClick={()=>setOpen(o=>!o)} onBlur={()=>setOpen(false)} onKeyDown={e=>{ if(e.key==="Escape") setOpen(false); }}
       style={{width:16,height:16,borderRadius:"50%",border:"1px solid "+C.border,background:"#fff",color:C.textLight,fontSize:10,fontWeight:700,cursor:"pointer",lineHeight:1,padding:0}}>i</button>
     {open && <span role="tooltip" id={tipId} style={{position:"absolute",bottom:"130%",left:"50%",transform:"translateX(-50%)",background:C.navy,color:"#fff",fontSize:11,fontWeight:400,lineHeight:1.5,padding:"8px 10px",borderRadius:8,width:"min(230px, calc(100vw - 32px))",boxShadow:"0 8px 24px rgba(0,0,0,.25)",zIndex:50}}>{text}</span>}
@@ -539,7 +542,7 @@ function Field({label, value, onChange, min, max, step=1, prefix, info, hint}){
     if(min!=null&&min!=="") n=Math.max(Number(min),n); if(max!=null&&max!=="") n=Math.min(Number(max),n);
     setTxt(String(n)); if(n!==num(value)) onChange(String(n)); };   // no-op blur must not fire onChange: some onChange handlers have side effects (e.g. the licence fee disables its auto-scaling)
   return (<div className="field">
-    <span className="flabel"><label htmlFor={id}>{label}</label>{info && <InfoTip text={info}/>}</span>
+    <span className="flabel"><label htmlFor={id}>{label}</label>{info && <InfoTip text={info} label={label}/>}</span>
     <div style={{position:"relative",display:"flex",alignItems:"center"}}>
       {prefix && <span style={{position:"absolute",left:10,color:C.textLight,fontSize:14}}>{prefix}</span>}
       <input id={id} type="number" value={txt} min={min} max={max} step={step} style={prefix?{paddingLeft:22}:null}
@@ -564,11 +567,11 @@ function SliderField({label, value, onChange, min=0, max=100, step=1, prefix, su
   const sv=Math.max(Number(min),Math.min(Number(max),num(value)));   // clamp for the slider track only; the readout may exceed max
   return (<div className="sfld">
     <div className="sfld-head">
-      <span className="flabel"><label htmlFor={id}>{label}</label>{info && <InfoTip text={info}/>}</span>
+      <span className="flabel"><label htmlFor={id}>{label}</label>{info && <InfoTip text={info} label={label}/>}</span>
       <span className="sfld-val">{prefix}<input id={id} type="text" inputMode="decimal" value={txt} style={{width:Math.max(2,String(txt).length)+"ch"}}
         onFocus={()=>{editing.current=true;}} onChange={e=>typeVal(e.target.value)} onBlur={commit} onKeyDown={e=>{ if(e.key==="Enter") e.target.blur(); }}/>{suffix}</span>
     </div>
-    <input type="range" min={min} max={max} step={step} value={sv} onChange={e=>slide(e.target.value)} aria-label={label}/>
+    <input type="range" min={min} max={max} step={step} value={sv} onChange={e=>slide(e.target.value)} aria-label={label} aria-valuetext={(prefix||"")+fmt(sv)+(suffix||"")}/>
     {hint && <span className="hint">{hint}</span>}
   </div>);
 }
@@ -588,7 +591,7 @@ function SizeField({label, value, prefix, hint, info, onCommit, allowZero}){
     if(n>0 || (allowZero && n===0)){ const accepted=onCommit(n); setTxt(accepted===false ? show(value) : show(n)); } else setTxt(show(value)); };
   const id="sf_"+useId();
   return (<div className="field">
-    <span className="flabel"><label htmlFor={id}>{label}</label>{info && <InfoTip text={info}/>}</span>
+    <span className="flabel"><label htmlFor={id}>{label}</label>{info && <InfoTip text={info} label={label}/>}</span>
     <div style={{position:"relative",display:"flex",alignItems:"center"}}>
       {prefix && <span style={{position:"absolute",left:10,color:C.textLight,fontSize:14}}>{prefix}</span>}
       <input id={id} type="number" value={txt} min="0" style={prefix?{paddingLeft:22}:null}
@@ -650,6 +653,16 @@ function App(){
   // parameters → 3 calculate. Never re-locks on edit.
   const [dStep,setDStep]=useState(1);
   const dUnlock = n => setDStep(s=>Math.max(s,n));
+  // A11y for the staged sections: the unlock buttons unmount on click (focus would
+  // drop to <body>) and locked sections are inert (invisible to screen readers), so
+  // on each NEW unlock we move focus to the revealed section's heading and announce
+  // it via an always-mounted polite live region.
+  const [announcement,setAnnouncement]=useState("");
+  const prevQ=useRef(qStep), prevD=useRef(dStep);
+  const QS={2:["q-sec2","Step 2 unlocked: include admin time in the cash saving?"],3:["q-sec3","Step 3 unlocked: confidence level."],4:["q-sec4","Step 4 unlocked: adjust the defaults, then calculate."]};
+  const DS={2:["d-sec2","Agency parameters unlocked."],3:["d-calc","Calculate unlocked."]};
+  useEffect(()=>{ if(qStep>prevQ.current && QS[qStep]){ const [id,msg]=QS[qStep]; setAnnouncement(msg); requestAnimationFrame(()=>{ const el=document.getElementById(id); if(el) el.focus(); }); } prevQ.current=qStep; },[qStep]);
+  useEffect(()=>{ if(dStep>prevD.current && DS[dStep]){ const [id,msg]=DS[dStep]; setAnnouncement(msg); requestAnimationFrame(()=>{ const el=document.getElementById(id); if(el) el.focus(); }); } prevD.current=dStep; },[dStep]);
   // detailed state
   const [groups,setGroups]=useState(()=>buildOrg("acute")); const [preset,setPreset]=useState("acute"); const [fillRateNow,setFill]=useState(8.3);   // same national-average default as Quick
   const [admin,setAdmin]=useState({ hoursPerDay:ADMIN_HRS_PER_DAY_DEFAULT, workingDays:ADMIN_WORKING_DAYS, loadedHourly:ADMIN_LOADED_HOURLY });   // enabled + managers live in the shared includeAdmin/teamSize state
@@ -863,8 +876,11 @@ function App(){
   };
   const backToStart = () => { setMode("choose"); toTop(); };
 
+  useEffect(()=>{ if(calculated) setAnnouncement("Results ready. Your estimated annual impact is shown below and updates live as you adjust inputs."); },[calculated]);
+
   return (
     <div>
+      <div className="sr-only" aria-live="polite" role="status">{announcement}</div>
       {calibrating && <Calibrating/>}
 
       {(()=>{ const logoRow = (
@@ -920,7 +936,7 @@ function App(){
               <div>
                 <SliderField label="Registered bank workers" value={simple.bankPool} min={0} max={12000} step={10} format={fmtNum} onChange={v=>setSimple(s=>({...s,bankPool:num(v)}))} hint="Your whole bank register, not just bank-only staff (see i). Slide, or tap the number to type." info="Count EVERYONE on your bank register, including substantive staff who also pick up bank shifts, not just dedicated bank-only workers. Worked example: a trust with 150 bank-only workers plus 350 substantive staff who occasionally do bank shifts has 500 registered bank workers, not 150. This wider count is what the ~£2,700/worker agency-spend estimate is calibrated to (using bank-only would understate it ~3×). Scales for large systems (e.g. Leeds ~5,000, Sussex ~10,000); sets the estimated agency spend, licence tier and duty-count narrative (2026/27 AfC band-mix rate, ~£34k blended)."/>
                 <div className="field" style={{marginBottom:14}}>
-                  <span className="flabel"><label htmlFor="spendKnown">Annual agency spend</label><InfoTip text="Your organisation's total annual agency staffing spend (all staff groups: medical, nursing, AHP, admin), the anchor for the cash saving. Until ticked, it is estimated from bank size using FY2025/26 national averages (~£2,700 per registered bank worker); the organisation's own figure makes the result far more credible. National agency spend is falling fast (£3bn→£1.2bn since 2023/24), so prefer the latest figure."/></span>
+                  <span className="flabel"><span>Annual agency spend</span><InfoTip label="annual agency spend" text="Your organisation's total annual agency staffing spend (all staff groups: medical, nursing, AHP, admin), the anchor for the cash saving. Until ticked, it is estimated from bank size using FY2025/26 national averages (~£2,700 per registered bank worker); the organisation's own figure makes the result far more credible. National agency spend is falling fast (£3bn→£1.2bn since 2023/24), so prefer the latest figure."/></span>
                   <label style={{display:"flex",alignItems:"center",gap:8,fontSize:12.5,fontWeight:600,color:C.navy,cursor:"pointer",margin:"6px 0 4px"}}>
                     <input id="spendKnown" type="checkbox" checked={!spendAuto} onChange={e=>setSimple(s=>({...s,agencySpend:e.target.checked?estimateAgencySpend(s.bankPool):null}))}/> I know our annual agency spend
                   </label>
@@ -936,7 +952,7 @@ function App(){
             </div>
 
             <div className={"qsec"+(qStep<2?" locked":"")} inert={qStep<2?"":undefined} aria-disabled={qStep<2}>
-            <div className="step-label"><div className="step-num">2</div><h2>Include admin time in the cash saving?</h2></div>
+            <div className="step-label"><div className="step-num">2</div><h2 id="q-sec2" tabIndex={-1}>Include admin time in the cash saving?</h2></div>
             <p className="step-sub">Smart Match automates booking and matching, giving the temporary-staffing team hours back each week. Those hours are always shown, should their cash value also be added to the headline saving?</p>
             <div className="card">
               <div className="yesno" role="radiogroup" aria-label="Include admin time saving in the cash total?">
@@ -948,12 +964,12 @@ function App(){
             </div>
 
             <div className={"qsec"+(qStep<3?" locked":"")} inert={qStep<3?"":undefined} aria-disabled={qStep<3}>
-            <div className="step-label"><div className="step-num">3</div><h2>Confidence level</h2></div>
+            <div className="step-label"><div className="step-num">3</div><h2 id="q-sec3" tabIndex={-1}>Confidence level</h2></div>
             <p className="step-sub">How much of today's agency work do you expect to move onto your own bank? Defaults to Moderate.</p>
             <div className="params-grid">
               <div className="field">
-                <span className="flabel">Confidence level: {displacement}% · {st.key} <InfoTip text={"Share of current agency usage that improved bank utilisation moves to bank, applied to the "+Math.round(displaceableShare*100)+"% displaceable share (so "+displacement+"% ≈ "+Math.round(displacement*displaceableShare)+"% of all agency). Defaults to Moderate for this guided account-manager tool; the pilot evidence behind the stances is set out in Assumptions & methodology under the results."}/></span>
-                <div className="stance-btns">{[["Conservative",13],["Moderate",26],["Optimistic",50]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
+                <span className="flabel">Confidence level: {displacement}% · {st.key} <InfoTip label="confidence level" text={"Share of current agency usage that improved bank utilisation moves to bank, applied to the "+Math.round(displaceableShare*100)+"% displaceable share (so "+displacement+"% ≈ "+Math.round(displacement*displaceableShare)+"% of all agency). Defaults to Moderate for this guided account-manager tool; the pilot evidence behind the stances is set out in Assumptions & methodology under the results."}/></span>
+                <div className="stance-btns">{[["Conservative",13],["Moderate",26],["Optimistic",50]].map(([lbl,v])=>(<button key={v} type="button" aria-pressed={displacement===v} className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
                 <input type="range" min="13" max="50" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Confidence level, percent" aria-valuetext={displacement+"%, "+st.key}/>
                 <div className="slider-ctx"><span>13% conservative</span><span>26% moderate</span><span>50% optimistic</span></div>
               </div>
@@ -963,7 +979,7 @@ function App(){
             </div>
 
             <div className={"qsec"+(qStep<4?" locked":"")} inert={qStep<4?"":undefined} aria-disabled={qStep<4}>
-            <div className="step-label"><div className="step-num">4</div><h2>Adjust the defaults</h2></div>
+            <div className="step-label"><div className="step-num">4</div><h2 id="q-sec4" tabIndex={-1}>Adjust the defaults</h2></div>
             <p className="step-sub">Conservative, sourced defaults: leave them as they are, or set the organisation's own rates.</p>
             <div className="params-grid">
               <Field label="Agency premium over bank (%)" value={premium} min="0" max="150" step={1} onChange={v=>setPremium(num(v))} info="What an agency charges over your own bank for the same shift. Default 20%; contested at shift level, so use the organisation's own rate where known. Sourced in Assumptions & methodology under the results." />
@@ -993,12 +1009,12 @@ function App(){
             <div className="step-label"><div className="step-num">1</div><h2>Your organisation profile</h2></div>
             <p className="step-sub">Pick the closest profile, set your size, then fine-tune each staff group. Agency spend is the anchor for the saving, so get that right first.</p>
             <div className="presets">{Object.entries(ORG_TYPES).map(([k,p])=>(
-              <button key={k} className={"preset"+(preset===k?" active":"")} onClick={()=>choosePreset(k)}><div className="pt">{p.label}</div><div className="pd">{p.desc}</div></button>))}
+              <button key={k} type="button" aria-pressed={preset===k} className={"preset"+(preset===k?" active":"")} onClick={()=>choosePreset(k)}><div className="pt">{p.label}</div><div className="pd">{p.desc}</div></button>))}
             </div>
             <div className="card" style={{marginBottom:"1rem"}}>
               <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:12}}>
                 <strong style={{fontSize:13,color:C.navy}}>Size of your organisation</strong>
-                <InfoTip text="Set your size and we rescale the staff-group mix to match. Both figures stay editable, and you can fine-tune each group below."/>
+                <InfoTip label="organisation size" text="Set your size and we rescale the staff-group mix to match. Both figures stay editable, and you can fine-tune each group below."/>
               </div>
               <div className="inputs-grid">
                 <SizeField label="Total bank headcount" value={totalHead} hint="Across all staff groups; rescales the mix" onCommit={v=>{ const next=scaleGroupsTo(groups,"headcount",v); setGroups(next); return next!==groups; }}/>
@@ -1014,7 +1030,7 @@ function App(){
               <div className="card" key={g.id}>
                 <div className="staff-header">
                   <div className="staff-title" style={{flex:1,minWidth:0}}><span className="band-pill" style={bandPill(g.band)}>{g.band}</span><input className="grp-name" value={g.role} onChange={e=>setG(i,"role",e.target.value)} aria-label="Staff group name"/></div>
-                  <button type="button" className="grp-remove" title="Remove this group" onClick={()=>removeGroup(i)} disabled={groups.length<=1}>×</button>
+                  <button type="button" className="grp-remove" aria-label="Remove this staff group" title="Remove this group" onClick={()=>removeGroup(i)} disabled={groups.length<=1}>×</button>
                 </div>
                 <div className="saving-badge" style={{display:"inline-block",marginBottom:12}}>{fmt(r.rows[i]?r.rows[i].saving:0)} / yr <span style={{fontWeight:400,opacity:.75}}>· premium displaced</span></div>
                 <div className="inputs-grid">
@@ -1031,15 +1047,15 @@ function App(){
             {dStep===1 && <div className="qnav"><div style={{flex:1}}/><button type="button" className="btn primary" onClick={()=>dUnlock(2)}>These numbers look right →</button></div>}
           </div>
           <div className={"section qsec"+(dStep<2?" locked":"")} inert={dStep<2?"":undefined} aria-disabled={dStep<2}>
-            <div className="step-label"><div className="step-num">2</div><h2>Agency parameters</h2></div>
+            <div className="step-label"><div className="step-num">2</div><h2 id="d-sec2" tabIndex={-1}>Agency parameters</h2></div>
             <div className="params-grid">
               <div>
                 <Field label={perGroupPremium?"Default agency premium (%)":"Agency premium over bank (%)"} value={premium} min="0" max="150" step={1} onChange={v=>setPremium(num(v))} info="A single agency-over-bank premium applied across all groups unless you override per group. Default 20%; contested at shift level, so use your organisation's actual rate where possible. Sourced in Assumptions & methodology under the results." hint={perGroupPremium?"Default for any group you don't override below":"Default 20% · editable · contested (sourced under the results)"}/>
-                <div style={{display:"flex",alignItems:"center",gap:7,marginTop:8}}><label style={{display:"flex",alignItems:"center",gap:7,fontSize:12,fontWeight:600,color:C.navy,cursor:"pointer"}}><input type="checkbox" checked={perGroupPremium} onChange={e=>setPGP(e.target.checked)}/> Set the agency premium per staff group</label> <InfoTip text="Off by default, one premium across all groups (the defensible business-case default). Tick to override the premium per group, e.g. higher for medics, where you have organisation-specific agency rates."/></div>
+                <div style={{display:"flex",alignItems:"center",gap:7,marginTop:8}}><label style={{display:"flex",alignItems:"center",gap:7,fontSize:12,fontWeight:600,color:C.navy,cursor:"pointer"}}><input type="checkbox" checked={perGroupPremium} onChange={e=>setPGP(e.target.checked)}/> Set the agency premium per staff group</label> <InfoTip label="per-group premium" text="Off by default, one premium across all groups (the defensible business-case default). Tick to override the premium per group, e.g. higher for medics, where you have organisation-specific agency rates."/></div>
               </div>
               <div className="field">
-                <span className="flabel">Confidence level: {displacement}% · {st.key} <InfoTip text={"Share of your baseline agency usage that improved bank utilisation moves to bank, applied to the displaceable share only (currently "+Math.round(displaceableShare*100)+"%, so "+displacement+"% ≈ "+Math.round(displacement*displaceableShare)+"% of all agency). The pilot evidence behind the stances is set out in Assumptions & methodology under the results."}/></span>
-                <div className="stance-btns">{[["Conservative",13],["Moderate",26],["Optimistic",50]].map(([lbl,v])=>(<button key={v} type="button" className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
+                <span className="flabel">Confidence level: {displacement}% · {st.key} <InfoTip label="confidence level" text={"Share of your baseline agency usage that improved bank utilisation moves to bank, applied to the displaceable share only (currently "+Math.round(displaceableShare*100)+"%, so "+displacement+"% ≈ "+Math.round(displacement*displaceableShare)+"% of all agency). The pilot evidence behind the stances is set out in Assumptions & methodology under the results."}/></span>
+                <div className="stance-btns">{[["Conservative",13],["Moderate",26],["Optimistic",50]].map(([lbl,v])=>(<button key={v} type="button" aria-pressed={displacement===v} className={"stance-btn"+(displacement===v?" active":"")} onClick={()=>setDisp(v)}>{lbl}<small>{v}%</small></button>))}</div>
                 <input type="range" min="13" max="50" step="1" value={displacement} onChange={e=>setDisp(num(e.target.value))} aria-label="Confidence level, percent" aria-valuetext={displacement+"%, "+st.key}/>
                 <div className="slider-ctx"><span>13% conservative</span><span>26% moderate</span><span>50% optimistic</span></div>
               </div>
@@ -1062,7 +1078,7 @@ function App(){
                 <label style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:600,color:C.navy,cursor:"pointer"}}>
                   <input type="checkbox" checked={includeAdmin===true} onChange={e=>setIncludeAdmin(e.target.checked)}/> Include admin time saving in cash (off by default)
                 </label>
-                <InfoTip text="Off by default, treated as a secondary recommendation. Self-booking automation releases time for the temporary staffing team; the hours saved per week are always shown, ticking adds their cash value to the saving total."/>
+                <InfoTip label="admin time saving" text="Off by default, treated as a secondary recommendation. Self-booking automation releases time for the temporary staffing team; the hours saved per week are always shown, ticking adds their cash value to the saving total."/>
               </div>
               <div className="inputs-grid" style={{marginTop:12}}>
                 <Field label="Temporary staffing team" value={teamSize} min="0" onChange={v=>setTeamSize(num(v))} info="Your temporary staffing team: bank/temp coordinators, officers and administrators."/>
@@ -1075,7 +1091,7 @@ function App(){
             <div className="card" style={{marginTop:12}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
                 <strong style={{fontSize:13,color:C.navy}}>Include avoided re-recruitment cost in the cash saving?</strong>
-                <InfoTip text="Under-utilised bank workers lapse and must be replaced. Activating idle capacity avoids part of that future re-recruitment and onboarding cost (already-spent recruitment cost is sunk and is not counted). Conservative either way; nothing is assumed, choose Yes or No."/>
+                <InfoTip label="re-recruitment cost" text="Under-utilised bank workers lapse and must be replaced. Activating idle capacity avoids part of that future re-recruitment and onboarding cost (already-spent recruitment cost is sunk and is not counted). Conservative either way; nothing is assumed, choose Yes or No."/>
               </div>
               <div className="yesno" role="radiogroup" aria-label="Include avoided re-recruitment cost in the cash saving?">
                 <button type="button" role="radio" aria-checked={recruit.enabled===false} className={"yn"+(recruit.enabled===false?" active":"")} onClick={()=>{ setRecruit(a=>({...a,enabled:false})); dUnlock(3); }}>No, leave it out<small>Recommended. Keeps the headline to the agency premium (plus any admin time you've included); there is no strong public benchmark for this lever.</small></button>
@@ -1095,13 +1111,13 @@ function App(){
         {/* RESULTS (shared). Quick mode has its own Calculate on the wizard's last step. */}
         {!choosing && !calculated && !isQuick && (
           <div className={"section qsec"+(dStep<3?" locked":"")} inert={dStep<3?"":undefined} aria-disabled={dStep<3} style={{textAlign:"center",padding:"1.5rem 0 0"}}>
-            <button className="btn primary" disabled={recruit.enabled==null} title={recruit.enabled==null?"Answer the re-recruitment question (section 2) first":undefined} style={{fontSize:16,padding:"14px 34px",...(recruit.enabled==null?{opacity:.5,cursor:"not-allowed"}:{})}} onClick={runCalc}>Calculate my savings →</button>
+            <button id="d-calc" className="btn primary" disabled={recruit.enabled==null} title={recruit.enabled==null?"Answer the re-recruitment question (section 2) first":undefined} style={{fontSize:16,padding:"14px 34px",...(recruit.enabled==null?{opacity:.5,cursor:"not-allowed"}:{})}} onClick={runCalc}>Calculate my savings →</button>
             <p className="step-sub" style={{margin:"12px 0 0"}}>{recruit.enabled==null?"Answer the re-recruitment question above (Yes or No) to unlock Calculate.":"We'll model your bank pool and agency exposure, then adjust anything and the report updates live."}</p>
           </div>
         )}
         {!choosing && calculated && (
         <div className="section" id="results">
-          <p className="sr-only" role="status">Results ready. Your estimated annual impact is shown below and updates live as you adjust inputs.</p>
+          {/* Announced via the app-level live region when `calculated` flips (a region inserted already populated is skipped by several screen readers) */}
           <div className="step-label"><div className="step-num">{isQuick?5:3}</div><h2>Your potential impact</h2></div>
           <div className="results-box">
             <div className="roi-header">
@@ -1127,7 +1143,7 @@ function App(){
               <div className="s-card hl"><div className="s-lbl">Net annual saving</div><div className="s-val">{noNet?"n/a":<AnimMoney v={r.netSaving}/>}</div><div className="s-sub">{noNet?"licence fee exceeds the modelled premium":<>after {fmt(platformCost)} licence fee</>}</div></div>
               <div className="s-card"><div className="s-lbl">Agency premium avoided</div><div className="s-val"><AnimMoney v={r.totSaving}/></div><div className="s-sub">agency vs bank gap, before licence</div></div>
               {r.adminSaving>0 && (()=>{ const aM=num(teamSize), aH=isQuick?ADMIN_HRS_PER_DAY_DEFAULT:num(admin.hoursPerDay), aD=isQuick?ADMIN_WORKING_DAYS:num(admin.workingDays), aR=isQuick?ADMIN_LOADED_HOURLY:num(admin.loadedHourly);
-                return <div className="s-card"><div className="s-lbl">Admin saving <InfoTip text={aM+" "+(aM===1?"person":"people")+" × "+aH+" h/day × "+aD+" working days × £"+aR+"/h (loaded) = "+fmt(r.adminSaving)}/></div><div className="s-val"><AnimMoney v={r.adminSaving}/></div><div className="s-sub">modelled, conservative</div></div>; })()}
+                return <div className="s-card"><div className="s-lbl">Admin saving <InfoTip label="admin saving calculation" text={aM+" "+(aM===1?"person":"people")+" × "+aH+" h/day × "+aD+" working days × £"+aR+"/h (loaded) = "+fmt(r.adminSaving)}/></div><div className="s-val"><AnimMoney v={r.adminSaving}/></div><div className="s-sub">modelled, conservative</div></div>; })()}
               <div className="s-card"><div className="s-lbl">Time saved / week</div><div className="s-val">{Math.round(r.timeSavedWeek).toLocaleString(LOCALE)}<span style={{fontSize:13}}> hrs</span></div><div className="s-sub">across the temporary staffing team</div></div>
             </div>
 

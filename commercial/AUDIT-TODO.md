@@ -13,25 +13,19 @@ Nothing below is committed-to; each needs a review decision first.
 - [x] **Bank-spend cap counterargument.** Assumptions panel row
   "Bank spend is also capped".
 
-## Accessibility cluster
+## Accessibility cluster — DONE (July 2026)
 
-- [ ] Unlock buttons ("These numbers look right →" etc.) unmount on click —
-  keyboard/SR focus drops to `<body>`; locked sections are `inert` so SR users
-  can't perceive them, and nothing announces an unlock. Keep the button
-  mounted, or move focus to the revealed section's heading + live-region note.
-- [ ] Stance buttons and org-preset buttons expose no selected state — add
-  `aria-pressed` (the Yes/No radiogroups already do this correctly).
-- [ ] Results `role="status"` live region mounts already populated, so many
-  screen readers never announce it — keep an always-mounted empty node and set
-  its text when `calculated` flips.
-- [ ] InfoTip `aria-label` embeds the entire tooltip paragraph (80+ words) —
-  use "More info about {label}" and keep the body in `aria-describedby`.
-- [ ] £ sliders announce raw numbers ("1782000") — add `aria-valuetext` with
-  the formatted value (the confidence slider already does this).
-- [ ] Remove-group button's accessible name is "×" ("multiplication sign") —
-  add `aria-label="Remove this staff group"`.
-- [ ] Quick's "Annual agency spend" heading is a `<label for="spendKnown">`,
-  garbling the checkbox's accessible name — make it a non-label span.
+- [x] Unlock focus + announcements: on each new unlock, focus moves to the
+  revealed section's heading (or the Calculate button) and an always-mounted
+  polite live region announces it.
+- [x] `aria-pressed` on stance and org-preset buttons.
+- [x] Results announced via the app-level live region when `calculated` flips
+  (the inline pre-populated `role="status"` node removed).
+- [x] InfoTip accessible name is now "More info about {label}"; body stays in
+  `aria-describedby` when open.
+- [x] SliderField ranges carry `aria-valuetext` with the formatted value.
+- [x] Remove-group button: `aria-label="Remove this staff group"`.
+- [x] "Annual agency spend" heading no longer labels the checkbox.
 
 ## Diagnostics & small correctness
 
