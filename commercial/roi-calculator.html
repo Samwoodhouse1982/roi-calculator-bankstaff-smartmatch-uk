@@ -97,7 +97,7 @@
   .stance-btn.active { background:var(--navy); border-color:var(--navy); color:#fff; }
   .staff-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:8px; }
   .staff-title { display:flex; align-items:center; gap:10px; }
-  .band-pill { font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; }
+  .band-pill { font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; white-space:nowrap; flex-shrink:0; }   /* never wraps: the flexible group-name input gives way instead */
   .staff-name { font-size:14px; font-weight:600; color:var(--navy); }
   .saving-badge { font-size:13px; font-weight:600; padding:4px 12px; border-radius:var(--radius-sm); background:var(--navy-light); color:var(--navy); }
   .saving-badge-sub { font-size:10px; color:var(--text-light); margin-top:4px; line-height:1.4; text-align:right; max-width:210px; }
