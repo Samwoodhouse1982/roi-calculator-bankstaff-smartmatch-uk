@@ -54,8 +54,8 @@ Nothing below is committed-to; each needs a review decision first.
   308-redirects the `.html` form.
 - [x] Band 2/3 pay aligned to £25,945, the midpoint of the quoted Band 2
   (£25,272) and Band 3 (£26,618) figures. Cash goldens are pay-independent so
-  tests are unaffected. **Cross-product note:** the kiosk/web engines still
-  carry £25,900 — mirror there on the next methodology sweep.
+  tests are unaffected. Mirrored into the web and touchscreen engines in the
+  July 2026 cross-product parity pass — all three products now agree.
 - [x] "Update results →" relabelled "See updated results →" (results update
   live; the button is a scroll affordance).
 - [x] README guardrails paragraph rewords `exceedsSpend` as structural (the

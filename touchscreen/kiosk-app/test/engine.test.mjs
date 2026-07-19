@@ -119,3 +119,27 @@ test('agencyRegime classifies by % of turnover (benchmark §5)', () => {
   assert.equal(agencyRegime(5000000, 1000000000).key, 'low');     // 0.5%
   assert.equal(agencyRegime(10000000, 0).key, null);              // no turnover -> no regime
 });
+
+/* ===== Cross-product parity regressions (July 2026 review vs the commercial calculator) ===== */
+
+test('PARITY: quick auto-estimate rounds to clean thousands, matching the commercial product', () => {
+  assert.equal(calc({ bankPool: 333 }).agencySpend, 899000);    // 333 x 2700 = 899,100 -> 899,000
+  assert.equal(calc({ bankPool: 1234 }).agencySpend, 3332000);  // 3,331,800 -> 3,332,000
+  assert.equal(calc({ bankPool: 660 }).agencySpend, 1782000);   // already round: unchanged
+});
+
+test('PARITY: detailed fillAfter applies the displaceable share (was fill x (1-d), disagreeing with the simple variant)', () => {
+  const d = calcDetailed({ ...DETAILED_DEFAULTS, groups: buildOrg('acute'), fillRateNow: 8.3 });
+  assert.ok(Math.abs(d.fillAfter - 8.3 * (1 - 0.8 * 0.13)) < 1e-9);
+  const q = calc({ ...DEFAULTS });   // and the two modes now agree with each other
+  assert.ok(Math.abs(q.fillAfter - 8.3 * (1 - 0.8 * 0.13)) < 1e-9);
+});
+
+test('PARITY: zero bank pay cannot delete a group\'s cash saving (pay-independent identity)', () => {
+  const gs = buildOrg('acute'); gs[0].bankPay = 0;   // RNs: GBP 6.5m agency spend, no pay rate
+  const d = calcDetailed({ ...DETAILED_DEFAULTS, groups: gs });
+  assert.equal(Math.round(d.totSaving), 260000);     // unchanged from the acute golden
+  assert.equal(d.rows[0].displaced, 0);              // duty counts still need a real pay rate
+  assert.equal(d.zeroPay, true);
+  assert.equal(calcDetailed({ ...DETAILED_DEFAULTS, groups: buildOrg('acute') }).zeroPay, false);
+});

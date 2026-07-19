@@ -65,7 +65,7 @@ export function calc(inp) {
   // Anchor on agency spend: the user's actual figure when given, else auto-estimated at
   // ~£2,700 per registered bank worker (FY2025/26). The fill rate feeds the reliance
   // narrative (fillAfter) only, not the cash.
-  const agencySpend = inp.agencySpend != null ? Math.max(0, Number(inp.agencySpend) || 0) : bankPool * AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP;
+  const agencySpend = inp.agencySpend != null ? Math.max(0, Number(inp.agencySpend) || 0) : Math.round(bankPool * AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP / 1000) * 1000;   // clean thousands - it's an estimate, and it keeps this product's quote identical to the commercial calculator's
   const baseline = agencyShiftCost > 0 ? agencySpend / agencyShiftCost : 0;
   const displaced = baseline * displaceableShare * d;           // duty counts (need a pay rate)
   const agencySaving = agencySpend * displaceableShare * d * (p / (1 + p));   // CASH: pay-independent identity
@@ -112,20 +112,20 @@ export const ORG_TYPES = {
     G("rn",  "Registered nurses",      "Band 5",     35558, 900, 6500000),
     G("sn",  "Senior nurses",          "Band 6",     44038, 350, 2500000),
     G("ahp", "AHPs (physio / OT)",     "Band 5/6",   39798, 300, 1500000),
-    G("hca", "Healthcare assistants",  "Band 2/3",   25900, 550, 500000),
+    G("hca", "Healthcare assistants",  "Band 2/3",   25945, 550, 500000),
     G("doc", "Medics (locum / SAS)",   "SAS / ST3+", 60000, 100, 4000000),
   ]},
   community: { label: "Community / specialist", desc: "~700 bank · ~£7m agency", iconKey: "community", turnover: 235000000, groups: [
     G("cn",  "Community / district nurses", "Band 6",     44038, 200, 2500000),
     G("rn",  "Registered nurses",           "Band 5",     35558, 180, 1800000),
     G("ahp", "AHPs (physio / OT / SLT)",    "Band 5/6",   39798, 200, 2000000),
-    G("hca", "Healthcare assistants",       "Band 2/3",   25900, 100, 400000),
+    G("hca", "Healthcare assistants",       "Band 2/3",   25945, 100, 400000),
     G("doc", "Medics (locum / SAS)",        "SAS / ST3+", 60000, 20,  300000),
   ]},
   mental: { label: "Mental health trust", desc: "~1,000 bank · ~£10m agency", iconKey: "behavioral", turnover: 235000000, groups: [
     G("rmn", "Mental health nurses (RMN)", "Band 5",     35558, 450, 4500000),
     G("sn",  "Senior nurses",              "Band 6",     44038, 150, 2000000),
-    G("hca", "Healthcare assistants",      "Band 2/3",   25900, 300, 1500000),
+    G("hca", "Healthcare assistants",      "Band 2/3",   25945, 300, 1500000),
     G("ahp", "AHPs (OT / psychology)",     "Band 5/6",   39798, 50,  500000),
     G("doc", "Medics (locum psych)",       "SAS / ST3+", 60000, 50,  1500000),
   ]},
@@ -140,12 +140,12 @@ export const ORG_TYPES = {
     G("rn",  "Registered nurses",     "Band 5",     35558, 1900, 12000000),
     G("sn",  "Senior nurses",         "Band 6",     44038, 900,  5000000),
     G("ahp", "AHPs",                  "Band 5/6",   39798, 800,  4000000),
-    G("hca", "Healthcare assistants", "Band 2/3",   25900, 1200, 2000000),
+    G("hca", "Healthcare assistants", "Band 2/3",   25945, 1200, 2000000),
     G("doc", "Medics (locum / SAS)",  "SAS / ST3+", 60000, 200,  7000000),
   ]},
 };
 
-export const AFC_BANDS = [["Band 2", 25272], ["Band 3", 26618], ["Band 5", 35558], ["Band 5/6", 39798], ["Band 6", 44038], ["Band 2/3", 25900], ["SAS / ST3+", 60000]];
+export const AFC_BANDS = [["Band 2", 25272], ["Band 3", 26618], ["Band 5", 35558], ["Band 5/6", 39798], ["Band 6", 44038], ["Band 2/3", 25945], ["SAS / ST3+", 60000]];
 
 // Fresh editable copy of a type's staff-group profile.
 export const buildOrg = key => (ORG_TYPES[key] || ORG_TYPES.acute).groups.map(g => ({ ...g }));
@@ -196,8 +196,10 @@ export function calcDetailed(input) {
     const bankShiftCost = (pay / AFC_DIVISOR) * shiftHours * (1 + oc);
     const agencyShiftCost = bankShiftCost * (1 + gp);
     const baseline = agencyShiftCost > 0 ? spend / agencyShiftCost : 0;
-    const displaced = baseline * displaceableShare * d;   // displaceable share only (benchmark §4)
-    const saving = displaced * (agencyShiftCost - bankShiftCost); // = displaced × bankShiftCost × premium
+    const displaced = baseline * displaceableShare * d;   // displaceable share only (benchmark §4); duty COUNTS need a real pay rate
+    // Cash via the pay-independent identity (pay/hours/on-cost cancel out of the saving),
+    // so a zero or missing pay rate cannot silently delete a group's cash (commercial parity).
+    const saving = spend * displaceableShare * d * (gp / (1 + gp));
     const capacityValue = displaced * bankShiftCost;              // gross bank backfill (NON-cash)
     totSpend += spend; totSaving += saving; totDisplaced += displaced; totHead += head; totCapacityValue += capacityValue;
     return { ...g, head, spend, pay, premiumPct: Math.round(gp * 100), bankShiftCost, agencyShiftCost, baseline, displaced, saving, capacityValue };
@@ -214,12 +216,13 @@ export function calcDetailed(input) {
   const roiPct = platformCost > 0 ? (netSaving / platformCost) * 100 : null;   // n/a (not 0%) when no platform cost
   const roiMultiple = num(platformCost) > 0 ? netSaving / num(platformCost) : null;   // net return on the licence fee (net saving ÷ cost)
   const paybackMonths = grossBenefit > 0 ? platformCost / (grossBenefit / 12) : null;
-  const fillNow = num(fillRateNow), fillAfter = fillNow * (1 - d);
+  const fillNow = num(fillRateNow), fillAfter = fillNow * (1 - displaceableShare * d);   // reduction on the displaceable share only, matching the simple variant and the modelled counts
   const reg = agencyRegime(totSpend, turnover);
   return {
     rows, totSpend, totSaving, totDisplaced, totHead, totCapacityValue,
     adminSaving, recruitSaving, timeSavedWeek, grossBenefit, netSaving, roiPct, roiMultiple, paybackMonths,
     exceedsSpend: totSaving > totSpend && totSpend > 0, adminOnly: totSaving <= 0 && (adminSaving > 0 || recruitSaving > 0),
+    zeroPay: rows.some(x => x.spend > 0 && !(num(x.bankPay) > 0)),   // cash still counted; duty counts unavailable
     implausibleRoi: roiPct != null && roiPct > 4000,   // >40× (M3 parity: ICS preset ~32× is legitimate scale)
     fillNow, fillAfter, premium, displacement, perGroupPremium, platformCost: num(platformCost), bankShiftCost, agencyShiftCost, shiftHours,
     displaceableShare, turnover: num(turnover), agencyPctOfTurnover: reg.pct, regime: reg.key,

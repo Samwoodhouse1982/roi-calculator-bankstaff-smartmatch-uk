@@ -219,7 +219,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         </>;
       })()}
       <div style={{ marginTop: 14, fontSize: F.tiny, color: C.textMuted, fontStyle: "italic", lineHeight: 1.6 }}>
-        Bank rate = 2026/27 AfC blended midpoint, already including a {Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension, below the full ~30% NHS rate because bank-only workers often opt out of the pension), so on-costs are counted once and never added on top. Premium defaults to ~20%, reflecting figures cited in House of Commons Library research, deliberately conservative and contested at shift level (nursing ~35-50%, medics ~80-120%).{r.agencySpend != null ? (leadContext && leadContext.agencySpend != null
+        Bank rate = 2026/27 AfC blended midpoint, already including a {Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension, below the full ~30% NHS rate because bank-only workers often opt out of the pension), so on-costs are counted once and never added on top. Premium defaults to ~20%, reflecting figures cited in House of Commons Library research, deliberately conservative; it varies widely by role and shift (nursing ~35-50%, medics ~80-120%), so use your own rates where known.{r.agencySpend != null ? (leadContext && leadContext.agencySpend != null
           ? <> Agency spend is the annual figure you supplied, which anchors the saving.</>
           : <> Agency spend is estimated from your bank size using FY2025/26 national averages (~{fmt(AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP)} per registered bank worker), which anchors the saving.</>) : ""}
       </div>
@@ -275,7 +275,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
       <ul style={{ margin: 0, paddingLeft: 22, fontSize: F.small, color: C.textMid, lineHeight: 1.75 }}>
         <li>These figures are <strong style={{ color: C.text }}>indicative</strong>, not a guarantee or a quote.</li>
         <li>The evidence comes from a pilot study, a small <strong style={{ color: C.text }}>two-site vendor sample within a four-trust programme</strong>, anonymised here as "a community trust" and "an acute trust". Results are not solely attributable to Smart Match.</li>
-        <li>The <strong style={{ color: C.text }}>agency premium is contested</strong> at shift level; the model is most credible when run on your own organisation's rates.</li>
+        <li>The <strong style={{ color: C.text }}>agency premium varies by role and shift</strong>; the model is most credible when run on your own organisation's rates.</li>
         <li>Better bank <strong style={{ color: C.text }}>utilisation is the mechanism</strong>; the cash is the agency premium displaced. Capacity gained is coverage, not cash, and is reported separately above.</li>
       </ul>
       <div style={{ marginTop: 16, padding: "14px 18px", background: C.surface2, borderRadius: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.65, border: `1px solid ${C.borderLight}` }}>
@@ -294,13 +294,13 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
             agency_saving = displaced_duties × bank_shift_cost × premium
           </div>
           <p>
-            Filling a bank shift is itself <strong style={{ color: C.text }}>expenditure</strong>; only the gap between an agency shift and the equivalent bank shift (the premium) is cash released. The premium here is <strong style={{ color: C.text }}>20%</strong>, a contested figure at shift level; the model is most credible on your own organisation's rates.
+            Filling a bank shift is itself <strong style={{ color: C.text }}>expenditure</strong>; only the gap between an agency shift and the equivalent bank shift (the premium) is cash released. The premium here is <strong style={{ color: C.text }}>20%</strong>, a starting point that varies by role and shift; the model is most credible on your own organisation's rates.
           </p>
           <p>
             <strong style={{ color: C.text }}>Admin time saving</strong> uses a per-person model: each member of the temporary staffing team recovers a conservative <strong style={{ color: C.text }}>1 hour/day</strong> across 225 working days, valued at a loaded £18/hour (some teams report up to 2.5 hours/day; we deliberately use 1). The same hours feed the "time saved per week" co-headline.
           </p>
           <p>
-            Pay assumptions use <strong style={{ color: C.text }}>2026/27 NHS Agenda for Change midpoints</strong> (+3.3%; {r.rows ? "per staff group" : "a band-mix weighted blended bank pay"}), 1,957.5 AfC hours/year, 8-hour shifts and a <strong style={{ color: C.text }}>{Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension)</strong>, already included in the modelled bank shift costs and never added on top. Pay, hours and on-cost set the modelled shift counts, not the cash saving, which is anchored to agency spend, premium and confidence level.{r.rows ? "" : ` Agency spend is estimated at ~£${AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP.toLocaleString("en-GB")} per registered bank worker (FY2025/26), scaled from your bank size.`} Defaults are deliberately conservative.
+            Pay assumptions use <strong style={{ color: C.text }}>2026/27 NHS Agenda for Change midpoints</strong> (+3.3%; {r.rows ? "per staff group" : "a band-mix weighted blended bank pay"}), 1,957.5 AfC hours/year, 8-hour shifts and a <strong style={{ color: C.text }}>{Math.round(BANK_ONCOST * 100)}% employer on-cost (employer NI and pension)</strong>, already included in the modelled bank shift costs and never added on top. Pay, hours and on-cost set the modelled shift counts, not the cash saving, which is anchored to agency spend, premium and confidence level.{r.rows ? "" : ` Agency spend is estimated at ~£${AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP.toLocaleString("en-GB")} per registered bank worker (FY2025/26), scaled from your bank size.`} Rate assumptions are deliberately conservative; the confidence level is yours to set.
           </p>
           <p style={{ marginBottom: 0 }}>
             Outputs are <strong style={{ color: C.text }}>indicative</strong> and are recomputed live as you adjust the confidence level above.
