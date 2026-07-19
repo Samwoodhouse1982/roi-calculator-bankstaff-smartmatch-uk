@@ -32,6 +32,7 @@ const readme = `<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><t
 <ol>
 <li>Upload the <code>calculator/</code> folder to your web hosting (any static hosting works: your WordPress server, S3/CloudFront, or a CDN…). Example final URL: <code>https://your-domain.com/smartmatch-roi/index.html</code>.</li>
 <li>Serve it over <strong>HTTPS</strong>. No other server configuration is needed — all asset paths are relative.</li>
+<li><strong>Framing must be allowed:</strong> the calculator's hosting must not send an <code>X-Frame-Options</code> header (or a <code>Content-Security-Policy frame-ancestors</code>) that blocks your page from embedding it. If you host the <code>calculator/</code> folder on the <em>same domain</em> as the page, the common <code>X-Frame-Options: SAMEORIGIN</code> default (added by many security plugins) is fine; if you host it on a <em>different</em> domain or subdomain, make sure no such header is applied to this folder.</li>
 </ol>
 <h2>2. Embed it in your page</h2>
 <ol>
