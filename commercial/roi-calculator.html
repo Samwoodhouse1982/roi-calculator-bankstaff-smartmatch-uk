@@ -218,6 +218,20 @@
   details.method .mbody { padding:0 12px 12px; font-size:12px; color:var(--text-mid); line-height:1.6; }
   code.formula { display:block; background:var(--navy-dark); color:#cfe; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; padding:8px 10px; border-radius:6px; margin:6px 0; white-space:pre-wrap; }
 
+  /* ACCORDION */
+  .accordion { display:flex; flex-direction:column; gap:8px; margin-bottom:2rem; }
+  .accordion-item { border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+  .accordion-header { background:#fff; border:none; width:100%; text-align:left; padding:1rem 1.25rem; cursor:pointer; font-family:inherit; font-size:14px; font-weight:600; color:var(--navy); display:flex; align-items:center; justify-content:space-between; transition:.2s ease; }
+  .accordion-header:hover { background:var(--navy-light); }
+  .accordion-header.active { background:var(--navy-light); }
+  .accordion-icon { font-size:18px; transition:transform .3s ease; flex-shrink:0; margin-left:12px; }
+  .accordion-header.active .accordion-icon { transform:rotate(45deg); }
+  .accordion-content { max-height:0; overflow:hidden; transition:max-height .3s ease; background:var(--white); }
+  .accordion-content.active { max-height:1000px; }
+  .accordion-body { padding:1rem 1.25rem; color:var(--text-mid); line-height:1.6; }
+  .accordion-body p { margin-bottom:.75rem; }
+  .accordion-body p:last-child { margin-bottom:0; }
+
   .actions { display:flex; gap:10px; flex-wrap:wrap; padding:1.25rem 1.5rem; border-top:1px solid var(--border); }
   .btn { font-family:inherit; font-size:14px; font-weight:600; padding:11px 20px; border-radius:var(--radius-sm); cursor:pointer; border:1px solid var(--border); background:#fff; color:var(--navy); transition:.15s; }
   .btn:hover { box-shadow:var(--shadow); }
@@ -615,6 +629,37 @@ function Calibrating(){
     <div className="cal-dots" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
     <h3>Calibrating your model</h3><p>Mapping your bank pool and agency exposure…</p>
     <div className="cal-bar" aria-hidden="true"><i></i></div></div></div>);
+}
+
+function AccordionItem({title, children}){
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <div className="accordion-item">
+      <button
+        className={`accordion-header${isOpen ? ' active' : ''}`}
+        onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+      >
+        <span>{title}</span>
+        <span className="accordion-icon">+</span>
+      </button>
+      <div className={`accordion-content${isOpen ? ' active' : ''}`}>
+        <div className="accordion-body">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function Accordion({items}){
+  return (
+    <div className="accordion">
+      {items.map((item, idx) => (
+        <AccordionItem key={idx} title={item.title}>
+          {item.content}
+        </AccordionItem>
+      ))}
+    </div>
+  );
 }
 
 /* White RLDatix wordmark for the PDF header (base64, downscaled to w=400 so
