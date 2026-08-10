@@ -51,7 +51,9 @@ const readme = `<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><t
 <p>The iframe resizes itself to the calculator's content (no inner scrollbar) and scrolls the page back to the top of the calculator when a visitor moves between steps. It is fully responsive, from phones to desktop.</p>
 <h2>Notes</h2>
 <ul>
-<li><strong>Lead capture:</strong> the optional form on the results page submits to RLDatix's HubSpot (EU data centre) and downloads a PDF summary for the visitor. If your page's Content-Security-Policy restricts <code>connect-src</code> inside iframes, allow <code>https://forms-eu1.hsforms.com</code>.</li>
+<li><strong>Lead capture (HubSpot):</strong> the optional form on the results page submits to RLDatix's HubSpot (EU data centre) via a single JSON POST to <code>https://forms-eu1.hsforms.com</code> (HubSpot Forms API v3). If your page's Content-Security-Policy restricts <code>connect-src</code> inside iframes, allow that host. No HubSpot tracking script, cookies or pixels are loaded — it is one outbound request, made only when a visitor presses the download button.</li>
+<li><strong>What is sent:</strong> the visitor's name, email, organisation and job title as entered in the form, plus a summary line of their calculator inputs and results (bank size, fill rate, team size, confidence level, estimated spend, modelled saving and hours). Nothing is sent before the visitor submits the form; consent wording is included in the submission.</li>
+<li><strong>If HubSpot is unreachable</strong> (blocked network, CSP, ad-blocker): the submission fails silently, the visitor still gets their PDF, and the lead is kept in the local browser backup below — nothing on your page breaks.</li>
 <li><strong>Local lead backup:</strong> submissions are also stored in the visitor's browser only, as a resilience backup; appending <code>#admin-leads</code> to the calculator URL shows the records saved in that browser.</li>
 <li><strong>Figures:</strong> all outputs are indicative, conservative and clearly labelled as such in the UI and the PDF.</li>
 </ul>
