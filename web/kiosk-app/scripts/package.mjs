@@ -14,14 +14,18 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const out = resolve(root, 'package');
 const bundle = resolve(out, 'smartmatch-roi-web-embed');
 
-if (!existsSync(resolve(root, 'dist/index.html'))) {
-  console.error('dist/ not found — run `npm run build` first (or use `npm run package`).');
+if (!existsSync(resolve(root, 'dist-single/index.html'))) {
+  console.error('dist-single/ not found — run `npm run build:single` first (or use `npm run package`).');
   process.exit(1);
 }
 
 rmSync(out, { recursive: true, force: true });
-mkdirSync(bundle, { recursive: true });
-cpSync(resolve(root, 'dist'), resolve(bundle, 'calculator'), { recursive: true });
+mkdirSync(resolve(bundle, 'calculator'), { recursive: true });
+// The client bundle ships the SINGLE-FILE build: one self-contained index.html
+// (JS, CSS, fonts, logo and the PDF libraries all inlined) - nothing else to
+// keep together, no assets folder to half-deploy. The multi-file build in
+// dist/ remains what the Vercel deployment serves.
+cpSync(resolve(root, 'dist-single/index.html'), resolve(bundle, 'calculator/index.html'));
 cpSync(resolve(root, 'embed-snippet.html'), resolve(bundle, 'embed-snippet.html'));
 
 const readme = `<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><title>Smart Match ROI Calculator — install guide</title>
@@ -30,7 +34,7 @@ const readme = `<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><t
 <p>This package contains the RLDatix <strong>Smart Match</strong> (BankStaff+) workforce ROI calculator as a self-contained web app, ready to embed in your website via an iframe. It runs entirely in the visitor's browser — no server code, database or build step required.</p>
 <h2>1. Host the calculator</h2>
 <ol>
-<li>Upload the <code>calculator/</code> folder to your web hosting (any static hosting works: your WordPress server, S3/CloudFront, or a CDN…). Example final URL: <code>https://your-domain.com/smartmatch-roi/index.html</code>.</li>
+<li>Upload the <code>calculator/</code> folder to your web hosting (any static hosting works: your WordPress server, S3/CloudFront, or a CDN…). It contains a single, fully self-contained <code>index.html</code> — there are no other assets to keep together. Example final URL: <code>https://your-domain.com/smartmatch-roi/index.html</code>.</li>
 <li>Serve it over <strong>HTTPS</strong>. No other server configuration is needed — all asset paths are relative.</li>
 <li><strong>Framing must be allowed:</strong> the calculator's hosting must not send an <code>X-Frame-Options</code> header (or a <code>Content-Security-Policy frame-ancestors</code>) that blocks your page from embedding it. If you host the <code>calculator/</code> folder on the <em>same domain</em> as the page, the common <code>X-Frame-Options: SAMEORIGIN</code> default (added by many security plugins) is fine; if you host it on a <em>different</em> domain or subdomain, make sure no such header is applied to this folder.</li>
 </ol>
