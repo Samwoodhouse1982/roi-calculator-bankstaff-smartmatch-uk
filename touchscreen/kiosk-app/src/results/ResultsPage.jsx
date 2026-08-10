@@ -116,7 +116,7 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
         <div style={{ fontSize: F.hero, fontWeight: 800, color: C.accent, lineHeight: 1, letterSpacing: "-3px" }}>
           <AnimVal value={r.timeSavedWeek} format={v => fmtNum(v)} />
         </div>
-        <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14 }}>hours released each week</div>
+        <div style={{ fontSize: F.h3, color: C.textMid, marginTop: 14, display: "inline-flex", alignItems: "center", gap: 8 }}>hours released each week <InfoTip text="These hours deliberately stay the same when you change the confidence level: they come from automating the day-to-day booking and matching work itself, whatever share of agency work moves to bank. The confidence level scales only the cash saving. Modelled as team size × 1 hour/day × 5 days." /></div>
         <div style={{ fontSize: F.small, color: C.textMuted, marginTop: 8, lineHeight: 1.5, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>Time your temporary staffing team gets back each week as Smart Match automates shift booking and matching, scaled to your team's size.</div>
       </div>
     </div>
