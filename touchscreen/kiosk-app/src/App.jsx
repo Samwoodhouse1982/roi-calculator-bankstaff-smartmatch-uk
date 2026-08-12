@@ -27,7 +27,7 @@ const AGG_FIELDS = ['netSaving', 'agencySaving', 'adminSaving', 'grossBenefit', 
 const SESSION_CAP = 2000;   // raw rows kept (for the rolling 24h count); lifetime figures live in `agg`, so this cap never drops a headline stat.
 
 function newAgg() {
-  return { n: 0, sums: {}, counts: {}, stance: { Conservative: 0, Expected: 0, Optimistic: 0 }, adminObserved: 0, adminIncluded: 0 };
+  return { n: 0, sums: {}, counts: {}, stance: { Conservative: 0, Moderate: 0, Optimistic: 0 }, adminObserved: 0, adminIncluded: 0 };
 }
 
 // Fold one completed session into the running aggregate (used both live and when
@@ -61,7 +61,14 @@ function readRaw(key) {
 // Rebuild the running-aggregate block from raw rows, so a v1 store (raw rows only)
 // upgrades to v2 without losing its cumulative history.
 function ensureAgg(data) {
-  if (data.agg && data.agg.sums && data.agg.counts && data.agg.stance) return data;
+  if (data.agg && data.agg.sums && data.agg.counts && data.agg.stance) {
+    // Migrate stores from before the stance rename: fold old "Expected" counts
+    // into "Moderate" so historic sessions keep counting in the distribution.
+    const st = data.agg.stance;
+    if (st.Expected != null) { st.Moderate = (st.Moderate || 0) + st.Expected; delete st.Expected; }
+    if (st.Moderate == null) st.Moderate = 0;
+    return data;
+  }
   const agg = newAgg();
   for (const s of (data.sessions || [])) accumulate(agg, s);
   data.agg = agg;
@@ -135,7 +142,6 @@ function computeStats() {
     agencySaving: agg.sums.agencySaving || 0,
     adminSaving: agg.sums.adminSaving || 0,
     displaced: agg.sums.displaced || 0,
-    timeSavedWeek: agg.sums.timeSavedWeek || 0,
   };
 
   // Lifetime average of a field, over the sessions that actually carried it (so
@@ -151,10 +157,9 @@ function computeStats() {
     roiMultiple: avg('roiMultiple', 2), paybackMonths: avg('paybackMonths', 2),
     bankPool: avg('bankPool'), agencyFillRate: avg('agencyFillRate', 1),
     numManagers: avg('numManagers', 1), displacement: avg('displacement', 1),
-    agencySpend: avg('agencySpend'),
   };
   const adminPct = agg.adminObserved ? Math.round(100 * (agg.adminIncluded || 0) / agg.adminObserved) : null;
-  const stanceDist = agg.stance || { Conservative: 0, Expected: 0, Optimistic: 0 };
+  const stanceDist = agg.stance || { Conservative: 0, Moderate: 0, Optimistic: 0 };
   const pending = syncEnabled ? sessions.filter(s => s && s.id && s.synced !== true).length : 0;
 
   return { total, today, last, cum, averages, adminPct, stanceDist, avgBankPool: averages.bankPool || 0, pending };
@@ -255,8 +260,8 @@ function AdminOverlay({ onClose }) {
   };
   const handleConfirmReset = () => { resetStats(); setConfirmReset(false); refresh(); };
   const lastStr = stats.last ? new Date(stats.last).toLocaleString('en-GB') : 'never';
-  const sd = stats.stanceDist || { Conservative: 0, Expected: 0, Optimistic: 0 };
-  const stanceTotal = sd.Conservative + sd.Expected + sd.Optimistic;
+  const sd = stats.stanceDist || { Conservative: 0, Moderate: 0, Optimistic: 0 };
+  const stanceTotal = sd.Conservative + sd.Moderate + sd.Optimistic;
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(11,20,36,0.94)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40, overflow: 'auto' }}>
@@ -346,12 +351,12 @@ function AdminOverlay({ onClose }) {
           <div style={{ fontSize: 11, color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 600, marginBottom: 10 }}>Confidence stance chosen</div>
           <div style={{ display: 'flex', height: 26, borderRadius: 8, overflow: 'hidden', border: '1px solid ' + C.borderLight }}>
             {sd.Conservative > 0 && <div style={{ width: (100 * sd.Conservative / stanceTotal) + '%', background: C.accent }} />}
-            {sd.Expected > 0 && <div style={{ width: (100 * sd.Expected / stanceTotal) + '%', background: C.blue }} />}
+            {sd.Moderate > 0 && <div style={{ width: (100 * sd.Moderate / stanceTotal) + '%', background: C.blue }} />}
             {sd.Optimistic > 0 && <div style={{ width: (100 * sd.Optimistic / stanceTotal) + '%', background: C.amber }} />}
           </div>
           <div style={{ display: 'flex', gap: 18, marginTop: 8, flexWrap: 'wrap' }}>
             <StanceLegend color={C.accent} label="Conservative" n={sd.Conservative} />
-            <StanceLegend color={C.blue} label="Expected" n={sd.Expected} />
+            <StanceLegend color={C.blue} label="Moderate" n={sd.Moderate} />
             <StanceLegend color={C.amber} label="Optimistic" n={sd.Optimistic} />
           </div>
         </div>}

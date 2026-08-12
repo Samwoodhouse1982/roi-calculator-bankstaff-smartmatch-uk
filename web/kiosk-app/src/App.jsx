@@ -138,7 +138,6 @@ export default function App() {
   // optional override for users who know their figure, which then anchors the cash.
   const rQuick = useMemo(() => calc({ bankPool, agencyFillRate, numManagers, displacement, includeAdmin, agencySpend, platformCost: platformCostFor(bankPool) }),
     [bankPool, agencyFillRate, numManagers, displacement, includeAdmin, agencySpend]);
-  const r = rQuick;
   const chooseStance = useCallback((v) => { setDisplacement(v); setStanceTouched(true); }, []);
   const steps = KIOSK_STEPS;
   const RESULTS_STEP = steps.length - 1;

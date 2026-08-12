@@ -147,8 +147,7 @@ export function InfoTip({ text }) {
         fontSize: F.small, lineHeight: 1.6, padding: "20px 24px",
         borderRadius: 16, width: "min(400px, calc(100vw - 40px))",
         boxShadow: "0 12px 40px rgba(15,65,70,.28)",
-        zIndex: 99997, border: `1px solid ${C.border}`,
-        animation: "kfade .2s ease-out"
+        zIndex: 99997, border: `1px solid ${C.border}`
       }}>{text}</span>
     </>}
   </span>;
