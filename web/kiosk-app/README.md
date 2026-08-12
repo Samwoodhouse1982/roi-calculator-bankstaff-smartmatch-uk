@@ -4,7 +4,7 @@
 Same methodology, engine and step flow as the kiosk build; fully responsive (phone → desktop),
 embeddable in an iframe (auto-resize via postMessage) and shareable as a static HTML package —
 run `npm run package` to produce `package/smartmatch-roi-web-embed.zip` (built app + WordPress
-embed snippet + client install guide). Dark navy + teal theme, en-GB (£).
+embed snippet + client install guide). Light RLDatix theme (deep teal + seafoam), en-GB (£).
 
 Differences from the kiosk build: no attract splash / idle reset / admin stats (kiosk-only chrome),
 plus a lead capture form on the results page ported from an earlier RLDatix ROI
@@ -65,21 +65,17 @@ build settings come from that folder's `vercel.json` (`cd kiosk-app && npm run b
 ```
 src/
   main.jsx              Entry point
-  App.jsx               State, step routing, splash, calibrating, admin stats overlay
-  theme.js              Colours (navy + teal), fonts, £ formatters, step labels
+  App.jsx               State, step routing, calibrating pause, embed (iframe) plumbing
+  theme.js              Colours (light teal/seafoam), fluid type scale, £ formatters
   calc/
     engine.js           calc() + the validated bank-staff ROI model constants
   components/
     index.jsx           Card, StepIndicator, NavButtons, PageTransition,
                         TouchSlider, Stepper, InfoTip, SectionTitle, etc.
-    SplashScreen.jsx    Animated splash + particle convergence
-    BackgroundParticles.jsx
+    LeadCapture.jsx     Results-page lead form (HubSpot submit + PDF download)
     Icons.jsx
   steps/
     index.jsx           BankStep, AgencyStep, TeamStep
   results/
     ResultsPage.jsx     Co-headlines, KPIs, live stance slider, capacity, methodology
 ```
-
-Hidden admin stats overlay: single-tap the RLDatix logo on the splash. Reset is PIN-protected.
-15-minute idle timeout returns the kiosk to the splash.

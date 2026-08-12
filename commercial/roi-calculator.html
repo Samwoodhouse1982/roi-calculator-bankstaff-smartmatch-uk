@@ -68,7 +68,7 @@
   .flow-card:hover { border-color:var(--teal-mid); box-shadow:var(--shadow); transform:translateY(-1px); }
   .flow-card .fc-eyebrow { font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--teal-mid); }
   .flow-card h3 { font-family:'DM Serif Display',Georgia,serif; font-size:1.35rem; font-weight:400; color:var(--navy); }
-  .flow-card p { font-size:13px; color:var(--text-mid); line-height:1.6; flex:1; margin:0; }
+  .flow-card p { font-size:13px; color:var(--text-mid); line-height:1.6; flex:1; }
   .flow-card .fc-cta { font-size:13.5px; font-weight:700; color:var(--teal-mid); }
   .back-link { background:none; border:none; color:var(--navy-mid); font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; padding:0; text-decoration:underline; margin-bottom:1.5rem; display:inline-block; }
 
@@ -110,9 +110,7 @@
   .staff-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:8px; }
   .staff-title { display:flex; align-items:center; gap:10px; }
   .band-pill { font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px; white-space:nowrap; flex-shrink:0; }   /* never wraps: the flexible group-name input gives way instead */
-  .staff-name { font-size:14px; font-weight:600; color:var(--navy); }
   .saving-badge { font-size:13px; font-weight:600; padding:4px 12px; border-radius:var(--radius-sm); background:var(--navy-light); color:var(--navy); }
-  .saving-badge-sub { font-size:10px; color:var(--text-light); margin-top:4px; line-height:1.4; text-align:right; max-width:210px; }
   .inputs-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
   .field { display:flex; flex-direction:column; gap:5px; }
   .field label { font-size:12px; color:var(--text-light); display:flex; align-items:center; gap:5px; }
@@ -145,8 +143,7 @@
   .sfld + .sfld { border-top:1px solid var(--border); }
   .sfld-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
   .sfld-val { display:inline-flex; align-items:baseline; font-size:19px; font-weight:700; color:var(--navy); white-space:nowrap; }
-  .sfld-val input { font:inherit; color:inherit; text-align:right; border:none; background:transparent; padding:2px 0; min-width:1ch; -moz-appearance:textfield; }
-  .sfld-val input::-webkit-outer-spin-button, .sfld-val input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .sfld-val input { font:inherit; color:inherit; text-align:right; border:none; background:transparent; padding:2px 0; min-width:1ch; }
   .sfld-val input:focus { outline:none; box-shadow:inset 0 -2px 0 var(--teal-mid); }
   .sfld > input[type=range] { margin-top:12px; height:8px; }   /* taller track = easier to grab on touch */
   .disp-note { margin-top:12px; font-size:12px; border-radius:var(--radius-sm); padding:9px 13px; line-height:1.5; }
@@ -280,7 +277,7 @@
 const { useState, useMemo, useEffect, useRef, useId } = React;
 
 /* ===== THEME: RLDatix suite (deep teal + seafoam) ===== */
-const C = { navy:"#0F4146", navyMid:"#1A5459", navyLight:"#E8FAF6", teal:"#0F4146", tealMid:"#1A8A7A", tealLight:"#D6F7EE", seafoam:"#34DEC2", border:"#D4E0DD", text:"#0F4146", textMid:"#3D5A5E", textLight:"#5F787C" };  // textLight darkened to >=4.5:1 on white (WCAG AA)
+const C = { navy:"#0F4146", navyMid:"#1A5459", navyLight:"#E8FAF6", teal:"#0F4146", tealLight:"#D6F7EE", border:"#D4E0DD", textMid:"#3D5A5E", textLight:"#5F787C" };  // textLight darkened to >=4.5:1 on white (WCAG AA)
 const RAMP = ["#0F4146","#1A8A7A","#34DEC2","#73D2E1","#8FB3AE"];
 
 /* ===== FORMATTERS: en-GB / £ (AU-ready: swap LOCALE + SYMBOL) ===== */
@@ -290,7 +287,6 @@ const fmtK   = n => { n=n||0; return n>=1e6 ? `${SYMBOL}${(n/1e6).toFixed(2)}m` 
 const fmtNum = n => Math.round(n||0).toLocaleString(LOCALE);
 const fmtDays = m => m==null ? "n/a" : m===0 ? "immediate" : Math.round(m*365/12).toLocaleString(LOCALE)+" days";   // 0 months = no licence fee to pay back
 const fmtMult = m => m==null ? "n/a" : (m>=10 ? Math.round(m) : Math.round(m*10)/10)+"×";
-const pct    = n => `${Math.round(n)}%`;
 const num    = (v,f=0) => { const n=parseFloat(String(v).replace(/[£$,\s]/g,"")); return isNaN(n)?f:n; };  // strips £, commas, spaces from pasted figures; leaves scientific notation ("1e6") intact
 
 /* ===== MODEL CONSTANTS (conservative; flagged for validation) =====
@@ -332,11 +328,6 @@ const SIMPLE_BLENDED_BANK_PAY = 34000;    // AfC 2026/27 band-mix weighted midpo
    −25% in 2027/28, and zero agency spend by 2029/30. It is only the fallback used when a
    user gives bank size alone; a user-entered actual agency spend always takes precedence. */
 const AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP = 2700;   // FY2025-26 basis, review annually
-/* National average agency fill rate the £2,700/worker figure is calibrated at (RLDatix data).
-   The quick auto-estimate scales linearly around it, a trust filling twice the national
-   average carries ~twice the agency exposure per bank worker, so the fill-rate slider
-   drives the estimate (bounded, not the old hyperbolic 1/(1-fill)). A user-entered actual
-   agency spend still overrides it entirely. */
 const RECRUIT_COST_PER_WORKER = 1000;     // recruit + onboard a bank worker
 const RECRUIT_RECOVERY_RATE = 0.10;       // share recovered by activating idle capacity
 /* [Benchmark brief §4] Displaceable share: only part of agency spend can realistically move to bank
@@ -503,12 +494,13 @@ const REDUCE_MOTION = typeof window!=="undefined" && window.matchMedia && window
    the embed snippet translates into host-page scrolls. */
 const EMBEDDED = typeof window!=="undefined" && window.self!==window.top;
 function hostScroll(top){ window.parent.postMessage(top==null ? {type:"smartmatch-roi-scroll-top"} : {type:"smartmatch-roi-scroll",top}, "*"); }
-function useCountUp(target, ms=900){
+function useCountUp(target){
+  const ms=900;
   const [v,setV]=useState(target); const prev=useRef(target); const raf=useRef();
   useEffect(()=>{ if(REDUCE_MOTION){ prev.current=target; setV(target); return; }
     const from=prev.current,to=target,start=performance.now(); cancelAnimationFrame(raf.current);
     const tick=now=>{ const t=Math.min(1,(now-start)/ms),e=1-Math.pow(1-t,3); setV(from+(to-from)*e); if(t<1)raf.current=requestAnimationFrame(tick); else prev.current=to; };
-    raf.current=requestAnimationFrame(tick); return ()=>cancelAnimationFrame(raf.current); },[target,ms]);
+    raf.current=requestAnimationFrame(tick); return ()=>cancelAnimationFrame(raf.current); },[target]);
   return v;
 }
 const AnimMoney = ({v}) => fmt(useCountUp(v));
@@ -897,7 +889,7 @@ function App({onStartAgain}){
       {calibrating && <Calibrating/>}
 
       {(()=>{ const logoRow = (
-        <div className="logo" style={{display:"flex",alignItems:"center",flexWrap:"wrap",gap:8}}><b>RLDatix</b><span className="divider">·</span>BankStaff+<span className="divider">·</span>Smart Match<span style={{marginLeft:"auto",fontSize:10.5,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.28)",color:"rgba(255,255,255,.85)",padding:"4px 12px",borderRadius:999}}>Internal · account manager tool</span></div>
+        <div className="logo" style={{gap:8}}><b>RLDatix</b><span className="divider">·</span>BankStaff+<span className="divider">·</span>Smart Match<span style={{marginLeft:"auto",fontSize:10.5,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",background:"rgba(255,255,255,.1)",border:"1px solid rgba(255,255,255,.28)",color:"rgba(255,255,255,.85)",padding:"4px 12px",borderRadius:999}}>Internal · account manager tool</span></div>
       ); return choosing ? (
       <header><div className="wrap">
         {logoRow}
@@ -1196,12 +1188,12 @@ function App({onStartAgain}){
             {/* Single annual steady-state (Rev D: ramp removed) */}
             <div className="panel">
               <h3 className="panel-title">Annual, ongoing saving</h3>
-              <p style={{fontSize:12.5,color:C.textMid,lineHeight:1.6,margin:0}}>This is a <b>single annual, steady-state figure</b>, not a multi-year projection. Smart Match savings start once it is live and recur every year it is in use; the licence fee shown is an annual cost, so the net saving repeats each year.</p>
+              <p style={{fontSize:12.5,color:C.textMid,lineHeight:1.6}}>This is a <b>single annual, steady-state figure</b>, not a multi-year projection. Smart Match savings start once it is live and recur every year it is in use; the licence fee shown is an annual cost, so the net saving repeats each year.</p>
             </div>
 
             {!isQuick && r.regime && <div className="panel">
               <h3 className="panel-title">Agency intensity: {r.agencyPctOfTurnover.toFixed(1)}% of turnover</h3>
-              <p style={{fontSize:12.5,color:C.textMid,lineHeight:1.6,margin:0}}>{r.regime==="low" ? <>This is a <b>mature, low-agency</b> model (under 1% of turnover): rate-arbitrage savings are small, so the stronger story is <b>admin time released, fill-rate improvement and bank-rate control</b> rather than the cash premium.</> : r.regime==="high" ? <>This trust is <b>highly agency-reliant</b> (over 4% of turnover): <b>the cash saving from displacing the agency premium dominates</b>, the strongest rate-arbitrage case.</> : <>This is <b>typical</b> agency reliance (1–4% of turnover): <b>the cash saving from the agency premium</b> is the headline, with admin time a secondary benefit.</>} Displacement is applied to the <b>{Math.round(displaceableShare*100)}% displaceable share</b> only.</p>
+              <p style={{fontSize:12.5,color:C.textMid,lineHeight:1.6}}>{r.regime==="low" ? <>This is a <b>mature, low-agency</b> model (under 1% of turnover): rate-arbitrage savings are small, so the stronger story is <b>admin time released, fill-rate improvement and bank-rate control</b> rather than the cash premium.</> : r.regime==="high" ? <>This trust is <b>highly agency-reliant</b> (over 4% of turnover): <b>the cash saving from displacing the agency premium dominates</b>, the strongest rate-arbitrage case.</> : <>This is <b>typical</b> agency reliance (1–4% of turnover): <b>the cash saving from the agency premium</b> is the headline, with admin time a secondary benefit.</>} Displacement is applied to the <b>{Math.round(displaceableShare*100)}% displaceable share</b> only.</p>
             </div>}
 
             {!isQuick && <div className="table-wrap"><table>
