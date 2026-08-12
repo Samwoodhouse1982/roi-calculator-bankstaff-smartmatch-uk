@@ -26,7 +26,18 @@
       <div style="margin-top:12px;font-size:14px;opacity:0.5;">Requires Chromium 61+ with JavaScript enabled.</div>
     </div>
   </div>
-  <script>window.onerror=function(m,s,l,c,e){document.getElementById('js-fallback').innerHTML='<div style="color:#00D4AA;font-size:20px;font-weight:700;">JavaScript Error</div><div style="margin-top:12px;color:#A9B6CE;">'+m+'</div><div style="margin-top:8px;font-size:13px;color:#7E8CA8;">'+s+' line '+l+'</div>';}</script>
+  <script>
+  // Boot-failure screen for OUR OWN code only: errors raised by browser extensions
+  // or injected scripts (any other origin) must never blank the kiosk.
+  window.onerror = function (m, s, l) {
+    var own = s && (s === location.href || s.indexOf(location.protocol + '//' + location.host) === 0);
+    var f = document.getElementById('js-fallback');
+    if (!own || !f) return;
+    f.innerHTML = '<div style="color:#00D4AA;font-size:20px;font-weight:700;">JavaScript Error</div><div style="margin-top:12px;color:#A9B6CE;"></div><div style="margin-top:8px;font-size:13px;color:#7E8CA8;"></div>';
+    f.children[1].textContent = String(m);
+    f.children[2].textContent = s + ' line ' + l;
+  };
+  </script>
   <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

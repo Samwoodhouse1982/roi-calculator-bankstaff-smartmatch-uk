@@ -27,7 +27,17 @@
       <div>This calculator needs JavaScript. If this message persists, please contact your RLDatix representative.</div>
     </div>
   </div>
-  <script>window.onerror=function(m,s,l,c,e){var f=document.getElementById('js-fallback');if(f)f.innerHTML='<div style="color:#0F4146;font-size:20px;font-weight:700;">Something went wrong</div><div style="margin-top:12px;color:#3D5A5E;">'+m+'</div>';}</script>
+  <script>
+  // Boot-failure screen for OUR OWN code only: errors raised by browser extensions
+  // or host-injected scripts (any other origin) must never blank the calculator.
+  window.onerror = function (m, s) {
+    var own = s && (s === location.href || s.indexOf(location.protocol + '//' + location.host) === 0);
+    var f = document.getElementById('js-fallback');
+    if (!own || !f) return;
+    f.innerHTML = '<div style="color:#0F4146;font-size:20px;font-weight:700;">Something went wrong</div><div style="margin-top:12px;color:#3D5A5E;"></div>';
+    f.lastChild.textContent = String(m);
+  };
+  </script>
   <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
