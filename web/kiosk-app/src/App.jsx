@@ -5,6 +5,7 @@ import { StepIndicator, NavButtons, PageTransition } from './components';
 import { BankStep, AgencyStep, TeamStep, StanceStep } from './steps';
 import { ResultsPage } from './results/ResultsPage';
 import { AdminLeads } from './components/LeadCapture';
+import { buildData, publishData } from './dataLayer';
 import rldatixLogo from './assets/rldatix-logo.png';
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -139,6 +140,14 @@ export default function App() {
   const rQuick = useMemo(() => calc({ bankPool, agencyFillRate, numManagers, displacement, includeAdmin, agencySpend, platformCost: platformCostFor(bankPool) }),
     [bankPool, agencyFillRate, numManagers, displacement, includeAdmin, agencySpend]);
   const chooseStance = useCallback((v) => { setDisplacement(v); setStanceTouched(true); }, []);
+
+  // Data layer: republish on every input/result change so a host page can read
+  // window.smartMatchROIData (see DATA-LAYER-REFERENCE.md). Never blocks the UI.
+  useEffect(() => {
+    const inputs = { bankPool, agencyFillRate, numManagers, displacement, includeAdmin, agencySpend,
+      calcAt: (d) => calc({ bankPool, agencyFillRate, numManagers, displacement: d, includeAdmin, agencySpend, platformCost: platformCostFor(bankPool) }) };
+    publishData(buildData(rQuick, inputs));
+  }, [rQuick, bankPool, agencyFillRate, numManagers, displacement, includeAdmin, agencySpend]);
   const steps = KIOSK_STEPS;
   const RESULTS_STEP = steps.length - 1;
 

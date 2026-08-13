@@ -1,0 +1,85 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     Smart Match ROI Calculator - Iframe Embed Snippet
+     ═══════════════════════════════════════════════════════════════
+
+     Drop this wherever you want the calculator to appear (in WordPress,
+     a Custom HTML block). Host roi-calculator.html on the same domain
+     or a CDN and point src at it.
+
+     The calculator posts its height to the parent via postMessage so
+     the iframe auto-sizes with no inner scrollbar.
+     ═══════════════════════════════════════════════════════════════ -->
+
+<!-- Option A: Auto-resizing (recommended) -->
+<iframe
+  id="smartmatch-roi"
+  src="/path/to/roi-calculator.html"
+  style="width: 100%; border: none; overflow: hidden; min-height: 720px; background: #EEF7F2;"
+  scrolling="no"
+  title="Smart Match Workforce ROI Calculator"
+  loading="lazy"
+></iframe>
+
+<script>
+  window.addEventListener("message", function (e) {
+    // Optional hardening: check e.origin against your calculator's domain.
+    if (!e.data || typeof e.data !== "object") return;
+
+    // 1. Auto-resize: the calculator reports its content height on change.
+    if (e.data.type === "smartmatch-roi-resize" && typeof e.data.height === "number") {
+      document.getElementById("smartmatch-roi").style.height = Math.max(400, e.data.height) + "px";
+    }
+
+    // 2. "Start again" / step changes: bring the top of the calculator
+    //    back into view, since the iframe itself cannot scroll the page.
+    if (e.data.type === "smartmatch-roi-scroll-top") {
+      document.getElementById("smartmatch-roi").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    // 3. Data layer: every figure the visitor is looking at, on every
+    //    change. Full field list in DATA-LAYER-REFERENCE.md.
+    if (e.data.type === "smartmatch-roi-data") {
+      // e.g. window.dataLayer.push({ event: "roi_update", ...e.data.data });
+      // console.log("Annual saving:", e.data.data.fmt.annual_cash_saving);
+    }
+  });
+</script>
+
+
+<!-- Option B: Fixed height (simpler, uses the iframe's own scrollbar) -->
+<!--
+<iframe
+  src="/path/to/roi-calculator.html"
+  style="width: 100%; height: 900px; border: none;"
+  title="Smart Match Workforce ROI Calculator"
+  loading="lazy"
+></iframe>
+-->
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     NOTES FOR THE DEVELOPER
+     ═══════════════════════════════════════════════════════════════
+
+     File:     roi-calculator.html (single self-contained file)
+     Requires: internet access for the CDN scripts (React 18, Babel 7,
+               and jsPDF only when a visitor downloads their report).
+               Each library falls back across cdnjs, jsDelivr and unpkg.
+     Fonts:    DM Sans from Google Fonts, with a system-font fallback if
+               that host is blocked. Nothing else is fetched.
+
+     Framing:  the host serving roi-calculator.html must NOT send an
+               X-Frame-Options / Content-Security-Policy frame-ancestors
+               header that blocks your page from embedding it. Many
+               WordPress security plugins add SAMEORIGIN by default,
+               which is fine when both live on the same domain.
+
+     Lead form: submits to RLDatix HubSpot (EU). If your page sets a
+               strict Content-Security-Policy, allow
+               connect-src https://forms-eu1.hsforms.com
+               (see INTEGRATION-GUIDE.md).
+
+     Analytics: the calculator emits no analytics of its own. Use the
+               smartmatch-roi-data message above to feed your own
+               dataLayer / GTM.
+     ═══════════════════════════════════════════════════════════════ -->
