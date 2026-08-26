@@ -1,4 +1,4 @@
-# Smart Match (BankStaff+) — Workforce ROI Calculator
+# Smart Match (BankStaff+): Workforce ROI Calculator
 
 The public, self-serve web version of the RLDatix **Smart Match** bank-staff
 utilisation ROI calculator. NHS terminology (bank/agency, AfC, Trust), pounds
@@ -55,9 +55,9 @@ these sections in order:
 | **`calc()`** | Pure function. Takes the inputs, returns every derived value. No side effects, no DOM. This is the whole financial model. |
 | **`calcDetailed()`, `ORG_TYPES`, `buildOrg()`** | The per-staff-group model used by the internal account-manager build. Not rendered by this UI; kept so both products share one engine. |
 | **Theme** | `C` (colours), `F` (fluid type scale), `£` formatters, step labels. |
-| **Data layer** | `buildData()` / `publishData()` — see `DATA-LAYER-REFERENCE.md`. |
+| **Data layer** | `buildData()` / `publishData()`. See `DATA-LAYER-REFERENCE.md`. |
 | **Helper components** | `Card`, `TouchSlider`, `Stepper`, `InfoTip`, `DecisionRow`, `StepIndicator`, `NavButtons`, `PageTransition`, `Icon`. |
-| **Steps** | `BankStep`, `AgencyStep`, `TeamStep`, `StanceStep` — the four input pages. |
+| **Steps** | `BankStep`, `AgencyStep`, `TeamStep`, `StanceStep`: the four input pages. |
 | **`ResultsPage`** | Co-headline figures, KPI row, live confidence slider, capacity panel, methodology and assumptions. |
 | **`LeadCapture`** | Results-page form: HubSpot submission, PDF download, local browser backup. |
 | **`generatePDF()`** | Builds a branded one-page A4 report with jsPDF and downloads it directly. No popup, no print dialog, no server. |
@@ -80,9 +80,9 @@ Three categories are kept strictly separate, and the UI says so:
 
 | Category | In the headline saving? |
 |---|---|
-| **Hard cash** — agency premium displaced | **Yes** |
-| **Admin time** — scheduling hours released | Optional, visitor decides; shown either way |
-| **Capacity** — extra shifts filled from bank | **Never** — shown in its own panel |
+| **Hard cash** (agency premium displaced) | **Yes** |
+| **Admin time** (scheduling hours released) | Optional, visitor decides; shown either way |
+| **Capacity** (extra shifts filled from bank) | **Never**, shown in its own panel |
 
 Confidence defaults to **Moderate (26%)**, applied to the **80% displaceable
 share** of agency spend (so ~21% of the whole agency book). Pay rates are

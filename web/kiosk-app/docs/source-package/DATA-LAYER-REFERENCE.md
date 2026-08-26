@@ -1,4 +1,4 @@
-# Smart Match ROI Calculator — Data Layer Reference
+# Smart Match ROI Calculator: Data Layer Reference
 
 Every data point from the calculator is exposed in a single structured
 object: `window.smartMatchROIData`. It updates reactively whenever the visitor
@@ -189,13 +189,13 @@ window.addEventListener("smartmatch-roi-update", (e) => {
 
 ## Notes
 
-- Number fields are raw (`172032`), never formatted strings — use `fmt.*` for
+- Number fields are raw (`172032`), never formatted strings. Use `fmt.*` for
   display.
 - The object updates on every input change, not only on form submission.
 - `annual_cash_saving` is **net** of the licence fee; `agency_premium_avoided`
   is the gross premium before it.
 - `admin_time_value` is always populated, but is only part of
-  `annual_cash_saving` when `admin_time_in_cash_total` is `true` — that is the
+  `annual_cash_saving` when `admin_time_in_cash_total` is `true`, and that is the
   visitor's explicit Yes/No choice.
 - Capacity fields (`shifts_moved_to_bank`, `bank_backfill_cost`) are
   operational value, **never** added to the cash saving. Presenting them as

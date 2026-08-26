@@ -11,17 +11,33 @@ import rldatixLogo from '../assets/rldatix-logo.png';
    1. Submit generates + downloads a PDF summary (the value exchange).
    2. The submission is backed up to localStorage (reviewable at #admin-leads,
       exportable as CSV) so leads survive offline/blocked-network conditions.
-   3. Fire-and-forget POST to HubSpot (EU1) with the calculator context in the
-      message field.
+   3. POST to HubSpot (EU1) with the calculator context in the message field.
+      The visitor's PDF never waits on it, but the response IS checked: a
+      rejected submission (unknown field, wrong GUID, bad pageUri) returns 400
+      with a JSON reason, and silently discarding that is how a broken lead
+      form looks like a working one.
 
-   The HubSpot portal is RLDatix's. The form
-   GUID below is borrowed from another live RLDatix calculator form — swap it for a dedicated
-   Smart Match form GUID when marketing creates one; submissions are
-   distinguishable meanwhile via the message field ("Smart Match ROI ...").
+   Dedicated Smart Match form on the RLDatix HubSpot portal (EU data centre).
    ──────────────────────────────────────────────────────────────────────── */
 const HUBSPOT_PORTAL_ID = "27174408";
-const HUBSPOT_FORM_GUID = "3f860858-5a58-4f1b-8419-a561af17adbe";   // interim: another RLDatix calculator's live form — replace with a Smart Match form GUID when available
+const HUBSPOT_FORM_GUID = "7bbba4f2-2045-458d-a339-b06e5e7a16d7";
 const HUBSPOT_REGION = "eu1";   // EU data centre
+
+/* The page to attribute the submission to. `location.href` is the answer in
+   every normal embed, but it is the literal string "about:srcdoc" when a host
+   injects the calculator via iframe srcdoc, and a file:// path when someone
+   opens the HTML from disk. Neither is a URL HubSpot will accept, so fall back
+   to the parent page: a srcdoc document inherits its base URL from its parent,
+   and the referrer carries it otherwise. pageUri is optional in the Forms API,
+   so if none of the three is usable we omit the field rather than send junk. */
+const isHttpUrl = u => /^https?:/i.test(u || "");
+function pageUri() {
+  return [
+    typeof location !== "undefined" ? location.href : null,
+    typeof document !== "undefined" ? document.baseURI : null,
+    typeof document !== "undefined" ? document.referrer : null,
+  ].find(isHttpUrl);
+}
 
 const STORAGE_KEY = "smartmatch-roi-web-submissions";
 const MAX_RECORDS = 200;
@@ -305,11 +321,12 @@ export function LeadCapture({ r, leadContext }) {
       },
     });
 
-    // 3. Fire-and-forget to HubSpot (EU1), context in the message field.
+    // 3. POST to HubSpot (EU1), context in the message field.
     if (HUBSPOT_PORTAL_ID && HUBSPOT_FORM_GUID) {
       try {
         const context = `Smart Match ROI (web) submission | Bank workers: ${fmtNum(leadContext.bankPool)} | Agency fill: ${leadContext.agencyFillRate}% | Team: ${leadContext.numManagers} | Confidence: ${leadContext.displacement}% (${leadContext.stance}) | Net annual saving: ${fmtK(r.netSaving)} | Hours/week released: ${fmtNum(r.timeSavedWeek)} | Est. agency spend: ${fmtK(r.agencySpend)}`;
-        await fetch(`https://forms-${HUBSPOT_REGION}.hsforms.com/submissions/v3/integration/submit/${HUBSPOT_PORTAL_ID}/${HUBSPOT_FORM_GUID}`, {
+        const uri = pageUri();
+        const res = await fetch(`https://forms-${HUBSPOT_REGION}.hsforms.com/submissions/v3/integration/submit/${HUBSPOT_PORTAL_ID}/${HUBSPOT_FORM_GUID}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -321,11 +338,23 @@ export function LeadCapture({ r, leadContext }) {
               { name: "jobtitle", value: lead.role || "" },
               { name: "message", value: context },
             ],
-            context: { pageUri: window.location.href, pageName: "Smart Match ROI Calculator (web)" },
+            context: { pageName: "Smart Match ROI Calculator (web)", ...(uri ? { pageUri: uri } : {}) },
             legalConsentOptions: { consent: { consentToProcess: true, text: "I agree to receive communications about my ROI estimate." } },
           }),
         });
-      } catch (e) { console.warn("HubSpot submission failed:", e); }
+        // HubSpot answers 200 on success and 400 with a JSON reason on
+        // rejection. Surface the reason: the visitor's journey is unaffected
+        // either way, so without this a misconfigured form is invisible.
+        if (!res.ok) {
+          const detail = await res.text().catch(() => "");
+          console.warn(`HubSpot rejected the submission (HTTP ${res.status}). Check HUBSPOT_FORM_GUID and that every field above exists on that form.`, detail);
+        }
+      } catch (e) {
+        // Network-level failure: blocked by CSP, an ad-blocker, offline, or a
+        // sandboxed iframe with no allow-same-origin. The lead is still in the
+        // local backup above.
+        console.warn("HubSpot submission could not be sent:", e);
+      }
     }
 
     setSending(false);
