@@ -151,23 +151,30 @@ embedding it. WordPress security plugins commonly add
 are on the same domain; if they are on different domains or subdomains, that
 header has to be relaxed for the calculator's path.
 
-### Use `src`, not `srcdoc`
+### Hosted file, or inline
 
-Upload `roi-calculator.html` and point the iframe's `src` at its URL, as
-`embed-snippet.html` shows. Inlining the file's contents into a `srcdoc`
-attribute (or a `data:` URL) does work, but it costs you things that are
-awkward to get back:
+Both are supported, and both are tested:
 
-- The document's own URL becomes the literal string `about:srcdoc`, so it has
-  no address to report, cache against or link to.
-- Nothing can be cached or versioned independently of the host page.
-- The whole file has to be re-pasted into the page for every update, instead
-  of replacing one static file.
+| | `embed-snippet.html` (hosted) | `embed-snippet-srcdoc.html` (inline) |
+|---|---|---|
+| What you paste | ~30 lines | one ~315 KB file, calculator included |
+| Setup | upload `roi-calculator.html`, point `src` at it | nothing to upload |
+| To take a new version | replace the uploaded file | re-paste the whole snippet |
+| Calculator has its own URL | yes | no (`about:srcdoc`) |
+| Browser caches it separately | yes | no |
 
-The calculator itself is built to survive `srcdoc` (it falls back to the
-parent page's URL for HubSpot attribution, and its local backup degrades
-quietly if storage is unavailable), so an existing `srcdoc` embed will work.
-`src` is simply less to maintain.
+The hosted route is less to maintain: updates are a one-file swap, and the
+calculator has a real address to cache and link to. The inline route needs no
+file upload at all, which is the right trade when uploading to the CMS is the
+awkward part.
+
+`embed-snippet-srcdoc.html` is generated from the calculator, so it is always
+the current build. Do not hand-edit the base64 `DATA` string inside it: to
+update, replace the whole file.
+
+Inline embedding is fully supported by the calculator. It resolves its HubSpot
+`pageUri` from the parent page (see section 1), and its local lead backup
+degrades quietly if browser storage is unavailable.
 
 ### If you use the `sandbox` attribute
 

@@ -9,9 +9,10 @@ Two ways to use it, both in this package:
 | You want to | Use |
 |---|---|
 | Embed it in a page (WordPress, CMS, landing page) | `roi-calculator.html` + `embed-snippet.html` |
+| Embed it with nothing to upload | `embed-snippet-srcdoc.html` on its own |
 | Render it inside an existing React app | `ROICalculator.jsx` + `styles.css` |
 
-Both are generated from the same source, so the figures are identical.
+All three are generated from the same source, so the figures are identical.
 
 ## Quick start
 
@@ -21,6 +22,14 @@ Both are generated from the same source, so the figures are identical.
    self-contained: no build step, no bundler, no server code.
 2. Paste the snippet from `embed-snippet.html` into your page and point the
    iframe `src` at the file from step 1.
+
+### Inline, with nothing to upload
+
+Paste the whole of `embed-snippet-srcdoc.html` into a Custom HTML block. It
+carries the calculator inside it as a base64 string, so there is no file to
+host and nothing to configure. To take a new version, replace the whole
+snippet; never hand-edit the `DATA` string. `INTEGRATION-GUIDE.md` section 5
+compares the two routes.
 
 ### Inside a React app
 

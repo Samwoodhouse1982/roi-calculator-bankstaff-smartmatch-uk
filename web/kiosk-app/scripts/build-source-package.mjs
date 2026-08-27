@@ -9,6 +9,7 @@
        styles.css                <- animations / interaction styles
        roi-calculator.html       <- standalone, self-contained (React + Babel via CDN)
        embed-snippet.html        <- iframe + auto-resize listener
+       embed-snippet-srcdoc.html <- the same, with the calculator inlined (no file to host)
 
    Both build artefacts are GENERATED from src/, so the Vite app stays the one
    source of truth: the engine, its tests and cross-product parity all still
@@ -194,9 +195,13 @@ for (const f of ['README.md', 'INTEGRATION-GUIDE.md', 'DATA-LAYER-REFERENCE.md',
   cpSync(resolve(docs, f), resolve(bundle, f));
 }
 
+/* The inline (srcdoc) snippet carries roi-calculator.html inside it, so it has
+   to be generated after the file above and regenerated whenever it changes. */
+execSync('node ' + JSON.stringify(resolve(root, 'scripts/build-embed-snippet-srcdoc.mjs')), { stdio: 'inherit' });
+
 const kb = n => Math.round(n / 1024) + ' KB';
 console.log('Source package built:');
-for (const f of ['ROICalculator.jsx', 'roi-calculator.html', 'styles.css', 'embed-snippet.html', 'README.md', 'INTEGRATION-GUIDE.md', 'DATA-LAYER-REFERENCE.md']) {
+for (const f of ['ROICalculator.jsx', 'roi-calculator.html', 'styles.css', 'embed-snippet.html', 'embed-snippet-srcdoc.html', 'README.md', 'INTEGRATION-GUIDE.md', 'DATA-LAYER-REFERENCE.md']) {
   console.log('  ' + f.padEnd(26) + kb(readFileSync(resolve(bundle, f)).length));
 }
 try {
