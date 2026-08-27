@@ -2,6 +2,7 @@
    dev team already integrated for the EPR Migration & Archiving calculator:
 
      package-source/smartmatch-roi-calculator/
+       WHAT-CHANGED.md           <- why this replaces the live version, and the one step to take
        README.md                 <- architecture + quick start
        INTEGRATION-GUIDE.md      <- HubSpot, CSP, framing, PDF branding
        DATA-LAYER-REFERENCE.md   <- window.smartMatchROIData reference
@@ -191,7 +192,7 @@ mkdirSync(bundle, { recursive: true });
 writeFileSync(resolve(bundle, 'ROICalculator.jsx'), jsx);
 writeFileSync(resolve(bundle, 'roi-calculator.html'), html);
 writeFileSync(resolve(bundle, 'styles.css'), styles);
-for (const f of ['README.md', 'INTEGRATION-GUIDE.md', 'DATA-LAYER-REFERENCE.md', 'embed-snippet.html']) {
+for (const f of ['WHAT-CHANGED.md', 'README.md', 'INTEGRATION-GUIDE.md', 'DATA-LAYER-REFERENCE.md', 'embed-snippet.html']) {
   cpSync(resolve(docs, f), resolve(bundle, f));
 }
 
@@ -201,7 +202,7 @@ execSync('node ' + JSON.stringify(resolve(root, 'scripts/build-embed-snippet-src
 
 const kb = n => Math.round(n / 1024) + ' KB';
 console.log('Source package built:');
-for (const f of ['ROICalculator.jsx', 'roi-calculator.html', 'styles.css', 'embed-snippet.html', 'embed-snippet-srcdoc.html', 'README.md', 'INTEGRATION-GUIDE.md', 'DATA-LAYER-REFERENCE.md']) {
+for (const f of ['ROICalculator.jsx', 'roi-calculator.html', 'styles.css', 'embed-snippet.html', 'embed-snippet-srcdoc.html', 'WHAT-CHANGED.md', 'README.md', 'INTEGRATION-GUIDE.md', 'DATA-LAYER-REFERENCE.md']) {
   console.log('  ' + f.padEnd(26) + kb(readFileSync(resolve(bundle, f)).length));
 }
 try {

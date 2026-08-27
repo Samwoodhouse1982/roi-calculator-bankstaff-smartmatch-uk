@@ -4,7 +4,10 @@ The public, self-serve web version of the RLDatix **Smart Match** bank-staff
 utilisation ROI calculator. NHS terminology (bank/agency, AfC, Trust), pounds
 sterling, `en-GB` formatting.
 
-Two ways to use it, both in this package:
+> **Replacing a version that is already live?** Read `WHAT-CHANGED.md` first.
+> It is one step.
+
+Three ways to use it, all in this package:
 
 | You want to | Use |
 |---|---|
