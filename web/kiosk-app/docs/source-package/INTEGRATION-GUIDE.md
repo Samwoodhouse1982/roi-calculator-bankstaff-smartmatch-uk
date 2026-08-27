@@ -19,8 +19,8 @@ PDF report downloads.
 
 ### Current configuration
 
-Near the top of the lead-capture section in `ROICalculator.jsx` (or in the
-`<script type="text/babel">` block of `roi-calculator.html`):
+Near the top of the lead-capture section in `roi-calculator.js` (and in the
+inline script of `roi-calculator.html`, which is the same code):
 
 ```javascript
 const HUBSPOT_PORTAL_ID = "27174408";
@@ -116,10 +116,10 @@ demos and events, not a CRM.
 The "Download PDF report" button builds a branded one-page A4 report with
 jsPDF and downloads it directly. No popup, no print dialog, no server.
 
-- **Standalone file:** jsPDF is loaded from a CDN on first use, trying cdnjs,
-  then jsDelivr, then unpkg. Nothing is fetched until a visitor asks for a PDF.
-- **React app:** `npm install jspdf`. It is imported dynamically, so it stays
-  out of your main bundle until needed.
+jsPDF is the calculator's only dependency of any kind. It is loaded from a CDN
+on first use, trying cdnjs, then jsDelivr, then unpkg, so one blocked host does
+not cost the visitor their report. Nothing is fetched until the Download button
+is pressed.
 
 The RLDatix wordmark is embedded in the file as base64, so the PDF header
 needs no external asset. To change the branding, replace the `rldatixLogo`
@@ -134,11 +134,10 @@ If your page or its host sets a strict CSP, allow these:
 | Directive | Host | Needed for |
 |---|---|---|
 | `connect-src` | `https://forms-eu1.hsforms.com` | Lead submission |
-| `script-src` | `https://cdnjs.cloudflare.com` `https://cdn.jsdelivr.net` `https://unpkg.com` | React, Babel, jsPDF (standalone file only) |
-| `font-src` / `style-src` | `https://fonts.googleapis.com` `https://fonts.gstatic.com` | DM Sans (standalone file only; falls back to system fonts) |
+| `script-src` | `https://cdnjs.cloudflare.com` `https://cdn.jsdelivr.net` `https://unpkg.com` | jsPDF, and only when a visitor downloads a report |
+| `font-src` / `style-src` | `https://fonts.googleapis.com` `https://fonts.gstatic.com` | DM Sans (falls back to system fonts if blocked) |
 
-In a React app you supply React and jsPDF yourself, so only the HubSpot entry
-applies.
+The calculator loads no framework, so there is nothing else to allow.
 
 ---
 

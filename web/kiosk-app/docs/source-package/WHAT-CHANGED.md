@@ -3,6 +3,17 @@
 This package replaces the version currently live. If the lead capture form has
 not been working, this is the fix.
 
+## The headline
+
+**The calculator is now plain JavaScript.** No React, no JSX, no build step,
+no framework of any kind, and nothing to install. It is one script that
+defines one global.
+
+That was the blocker: the previous package shipped a React component, which
+your site cannot run. The calculation engine, the wording and the figures are
+unchanged, and both builds share the same engine and the same lead-capture
+code, so nothing about the numbers has moved.
+
 ## The problem
 
 The calculator on the page is an older build. Its lead form posts to an interim
@@ -34,12 +45,21 @@ them.
 
 | | Before | Now |
 |---|---|---|
+| Technology | React 18 + Babel, compiled in the browser | plain JavaScript, nothing to load |
+| Files to integrate | `ROICalculator.jsx` (needs a React app) | `roi-calculator.js`, or just the HTML file |
+| Scripts fetched at load | React, ReactDOM, Babel (3 CDN requests) | none |
 | HubSpot form | `3f860858-...` (interim, shared) | `7bbba4f2-2045-458d-a339-b06e5e7a16d7` (Smart Match) |
 | Failed submission | discarded silently | HubSpot's own reason logged to the browser console |
 | `context.pageUri` | `window.location.href` | resolved at run time, valid inside an inline embed |
 
 The calculation engine is unchanged, so the figures a visitor sees are the same
-as before.
+as before. That is not an assertion: both builds were driven through the full
+flow with identical inputs and every published figure matched exactly, down to
+the payback days and the return multiple.
+
+Dropping the framework also made the page lighter. It no longer fetches React,
+ReactDOM and Babel before it can draw anything, and it no longer compiles
+itself in the browser on every visit.
 
 ### Why `pageUri` mattered
 
