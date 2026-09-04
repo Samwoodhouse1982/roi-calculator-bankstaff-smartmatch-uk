@@ -56,8 +56,8 @@ export function LeadCapture(getR, getContext) {
 
   const card = h('div', { style: { marginBottom: 28, padding: 'clamp(18px, 3vw, 28px)', borderRadius: 18, background: `linear-gradient(135deg, ${C.navy} 0%, ${C.navyMid} 100%)`, border: 'none' } },
     h('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 } },
-      Icon('mail', 22, C.seafoam),
-      h('h3', { style: { fontSize: F.h3, fontWeight: 800, margin: 0, color: '#fff' } }, 'Get this breakdown in your inbox')),
+      Icon('download', 22, C.seafoam),
+      h('h3', { style: { fontSize: F.h3, fontWeight: 800, margin: 0, color: '#fff' } }, 'Get your report')),
     h('p', { style: { fontSize: F.small, color: 'rgba(255,255,255,0.75)', marginTop: 6, marginBottom: 18 } }, 'Download a formatted summary ready to share with your team or board.'),
     h('div', { style: { display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 } }, name, email),
     h('div', { style: { display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 } }, org, role),

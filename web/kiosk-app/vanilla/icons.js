@@ -20,7 +20,7 @@ const SHAPES = {
   lightbulb: [["path","M9 18h6M10 21h4"], ["path","M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"]],
   check: [["circle",{"cx":"12","cy":"12","r":"10"}], ["path","M8 12l3 3 5-6"]],
   search: [["circle",{"cx":"11","cy":"11","r":"7"}], ["path","M16 16l5 5"]],
-  mail: [["rect",{"x":"3","y":"5","width":"18","height":"14","rx":"2"}], ["path","M3 7l9 6 9-6"]],
+  download: [["path","M12 3v11"], ["path","M7.5 10.5L12 15l4.5-4.5"], ["path","M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"]],
 };
 
 export function Icon(name, size = 24, stroke = 'currentColor', sw = 1.8) {
