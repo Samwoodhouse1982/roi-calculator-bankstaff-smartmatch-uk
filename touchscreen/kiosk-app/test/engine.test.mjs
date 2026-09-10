@@ -43,7 +43,7 @@ test('Quick agency spend: auto-estimate is £2,700/registered bank worker; an ex
   assert.equal(Math.round(own.agencySaving), 260000);         // same anchor as the acute preset → same saving
 });
 
-test('Quick default start (2,000 bank, Moderate 26%) sits well below the >40× warning', () => {
+test('Quick default start (2,000 bank, Moderate 26%) sits well below the >100x warning', () => {
   const start = calc({ bankPool: 2000, displacement: 26, platformCost: platformCostFor(2000) });
   assert.ok(start.roiPct > 1250 && start.roiPct < 1550);     // ~14× at £2,700/worker: legitimate scale
   assert.equal(start.implausibleRoi, false);

@@ -178,9 +178,9 @@ export function ResultsPage({ r, displacement, chosen, setDisplacement, onAdjust
       </div>;
     })()}
 
-    {/* Explains the ⚠ shown on the Return tile when the multiple is implausibly high (>40×). */}
+    {/* Explains the ⚠ shown on the Return tile when the multiple is implausibly high (>100x). */}
     {r.implausibleRoi && !noNet && <div style={{ marginBottom: 14, padding: "14px 20px", background: C.surface, border: `1px solid ${C.amber}66`, borderRadius: 14, fontSize: F.small, color: C.text, lineHeight: 1.5 }}>
-      <strong style={{ color: C.amber }}>⚠ Unusually high return.</strong> At these inputs the modelled saving is more than 40 times the licence fee, which usually reflects a very large bank or agency book. Sense-check against your organisation's real agency spend before quoting it.
+      <strong style={{ color: C.amber }}>⚠ Unusually high return.</strong> At these inputs the modelled saving is more than 100 times the licence fee, which usually means a figure has been entered wrongly rather than a genuinely large bank. Check your agency spend and licence fee before quoting it.
     </div>}
 
     {/* Annual-figures clarifier: these are steady-state, per-year numbers, not one-offs. */}
