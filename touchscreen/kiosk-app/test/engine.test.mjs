@@ -113,6 +113,7 @@ test('platformCostFor follows the supplied licence bands (parity with the web bu
   assert.equal(platformCostFor(2000), 12480);
   assert.equal(platformCostFor(5000), 19301);
   assert.equal(platformCostFor(12000), 30788);
+  assert.equal(platformCostFor(100000), 216429);  // top of the bank-size slider and of the price list
 });
 
 test('agencyRegime classifies by % of turnover (benchmark §5)', () => {

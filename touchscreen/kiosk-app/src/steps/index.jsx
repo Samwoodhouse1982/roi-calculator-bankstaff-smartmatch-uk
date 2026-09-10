@@ -1,5 +1,5 @@
 import React from 'react';
-import { C, F, fmt, fmtNum } from '../theme';
+import { C, F, fmt, fmtNum, BANK_MIN, BANK_MAX, bankScale } from '../theme';
 import { Card, SectionTitle, TouchSlider, Stepper, InfoTip, ToggleRow } from '../components';
 import { platformCostFor, stance, SIMPLE_BLENDED_BANK_PAY, AFC_DIVISOR, BANK_ONCOST } from '../calc/engine';
 
@@ -26,9 +26,9 @@ export function BankStep({ bankPool, setBankPool }) {
       <TouchSlider
         label="Registered bank workers"
         value={bankPool}
-        min={50}
-        max={12000}
-        step={10}
+        min={BANK_MIN}
+        max={BANK_MAX}
+        scale={bankScale}
         onChange={setBankPool}
         format={fmtNum}
         tip="Everyone on your bank register — INCLUDING substantive staff who also pick up bank shifts, not just dedicated bank-only workers. Counting only bank-only workers would understate the opportunity. A rough figure is fine."

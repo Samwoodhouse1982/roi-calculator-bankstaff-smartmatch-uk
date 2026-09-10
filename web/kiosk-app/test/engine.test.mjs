@@ -15,6 +15,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { calc, calcDetailed, buildOrg, DEFAULTS, DETAILED_DEFAULTS, platformCostFor, agencyRegime, LICENCE_BANDS } from '../src/calc/engine.js';
+import { BANK_MIN, BANK_MAX, bankScale } from '../src/theme.js';
 
 // Core invariant: cash saved per £1 of agency spend, at the default
 // premium (20%) + displacement (13%): d * p/(1+p) = 0.13 * 0.20/1.20.
@@ -112,7 +113,8 @@ test('platformCostFor follows the supplied licence bands', () => {
   assert.equal(platformCostFor(1501), 11612);   // one over -> the next band, which now exists
   assert.equal(platformCostFor(2000), 12480);   // default kiosk size
   assert.equal(platformCostFor(5000), 19301);
-  assert.equal(platformCostFor(12000), 30788);  // top of the bank-size slider
+  assert.equal(platformCostFor(12000), 30788);
+  assert.equal(platformCostFor(100000), 216429);  // top of the bank-size slider and of the price list
 });
 
 /* The old G-Cloud list had gaps (no 701-800, no 1,501-2,000), so a bank landing in one
@@ -124,11 +126,14 @@ test('licence bands are contiguous and ascending, and cover the whole slider ran
     assert.ok(LICENCE_BANDS[i][1] > LICENCE_BANDS[i - 1][1], `band ${i} fee not ascending`);
   }
   let prev = 0;
-  for (let b = 50; b <= 12000; b += 10) {          // every size the slider can produce
+  for (let b = BANK_MIN; b <= BANK_MAX; b += 10) {   // every size the slider can produce
     const fee = platformCostFor(b);
     assert.ok(fee > 0 && fee >= prev, `fee went backwards or vanished at ${b}`);
     prev = fee;
   }
+  // The list must cover the whole slider: the top band ends exactly at BANK_MAX,
+  // so no size the slider offers falls through to the held top fee.
+  assert.equal(LICENCE_BANDS[LICENCE_BANDS.length - 1][0], BANK_MAX);
   // A boundary charges the lower band, one worker over moves to the next.
   assert.ok(platformCostFor(901) > platformCostFor(900));
   assert.ok(platformCostFor(2201) > platformCostFor(2200));
@@ -163,4 +168,36 @@ test('PARITY: zero bank pay cannot delete a group\'s cash saving (pay-independen
   assert.equal(d.rows[0].displaced, 0);              // duty counts still need a real pay rate
   assert.equal(d.zeroPay, true);
   assert.equal(calcDetailed({ ...DETAILED_DEFAULTS, groups: buildOrg('acute') }).zeroPay, false);
+});
+
+/* ===== Bank-register slider scale ===== */
+
+test('bank slider scale covers the full range and round-trips', () => {
+  assert.equal(bankScale.fromPos(0), BANK_MIN);
+  assert.equal(bankScale.fromPos(bankScale.steps), BANK_MAX);
+  assert.equal(bankScale.toPos(BANK_MIN), 0);
+  assert.equal(bankScale.toPos(BANK_MAX), bankScale.steps);
+
+  // Every position gives a value in range, and the scale never goes backwards.
+  let prev = -1;
+  for (let p = 0; p <= bankScale.steps; p++) {
+    const v = bankScale.fromPos(p);
+    assert.ok(v >= BANK_MIN && v <= BANK_MAX, `position ${p} gave ${v}`);
+    assert.ok(v >= prev, `value went backwards at position ${p}`);
+    prev = v;
+  }
+
+  // A value set from a position maps back to that neighbourhood, so dragging
+  // and releasing does not make the thumb jump.
+  for (const v of [50, 100, 500, 2000, 5000, 12000, 25000, 60000, 100000]) {
+    const round = bankScale.fromPos(bankScale.toPos(v));
+    assert.ok(Math.abs(round - v) <= Math.max(10, v * 0.01), `${v} round-tripped to ${round}`);
+  }
+});
+
+test('bank slider keeps the common range usable, which is why it is not linear', () => {
+  // Half the track sits below ~2,000 workers, where nearly every bank register is.
+  assert.ok(bankScale.toPos(2000) > 400 && bankScale.toPos(2000) < 600);
+  // A linear track would put the old 12,000 maximum at 12% of the width; here it is past halfway.
+  assert.ok(bankScale.toPos(12000) > 650);
 });

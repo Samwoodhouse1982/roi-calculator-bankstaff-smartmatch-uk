@@ -7,7 +7,7 @@ export const BANK_ONCOST = 0.20;            // affects duty counts only, not cas
    the old list it is continuous, so no bank size has to round up through a gap any more.
    Each pair is [inclusive upper bound, annual fee], ascending. The published list ends at
    100,000 users; above that the top fee is held and the real figure is quoted manually,
-   which this product cannot reach (the bank-size slider stops at 12,000).
+   which is also where the bank-size slider stops, so the two agree exactly.
    Auto-linked to bank size, editable in the detailed build. */
 export const LICENCE_BANDS = [
   [   600,   8108],   // 1-600

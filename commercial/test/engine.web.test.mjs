@@ -184,4 +184,5 @@ test('platformCostFor follows the supplied licence bands (continuous; parity wit
   assert.equal(E.platformCostFor(2000), 12480);
   assert.equal(E.platformCostFor(5000), 19301);
   assert.equal(E.platformCostFor(12000), 30788);
+  assert.equal(E.platformCostFor(100000), 216429);  // top of the price list
 });

@@ -80,16 +80,24 @@ export function InfoTip(text) {
   return wrap;
 }
 
-export function TouchSlider({ label, value, min, max, step = 1, onChange, format, tip }) {
+/* `scale` is optional. Without it this is a plain linear range input, which is
+   what every slider but the bank register uses. With it, the range input runs
+   over positions (0..scale.steps) and the position is mapped to and from the
+   real value, so a slider can cover a range too wide to be usable linearly. */
+export function TouchSlider({ label, value, min, max, step = 1, onChange, format, tip, scale }) {
   const out = h('span', { style: { fontSize: F.h1, fontWeight: 800, color: C.accent } }, format ? format(value) : value);
   const input = h('input', {
-    type: 'range', 'aria-label': label, min, max, step, value,
+    type: 'range', 'aria-label': label,
+    min: scale ? 0 : min, max: scale ? scale.steps : max, step: scale ? 1 : step,
+    value: scale ? scale.toPos(value) : value,
     // Screen readers otherwise read the raw number ("2000"), not the figure
     // on screen ("2,000" / "8.3%"). aria-valuetext gives them the real one.
+    // On a scaled slider aria-valuenow is a position, not a headcount, so this
+    // is the only attribute that reads correctly at all.
     'aria-valuetext': String(format ? format(value) : value),
     style: { width: '100%', cursor: 'pointer', accentColor: C.accent },
     onInput: e => {
-      const v = Number(e.target.value);
+      const v = scale ? scale.fromPos(Number(e.target.value)) : Number(e.target.value);
       out.textContent = format ? format(v) : v;
       input.setAttribute('aria-valuetext', String(format ? format(v) : v));
       onChange(v);

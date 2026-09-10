@@ -7,7 +7,7 @@
    ──────────────────────────────────────────────────────────────────────── */
 import { h, setStyle } from './dom';
 import { Card, SectionTitle, Lead, Helper, TouchSlider, Stepper, InfoTip, ToggleRow, DecisionRow } from './ui';
-import { C, F, fmt, fmtNum } from '../src/theme';
+import { C, F, fmt, fmtNum, BANK_MIN, BANK_MAX, bankScale } from '../src/theme';
 import { platformCostFor, stance, SIMPLE_BLENDED_BANK_PAY, AFC_DIVISOR, BANK_ONCOST, AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP } from '../src/calc/engine';
 
 // STEP 0. Your bank register: the single input; agency spend and everything else scale from it.
@@ -22,7 +22,7 @@ export function BankStep(state, set) {
     Card({},
       TouchSlider({
         label: 'Registered bank workers',
-        value: state.bankPool, min: 50, max: 12000, step: 10, format: fmtNum,
+        value: state.bankPool, min: BANK_MIN, max: BANK_MAX, scale: bankScale, format: fmtNum,
         onChange: v => { set('bankPool', v); fee.textContent = `${fmt(platformCostFor(v))}/yr`; },
         tip: 'Everyone on your bank register, INCLUDING substantive staff who also pick up bank shifts, not just dedicated bank-only workers. Counting only bank-only workers would understate the opportunity. A rough figure is fine.',
       }),
@@ -42,7 +42,12 @@ export function AgencyStep(state, set) {
   // Slider range adapts to the bank-size estimate, so the control keeps good
   // resolution for a small community trust (~£2m) or a large ICS (~£30m) alike,
   // capped at £50m for the very largest Trusts (type a higher figure if needed).
-  const sliderMax = Math.min(50000000, Math.max(10000000, Math.ceil(estimate * 3 / 5000000) * 5000000));
+  // Capped at £50m so the control keeps resolution for ordinary trusts, except
+  // that it must always clear the estimate itself: at the top of the price list
+  // (100,000 workers) ~£2,700 a worker puts that estimate at £270m, and a slider
+  // that stopped at £50m would silently pin the thumb at its maximum.
+  const want = Math.max(estimate * 1.5, Math.min(estimate * 3, 50000000));
+  const sliderMax = Math.max(10000000, Math.ceil(want / 5000000) * 5000000);
   const sliderStep = Math.max(100000, Math.round(sliderMax / 200 / 100000) * 100000);
 
   const panel = h('div', { style: { marginTop: 24, padding: '18px 22px', background: C.surface2, borderRadius: 16, border: `1px solid ${C.accent}55` } });
