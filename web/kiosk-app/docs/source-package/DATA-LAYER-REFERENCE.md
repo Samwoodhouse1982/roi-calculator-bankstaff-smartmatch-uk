@@ -1,4 +1,4 @@
-# Smart Match ROI Calculator — Data Layer Reference
+# Smart Match ROI Calculator: Data Layer Reference
 
 Every data point from the calculator is exposed in a single structured
 object: `window.smartMatchROIData`. It updates reactively whenever the visitor
@@ -16,8 +16,8 @@ This data layer is how you feed your own tracking, CRM or PDF templates.
 ```javascript
 // Read the current state at any time
 const data = window.smartMatchROIData;
-console.log(data.annual_cash_saving);      // 172032
-console.log(data.fmt.annual_cash_saving);  // "£172k"
+console.log(data.annual_cash_saving);      // 174720
+console.log(data.fmt.annual_cash_saving);  // "£175k"
 
 // Listen for updates
 window.addEventListener("smartmatch-roi-update", (e) => {
@@ -101,14 +101,14 @@ that.
 
 | Field | Type | Example | Description |
 |---|---|---|---|
-| `annual_cash_saving` | number | `172032` | **The headline.** Net of the licence fee |
+| `annual_cash_saving` | number | `174720` | **The headline.** Net of the licence fee |
 | `agency_premium_avoided` | number | `187200` | Gross agency premium displaced |
 | `admin_time_value` | number | `48600` | Cash value of the hours released (always reported; in the headline only when `admin_time_in_cash_total` is true) |
 | `hours_released_per_week` | number | `60` | Temporary staffing team hours given back |
 | `gross_benefit` | number | `187200` | Before the licence fee |
-| `licence_fee` | number | `15168` | BankStaff+ annual licence (the ROI denominator) |
-| `payback_days` | number \| null | `30` | `null` when there is no net saving |
-| `return_multiple` | number \| null | `11.3` | Net saving ÷ licence fee |
+| `licence_fee` | number | `12480` | BankStaff+ annual licence (the ROI denominator) |
+| `payback_days` | number \| null | `24` | `null` when there is no net saving |
+| `return_multiple` | number \| null | `14` | Net saving ÷ licence fee |
 
 ### Capacity (never part of the cash saving)
 
@@ -125,9 +125,9 @@ All three confidence levels are always computed, whichever the visitor has
 selected:
 
 ```javascript
-data.scenarios.conservative.annual_cash_saving  // 78432
-data.scenarios.moderate.annual_cash_saving      // 172032
-data.scenarios.optimistic.annual_cash_saving    // 344832
+data.scenarios.conservative.annual_cash_saving  // 81120
+data.scenarios.moderate.annual_cash_saving      // 174720
+data.scenarios.optimistic.annual_cash_saving    // 347520
 // Each has: displacement, annual_cash_saving, agency_premium_avoided, payback_days
 ```
 
@@ -137,18 +137,18 @@ Ready to drop straight into templates without formatting:
 
 | Field | Example |
 |---|---|
-| `fmt.annual_cash_saving` | `"£172k"` |
+| `fmt.annual_cash_saving` | `"£175k"` |
 | `fmt.agency_premium_avoided` | `"£187k"` |
 | `fmt.admin_time_value` | `"£49k"` |
 | `fmt.agency_spend` | `"£5.40m"` |
-| `fmt.licence_fee` | `"£15,168"` |
+| `fmt.licence_fee` | `"£12,480"` |
 | `fmt.gross_benefit` | `"£187k"` |
 | `fmt.hours_released_per_week` | `"60"` |
 | `fmt.shifts_moved_to_bank` | `"5,613"` |
 | `fmt.bank_backfill_cost` | `"£936k"` |
 | `fmt.bank_workers` | `"2,000"` |
-| `fmt.payback_days` | `"30 days"` |
-| `fmt.return_multiple` | `"11.3x"` |
+| `fmt.payback_days` | `"24 days"` |
+| `fmt.return_multiple` | `"14x"` |
 | `fmt.fill_rate` | `"8.3% to 6.6%"` |
 | `fmt.date` | `"13 August 2026"` |
 
@@ -189,13 +189,13 @@ window.addEventListener("smartmatch-roi-update", (e) => {
 
 ## Notes
 
-- Number fields are raw (`172032`), never formatted strings — use `fmt.*` for
+- Number fields are raw (`174720`), never formatted strings. Use `fmt.*` for
   display.
 - The object updates on every input change, not only on form submission.
 - `annual_cash_saving` is **net** of the licence fee; `agency_premium_avoided`
   is the gross premium before it.
 - `admin_time_value` is always populated, but is only part of
-  `annual_cash_saving` when `admin_time_in_cash_total` is `true` — that is the
+  `annual_cash_saving` when `admin_time_in_cash_total` is `true`, and that is the
   visitor's explicit Yes/No choice.
 - Capacity fields (`shifts_moved_to_bank`, `bank_backfill_cost`) are
   operational value, **never** added to the cash saving. Presenting them as

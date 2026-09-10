@@ -14,7 +14,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { calc, calcDetailed, buildOrg, DEFAULTS, DETAILED_DEFAULTS, platformCostFor, agencyRegime } from '../src/calc/engine.js';
+import { calc, calcDetailed, buildOrg, DEFAULTS, DETAILED_DEFAULTS, platformCostFor, agencyRegime, LICENCE_BANDS } from '../src/calc/engine.js';
 
 // Core invariant: cash saved per £1 of agency spend, at the default
 // premium (20%) + displacement (13%): d * p/(1+p) = 0.13 * 0.20/1.20.
@@ -29,11 +29,11 @@ test('Quick default matches the golden headline (spend-anchored)', () => {
   assert.equal(Math.round(q.agencySaving), 30888);            // 1.782m × 0.8 × 0.13 × 0.2/1.2
   assert.equal(Math.round(q.adminSaving), 48600);
   assert.equal(Math.round(q.grossBenefit), 79488);
-  assert.equal(Math.round(q.netSaving), 62488);
-  assert.equal(Math.round(q.roiPct), 368);
-  assert.equal(Math.round(q.roiMultiple * 100) / 100, 3.68);   // net return on the licence fee (net saving ÷ cost)
+  assert.equal(Math.round(q.netSaving), 64958);                // 79,488 gross - the £14,530 fallback fee
+  assert.equal(Math.round(q.roiPct), 447);
+  assert.equal(Math.round(q.roiMultiple * 100) / 100, 4.47);   // net return on the licence fee (net saving ÷ cost)
   assert.equal(q.timeSavedWeek, 60);
-  assert.ok(Math.abs(q.paybackMonths - 17000 * 12 / 79488) < 1e-9);
+  assert.ok(Math.abs(q.paybackMonths - 14530 * 12 / 79488) < 1e-9);
 });
 
 test('Quick agency spend: auto-estimate is £2,700/registered bank worker; an explicit figure wins', () => {
@@ -45,16 +45,18 @@ test('Quick agency spend: auto-estimate is £2,700/registered bank worker; an ex
 
 test('Quick default start (2,000 bank, Moderate 26%) sits well below the >40× warning', () => {
   const start = calc({ bankPool: 2000, displacement: 26, platformCost: platformCostFor(2000) });
-  assert.ok(start.roiPct > 1000 && start.roiPct < 1300);     // ~11× at £2,700/worker: legitimate scale
+  assert.ok(start.roiPct > 1250 && start.roiPct < 1550);     // ~14× at £2,700/worker: legitimate scale
   assert.equal(start.implausibleRoi, false);
 });
 
+/* Net and roi re-pinned to the September 2026 price list: the premium, spend and head
+   counts are untouched, and every net moved by exactly the £2,470 the fallback fee fell. */
 const DETAILED_GOLDEN = {
-  acute:     { net: 291600, premium: 260000, totSpend: 15000000, totHead: 2200, roi: 1715 },
-  community: { net: 152933, premium: 121333, totSpend: 7000000,  totHead: 700,  roi: 900 },
-  mental:    { net: 204933, premium: 173333, totSpend: 10000000, totHead: 1000, roi: 1205 },
-  ambulance: { net: 100933, premium: 69333,  totSpend: 4000000,  totHead: 400,  roi: 594 },
-  ics:       { net: 551600, premium: 520000, totSpend: 30000000, totHead: 5000, roi: 3245 },
+  acute:     { net: 294070, premium: 260000, totSpend: 15000000, totHead: 2200, roi: 2024 },
+  community: { net: 155403, premium: 121333, totSpend: 7000000,  totHead: 700,  roi: 1070 },
+  mental:    { net: 207403, premium: 173333, totSpend: 10000000, totHead: 1000, roi: 1427 },
+  ambulance: { net: 103403, premium: 69333,  totSpend: 4000000,  totHead: 400,  roi: 712 },
+  ics:       { net: 554070, premium: 520000, totSpend: 30000000, totHead: 5000, roi: 3813 },
 };
 
 for (const [type, g] of Object.entries(DETAILED_GOLDEN)) {
@@ -101,16 +103,35 @@ test('adminOnly flags an agency-free saving, and is off by default (audit #14)',
   assert.equal(Math.round(noAgency.agencySaving), 0);
 });
 
-test('platformCostFor follows the G-Cloud licence bands (rounds a gap size UP to the covering tier)', () => {
-  assert.equal(platformCostFor(300), 9486.54);
-  assert.equal(platformCostFor(600), 9486.54);    // upper edge of band 1
-  assert.equal(platformCostFor(660), 9855.27);
-  assert.equal(platformCostFor(1000), 11321.21);
-  assert.equal(platformCostFor(1500), 13280.66);  // upper edge of the 1,401–1,500 tier
-  assert.equal(platformCostFor(1501), 15167.54);  // one over -> rounds up to the next tier
-  assert.equal(platformCostFor(2000), 15167.54);  // default kiosk size: covered by the 2,001–2,200 tier
-  assert.equal(platformCostFor(5000), 22793.38);  // above the 4,200 tier -> 5,001–5,200 tier
-  assert.equal(platformCostFor(12000), 29101.79);  // top band caps large systems
+test('platformCostFor follows the supplied licence bands', () => {
+  assert.equal(platformCostFor(300), 8108);
+  assert.equal(platformCostFor(600), 8108);     // upper edge of band 1
+  assert.equal(platformCostFor(660), 8423);
+  assert.equal(platformCostFor(1000), 9676);
+  assert.equal(platformCostFor(1500), 11351);
+  assert.equal(platformCostFor(1501), 11612);   // one over -> the next band, which now exists
+  assert.equal(platformCostFor(2000), 12480);   // default kiosk size
+  assert.equal(platformCostFor(5000), 19301);
+  assert.equal(platformCostFor(12000), 30788);  // top of the bank-size slider
+});
+
+/* The old G-Cloud list had gaps (no 701-800, no 1,501-2,000), so a bank landing in one
+   had to round up to the covering tier. This list is continuous, and these guard that:
+   a gap would show up as a fee that does not move where a band boundary says it should. */
+test('licence bands are contiguous and ascending, and cover the whole slider range', () => {
+  for (let i = 1; i < LICENCE_BANDS.length; i++) {
+    assert.ok(LICENCE_BANDS[i][0] > LICENCE_BANDS[i - 1][0], `band ${i} ceiling not ascending`);
+    assert.ok(LICENCE_BANDS[i][1] > LICENCE_BANDS[i - 1][1], `band ${i} fee not ascending`);
+  }
+  let prev = 0;
+  for (let b = 50; b <= 12000; b += 10) {          // every size the slider can produce
+    const fee = platformCostFor(b);
+    assert.ok(fee > 0 && fee >= prev, `fee went backwards or vanished at ${b}`);
+    prev = fee;
+  }
+  // A boundary charges the lower band, one worker over moves to the next.
+  assert.ok(platformCostFor(901) > platformCostFor(900));
+  assert.ok(platformCostFor(2201) > platformCostFor(2200));
 });
 
 test('agencyRegime classifies by % of turnover (benchmark §5)', () => {

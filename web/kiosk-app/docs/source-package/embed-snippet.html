@@ -74,10 +74,24 @@
                WordPress security plugins add SAMEORIGIN by default,
                which is fine when both live on the same domain.
 
+     src:      upload the file and point src at its URL, as above. Do not
+               inline the file into a srcdoc attribute: it works, but you
+               then re-paste the whole calculator into the page for every
+               update and it has no URL of its own to cache or link to.
+
+     sandbox:  do NOT add a sandbox attribute. Without allow-same-origin it
+               blocks the lead submission AND the PDF download while the
+               calculator still looks like it worked, so leads vanish with
+               no visible error. If your CMS insists on one, it needs at
+               least: allow-scripts allow-same-origin allow-popups
+               allow-downloads
+
      Lead form: submits to RLDatix HubSpot (EU). If your page sets a
                strict Content-Security-Policy, allow
                connect-src https://forms-eu1.hsforms.com
-               (see INTEGRATION-GUIDE.md).
+               (see INTEGRATION-GUIDE.md). If submissions are not arriving,
+               open the browser console: the calculator logs HubSpot's own
+               reason for rejecting them.
 
      Analytics: the calculator emits no analytics of its own. Use the
                smartmatch-roi-data message above to feed your own

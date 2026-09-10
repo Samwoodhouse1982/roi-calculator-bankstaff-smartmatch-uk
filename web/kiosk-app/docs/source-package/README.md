@@ -1,17 +1,21 @@
-# Smart Match (BankStaff+) — Workforce ROI Calculator
+# Smart Match (BankStaff+): Workforce ROI Calculator
 
 The public, self-serve web version of the RLDatix **Smart Match** bank-staff
 utilisation ROI calculator. NHS terminology (bank/agency, AfC, Trust), pounds
 sterling, `en-GB` formatting.
 
-Two ways to use it, both in this package:
+> **Replacing a version that is already live?** Read `WHAT-CHANGED.md` first.
+> It is one step.
+
+Three ways to use it, all in this package:
 
 | You want to | Use |
 |---|---|
 | Embed it in a page (WordPress, CMS, landing page) | `roi-calculator.html` + `embed-snippet.html` |
-| Render it inside an existing React app | `ROICalculator.jsx` + `styles.css` |
+| Embed it with nothing to upload | `embed-snippet-srcdoc.html` on its own |
+| Load it into a page you already control | `roi-calculator.js` + `styles.css` |
 
-Both are generated from the same source, so the figures are identical.
+All three are generated from the same source, so the figures are identical.
 
 ## Quick start
 
@@ -22,46 +26,59 @@ Both are generated from the same source, so the figures are identical.
 2. Paste the snippet from `embed-snippet.html` into your page and point the
    iframe `src` at the file from step 1.
 
-### Inside a React app
+### Inline, with nothing to upload
 
-```jsx
-import ROICalculator from "./ROICalculator";
-import "./styles.css";
+Paste the whole of `embed-snippet-srcdoc.html` into a Custom HTML block. It
+carries the calculator inside it as a base64 string, so there is no file to
+host and nothing to configure. To take a new version, replace the whole
+snippet; never hand-edit the `DATA` string. `INTEGRATION-GUIDE.md` section 5
+compares the two routes.
 
-export default function Page() {
-  return <ROICalculator />;
-}
+### Into a page you already control
+
+If you would rather not use an iframe at all, include the script and the
+styles yourself and mount it into any element:
+
+```html
+<link rel="stylesheet" href="styles.css">
+<div id="roi"></div>
+<script src="roi-calculator.js"></script>
+<script>SmartMatchROI.mount(document.getElementById("roi"));</script>
 ```
 
-Requires **React 18+**. The only other dependency is **jsPDF**, loaded on
-demand when a visitor downloads their report:
+`roi-calculator.js` defines exactly one global, `SmartMatchROI`, with one
+method, `mount(element)`. It adds nothing else to the page and takes nothing
+from it.
 
-```bash
-npm install jspdf
-```
-
-If you would rather not add jsPDF to your bundle, the standalone file loads it
-from a CDN instead; see `INTEGRATION-GUIDE.md`.
+Note that this is the one option with no isolation: the calculator's markup
+sits in your document, so your stylesheet can reach it. All of its own styling
+is inline for that reason, but a broad reset in your CSS can still affect it.
+The iframe options above cannot be touched by the host page.
 
 ## Architecture
 
-Single-component app. All logic lives in `ROICalculator.jsx`, assembled from
-these sections in order:
+**Plain JavaScript. No framework, no JSX, no build step, and no dependency to
+install.** The only external thing it ever loads is jsPDF, from a CDN, and only
+at the moment a visitor presses Download.
+
+All logic lives in `roi-calculator.js`, assembled from these sections in order:
 
 | Section | Description |
 |---|---|
-| **Model constants** (top) | `AFC_DIVISOR`, `BANK_ONCOST`, `GCLOUD_LICENCE`, `AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP`, `DISPLACEABLE_SHARE_DEFAULT`, admin-time defaults. Every tuneable assumption is a named constant. |
+| **Model constants** (top) | `AFC_DIVISOR`, `BANK_ONCOST`, `LICENCE_BANDS`, `AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP`, `DISPLACEABLE_SHARE_DEFAULT`, admin-time defaults. Every tuneable assumption is a named constant. |
 | **`stance()`** | The three confidence levels (Conservative 13% / Moderate 26% / Optimistic 50%) and the note shown beside the slider. Wording is computed from the live value, never hard-coded. |
 | **`calc()`** | Pure function. Takes the inputs, returns every derived value. No side effects, no DOM. This is the whole financial model. |
 | **`calcDetailed()`, `ORG_TYPES`, `buildOrg()`** | The per-staff-group model used by the internal account-manager build. Not rendered by this UI; kept so both products share one engine. |
+| **Lead core** | HubSpot configuration and submission, the PDF report, the local backup. Shared file, see below. |
 | **Theme** | `C` (colours), `F` (fluid type scale), `£` formatters, step labels. |
-| **Data layer** | `buildData()` / `publishData()` — see `DATA-LAYER-REFERENCE.md`. |
-| **Helper components** | `Card`, `TouchSlider`, `Stepper`, `InfoTip`, `DecisionRow`, `StepIndicator`, `NavButtons`, `PageTransition`, `Icon`. |
-| **Steps** | `BankStep`, `AgencyStep`, `TeamStep`, `StanceStep` — the four input pages. |
+| **Data layer** | `buildData()` / `publishData()`. See `DATA-LAYER-REFERENCE.md`. |
+| **`h()`** | A 40-line stand-in for the one thing a framework was doing here: turning a tag, some properties and some children into a DOM node. There is no virtual DOM and no reconciliation. |
+| **Helper components** | `Card`, `TouchSlider`, `Stepper`, `InfoTip`, `DecisionRow`, `StepIndicator`, `NavButtons`, `Icon`. Each is a function returning a DOM node. |
+| **Steps** | `BankStep`, `AgencyStep`, `TeamStep`, `StanceStep`: the four input pages. |
 | **`ResultsPage`** | Co-headline figures, KPI row, live confidence slider, capacity panel, methodology and assumptions. |
 | **`LeadCapture`** | Results-page form: HubSpot submission, PDF download, local browser backup. |
 | **`generatePDF()`** | Builds a branded one-page A4 report with jsPDF and downloads it directly. No popup, no print dialog, no server. |
-| **`ROICalculator`** | Default export. Owns state, step routing, the calculating pause, and the iframe (postMessage) plumbing. |
+| **`mount()`** | The entry point, exposed as `SmartMatchROI.mount`. Owns state, step routing, the calculating pause, and the iframe (postMessage) plumbing. |
 
 ## The value model
 
@@ -80,9 +97,9 @@ Three categories are kept strictly separate, and the UI says so:
 
 | Category | In the headline saving? |
 |---|---|
-| **Hard cash** — agency premium displaced | **Yes** |
-| **Admin time** — scheduling hours released | Optional, visitor decides; shown either way |
-| **Capacity** — extra shifts filled from bank | **Never** — shown in its own panel |
+| **Hard cash** (agency premium displaced) | **Yes** |
+| **Admin time** (scheduling hours released) | Optional, visitor decides; shown either way |
+| **Capacity** (extra shifts filled from bank) | **Never**, shown in its own panel |
 
 Confidence defaults to **Moderate (26%)**, applied to the **80% displaceable
 share** of agency spend (so ~21% of the whole agency book). Pay rates are
@@ -105,30 +122,35 @@ Defined in the `C` constant:
 
 **DM Sans** throughout. The standalone file loads it from Google Fonts with a
 system-font fallback (`system-ui`, `Segoe UI`, Roboto) if that host is blocked.
-In a React app, either load DM Sans yourself or install the self-hosted
-package, which needs no external request:
-
-```bash
-npm install @fontsource-variable/dm-sans
-```
-```js
-import "@fontsource-variable/dm-sans";
-```
+If you mount the script into your own page and would rather not call Google
+Fonts, load DM Sans yourself or leave it out: the calculator falls back to
+`system-ui`, `Segoe UI` and Roboto and still reads correctly.
 
 ## Styles
 
-`styles.css` carries only what the component cannot set inline: the
-box-sizing reset, page background and font stack, range-slider thumbs and
-scrollbars, plus a `prefers-reduced-motion` block. Everything else is inline
-in the component, so a host page's stylesheet cannot break the calculator and
-the calculator cannot leak styles into the host page.
+`styles.css` carries only what cannot be set inline: the box-sizing reset,
+page background and font stack, range-slider thumbs and scrollbars, plus a
+`prefers-reduced-motion` block. It is already inlined into
+`roi-calculator.html`, so you only need this file if you are mounting the
+script into your own page.
+
+Everything else is set inline on the elements themselves, so the calculator
+does not leak styles into a host page.
 
 ## Accessibility
 
-Keyboard and screen-reader support are built in: focus moves to each newly
-revealed step, a polite live region announces results, selection state is
-exposed with `aria-pressed` / `aria-checked`, sliders carry `aria-valuetext`
-with formatted values, and every control has a real accessible name.
+- Every control has a real accessible name, including the icon-only ones.
+- Sliders carry `aria-valuetext`, so a screen reader reads "2,000 workers" or
+  "26% (Moderate)" rather than the raw number behind them.
+- Focus moves to the new screen on every step change, so a keyboard or screen
+  reader user is not left on a control that no longer exists.
+- A polite live region announces the headline figures when results appear,
+  which is the one moment the page changes without the visitor acting.
+- Selection state is exposed with `aria-checked` on the Yes/No decisions and
+  the toggle; the tooltip and the methodology panel expose `aria-expanded` and
+  work from the keyboard.
+- `prefers-reduced-motion` is respected: the same figures, without the
+  count-ups and transitions.
 
 ## Evidence and honesty rules
 
@@ -142,8 +164,12 @@ Capacity is never added to the cash saving anywhere in the product.
 
 ## Regenerating this package
 
-These files are generated from the maintained Vite source app so the tested
-engine and the shipped calculator can never drift apart:
+These files are generated from the maintained source app so the tested engine
+and the shipped calculator can never drift apart. The calculation engine, the
+theme, the data layer and the whole of the lead-capture core (HubSpot
+configuration, submission and the PDF report) are shared files, used verbatim
+by this build and by the internal React build of the same calculator, so the
+two cannot produce different figures or send different submissions:
 
 ```bash
 npm install

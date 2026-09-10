@@ -1,4 +1,4 @@
-# Smart Match ROI Calculator — Integration Setup Guide
+# Smart Match ROI Calculator: Integration Setup Guide
 
 ## Overview
 
@@ -11,7 +11,7 @@ calculator still works and still gives the visitor their PDF.
 
 ## 1. HubSpot Lead Capture (pre-configured)
 
-**Status: LIVE** — HubSpot is already wired in and ready to use.
+**Status: LIVE.** HubSpot is already wired in and ready to use.
 
 **What it does:** when a visitor submits the results-page form, their details
 are POSTed to HubSpot's Forms API (EU1 region) as a new submission, and their
@@ -19,23 +19,28 @@ PDF report downloads.
 
 ### Current configuration
 
-Near the top of the lead-capture section in `ROICalculator.jsx` (or in the
-`<script type="text/babel">` block of `roi-calculator.html`):
+Near the top of the lead-capture section in `roi-calculator.js` (and in the
+inline script of `roi-calculator.html`, which is the same code):
 
 ```javascript
 const HUBSPOT_PORTAL_ID = "27174408";
-const HUBSPOT_FORM_GUID = "3f860858-5a58-4f1b-8419-a561af17adbe";
+const HUBSPOT_FORM_GUID = "7bbba4f2-2045-458d-a339-b06e5e7a16d7";
 const HUBSPOT_REGION    = "eu1";   // EU data centre
 ```
 
 **API endpoint:**
 `https://forms-eu1.hsforms.com/submissions/v3/integration/submit/{portalId}/{formGuid}`
 
-> **Note on the form GUID.** This is currently an **interim, shared** form,
-> also used by another RLDatix calculator. Smart Match submissions are
-> identifiable by the `message` field, which always begins
-> `Smart Match ROI (web) submission | ...`. When a dedicated Smart Match form
-> exists, replace `HUBSPOT_FORM_GUID` with its GUID — nothing else changes.
+This is the dedicated Smart Match form. To point the calculator at a different
+form, change `HUBSPOT_FORM_GUID` only. Nothing else in the code refers to it.
+
+> **If you are used to the `hbspt.forms.create()` embed script, note that this
+> is a different integration style.** That script renders HubSpot's own form
+> markup into a container div. This calculator renders its own form, styled to
+> match the results page, and POSTs the answers straight to the Forms API. Both
+> routes deliver to the same HubSpot form and the same submissions list, but
+> pasting the embed-script snippet into the page will not connect the
+> calculator's form to HubSpot. The GUID above is the only wiring needed.
 
 ### Fields submitted
 
@@ -51,16 +56,30 @@ const HUBSPOT_REGION    = "eu1";   // EU data centre
 The `message` field gives the sales team full visibility of what the visitor
 modelled, without needing custom HubSpot properties.
 
+> **Every one of these six fields must exist on the HubSpot form.** The Forms
+> API rejects the *whole* submission with HTTP 400 if it is sent a field the
+> form does not define, so a single missing property loses the lead. `message`
+> is the one most often absent. If you would rather not add it, delete that
+> line from the `fields` array and use the custom properties below instead.
+
+The submission also carries `context.pageUri`, the page the visitor was on.
+The calculator works this out at run time and omits the field entirely if it
+cannot find a valid `http(s)` URL, so this needs no configuration.
+
 ### How it works
 
 No HubSpot form SDK is loaded. The calculator POSTs directly to the Forms API
 v3, which is lighter than the `hbspt.forms.create()` widget and preserves the
 calculator's own styling. **No HubSpot tracking script, cookies or pixels are
-used** — it is a single request, made only when a visitor presses submit.
+used.** It is a single request, made only when a visitor presses submit.
 
-The submission is fire-and-forget: if HubSpot is unreachable (blocked network,
-CSP, ad-blocker), the visitor still gets their PDF and the lead is kept in the
-local browser backup below. Errors go to `console.warn` only.
+The visitor's PDF never waits on HubSpot: it is generated and downloaded
+first, and the lead is written to the local browser backup below before the
+request goes out. But the response **is** checked. HubSpot answers 200 on
+success and 400 with a JSON reason on rejection, and a rejection is logged to
+the browser console with that reason, naming the likely cause. If you are
+testing the form and nothing arrives in HubSpot, open the browser console:
+the answer will be there.
 
 ### Optional: custom HubSpot properties
 
@@ -97,10 +116,10 @@ demos and events, not a CRM.
 The "Download PDF report" button builds a branded one-page A4 report with
 jsPDF and downloads it directly. No popup, no print dialog, no server.
 
-- **Standalone file:** jsPDF is loaded from a CDN on first use, trying cdnjs,
-  then jsDelivr, then unpkg. Nothing is fetched until a visitor asks for a PDF.
-- **React app:** `npm install jspdf` — it is imported dynamically, so it stays
-  out of your main bundle until needed.
+jsPDF is the calculator's only dependency of any kind. It is loaded from a CDN
+on first use, trying cdnjs, then jsDelivr, then unpkg, so one blocked host does
+not cost the visitor their report. Nothing is fetched until the Download button
+is pressed.
 
 The RLDatix wordmark is embedded in the file as base64, so the PDF header
 needs no external asset. To change the branding, replace the `rldatixLogo`
@@ -115,11 +134,10 @@ If your page or its host sets a strict CSP, allow these:
 | Directive | Host | Needed for |
 |---|---|---|
 | `connect-src` | `https://forms-eu1.hsforms.com` | Lead submission |
-| `script-src` | `https://cdnjs.cloudflare.com` `https://cdn.jsdelivr.net` `https://unpkg.com` | React, Babel, jsPDF (standalone file only) |
-| `font-src` / `style-src` | `https://fonts.googleapis.com` `https://fonts.gstatic.com` | DM Sans (standalone file only; falls back to system fonts) |
+| `script-src` | `https://cdnjs.cloudflare.com` `https://cdn.jsdelivr.net` `https://unpkg.com` | jsPDF, and only when a visitor downloads a report |
+| `font-src` / `style-src` | `https://fonts.googleapis.com` `https://fonts.gstatic.com` | DM Sans (falls back to system fonts if blocked) |
 
-In a React app you supply React and jsPDF yourself, so only the HubSpot entry
-applies.
+The calculator loads no framework, so there is nothing else to allow.
 
 ---
 
@@ -131,6 +149,48 @@ embedding it. WordPress security plugins commonly add
 `X-Frame-Options: SAMEORIGIN`, which is fine when the calculator and the page
 are on the same domain; if they are on different domains or subdomains, that
 header has to be relaxed for the calculator's path.
+
+### Hosted file, or inline
+
+Both are supported, and both are tested:
+
+| | `embed-snippet.html` (hosted) | `embed-snippet-srcdoc.html` (inline) |
+|---|---|---|
+| What you paste | ~30 lines | one ~315 KB file, calculator included |
+| Setup | upload `roi-calculator.html`, point `src` at it | nothing to upload |
+| To take a new version | replace the uploaded file | re-paste the whole snippet |
+| Calculator has its own URL | yes | no (`about:srcdoc`) |
+| Browser caches it separately | yes | no |
+
+The hosted route is less to maintain: updates are a one-file swap, and the
+calculator has a real address to cache and link to. The inline route needs no
+file upload at all, which is the right trade when uploading to the CMS is the
+awkward part.
+
+`embed-snippet-srcdoc.html` is generated from the calculator, so it is always
+the current build. Do not hand-edit the base64 `DATA` string inside it: to
+update, replace the whole file.
+
+Inline embedding is fully supported by the calculator. It resolves its HubSpot
+`pageUri` from the parent page (see section 1), and its local lead backup
+degrades quietly if browser storage is unavailable.
+
+### If you use the `sandbox` attribute
+
+A `sandbox` attribute without `allow-same-origin` puts the calculator on an
+opaque origin. **The lead form then silently fails**: the browser blocks the
+HubSpot request outright, while the visitor still receives their PDF and still
+sees the confirmation message, so nothing looks wrong from the outside. The
+local lead backup is blocked too.
+
+If you need `sandbox`, use at least:
+
+```html
+sandbox="allow-scripts allow-same-origin allow-popups allow-downloads"
+```
+
+`allow-downloads` is needed for the PDF. The simplest option is to omit the
+attribute, which is what `embed-snippet.html` does.
 
 ---
 
@@ -147,11 +207,28 @@ To confirm the embed end to end: load the page, walk the four steps, press
 (b) the iframe grew to fit the results with no inner scrollbar, and
 (c) the submission is in HubSpot.
 
+### The form submits but nothing reaches HubSpot
+
+The PDF downloading and the confirmation message appearing prove only that the
+calculator ran; they say nothing about HubSpot. **Open the browser console and
+submit again.** The calculator logs the reason.
+
+| Console message | Cause | Fix |
+|---|---|---|
+| `HubSpot rejected the submission (HTTP 400)` plus a JSON body naming a field | That field is not defined on the form | Add the property in HubSpot, or remove the field from the `fields` array |
+| `HTTP 404` | Portal ID or form GUID is wrong, or the form was deleted | Re-check the two constants against Marketing then Forms in HubSpot |
+| `could not be sent: TypeError: Failed to fetch` | The request never left the browser | An ad-blocker, a `connect-src` CSP rule, or a `sandbox` attribute on the iframe. See sections 4 and 5 |
+| Nothing at all in the console | The `HUBSPOT_PORTAL_ID` / `HUBSPOT_FORM_GUID` constants are blank, so no request is attempted | Set them |
+
+Leads are kept in the local browser backup (section 2) whatever happens, so
+submissions made while the form was misconfigured can still be recovered from
+the machine they were made on.
+
 ---
 
 ## 7. Analytics
 
-The calculator emits **no** analytics of its own — no GTM, no GA, no cookies.
+The calculator emits **no** analytics of its own: no GTM, no GA, no cookies.
 Every value it holds is published on a data layer instead, so you can feed
 your own tracking on your terms. See `DATA-LAYER-REFERENCE.md`.
 
