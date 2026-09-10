@@ -1,5 +1,5 @@
 import React from 'react';
-import { C, F, fmt, fmtNum } from '../theme';
+import { C, F, fmt, fmtNum, BANK_MIN, BANK_MAX, bankScale } from '../theme';
 import { Card, SectionTitle, TouchSlider, Stepper, InfoTip, DecisionRow, ToggleRow } from '../components';
 import { platformCostFor, stance, SIMPLE_BLENDED_BANK_PAY, AFC_DIVISOR, BANK_ONCOST, AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP } from '../calc/engine';
 
@@ -29,9 +29,9 @@ export function BankStep({ bankPool, setBankPool }) {
       <TouchSlider
         label="Registered bank workers"
         value={bankPool}
-        min={50}
-        max={12000}
-        step={10}
+        min={BANK_MIN}
+        max={BANK_MAX}
+        scale={bankScale}
         onChange={setBankPool}
         format={fmtNum}
         tip="Everyone on your bank register, INCLUDING substantive staff who also pick up bank shifts, not just dedicated bank-only workers. Counting only bank-only workers would understate the opportunity. A rough figure is fine."
@@ -56,8 +56,12 @@ export function AgencyStep({ agencyFillRate, setAgencyFillRate, bankPool, agency
   const fmtM = v => v >= 1000000 ? `£${(v / 1000000 >= 100 ? (v / 1000000).toFixed(0) : (v / 1000000).toFixed(1).replace(/\.0$/, ""))}m` : fmt(v);
   // Slider range adapts to the bank-size estimate, so the control keeps good
   // resolution for a small community trust (~£2m) or a large ICS (~£30m) alike,
-  // capped at £50m for the very largest Trusts (type a higher figure if needed).
-  const sliderMax = Math.min(50000000, Math.max(10000000, Math.ceil(estimate * 3 / 5000000) * 5000000));
+    // Capped at £50m so the control keeps resolution for ordinary trusts, except
+  // that it must always clear the estimate itself: at the top of the price list
+  // (100,000 workers) ~£2,700 a worker puts that estimate at £270m, and a slider
+  // that stopped at £50m would silently pin the thumb at its maximum.
+  const want = Math.max(estimate * 1.5, Math.min(estimate * 3, 50000000));
+  const sliderMax = Math.max(10000000, Math.ceil(want / 5000000) * 5000000);
   const sliderStep = Math.max(100000, Math.round(sliderMax / 200 / 100000) * 100000);
   return <div>
     <SectionTitle number={2}>Agency reliance</SectionTitle>

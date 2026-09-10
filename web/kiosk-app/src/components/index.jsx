@@ -69,7 +69,11 @@ export function PageTransition({ children, step }) {
   </div>;
 }
 
-export function TouchSlider({ label, value, min, max, step = 1, onChange, format, tip }) {
+/* `scale` is optional. Without it this is a plain linear range input, which is
+   what every slider but the bank register uses. With it, the range input runs
+   over positions (0..scale.steps) and the position is mapped to and from the
+   real value, so a slider can cover a range too wide to be usable linearly. */
+export function TouchSlider({ label, value, min, max, step = 1, onChange, format, tip, scale }) {
   return <div style={{ marginBottom: 24 }}>
     {label && <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -78,7 +82,14 @@ export function TouchSlider({ label, value, min, max, step = 1, onChange, format
       </div>
       <span style={{ fontSize: F.h1, fontWeight: 800, color: C.accent }}>{format ? format(value) : value}</span>
     </div>}
-    <input type="range" aria-label={label} min={min} max={max} step={step} value={value} onChange={e => onChange(Number(e.target.value))} style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
+    {/* aria-valuetext matters doubly on a scaled slider: aria-valuenow is then a
+        position, not a headcount, so it is the only thing that reads correctly. */}
+    <input type="range" aria-label={label}
+      min={scale ? 0 : min} max={scale ? scale.steps : max} step={scale ? 1 : step}
+      value={scale ? scale.toPos(value) : value}
+      aria-valuetext={format ? format(value) : String(value)}
+      onChange={e => onChange(scale ? scale.fromPos(Number(e.target.value)) : Number(e.target.value))}
+      style={{ width: "100%", cursor: "pointer", accentColor: C.accent }} />
   </div>;
 }
 
