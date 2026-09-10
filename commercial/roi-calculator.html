@@ -300,17 +300,41 @@ const num    = (v,f=0) => { const n=parseFloat(String(v).replace(/[£$,\s]/g,"")
 const AFC_DIVISOR = 1957.5;
 const SHIFT_HOURS_DEFAULT = 8;
 const BANK_ONCOST_DEFAULT = 0.20;     // affects shift counts only, not the cash headline
-/* [G-Cloud] Annual BankStaff+ licence fee (ex VAT) by number of Licensed Users
-   (≈ bank-staff size). The published G-Cloud bands are quoted as ranges with gaps
-   (1,401–1,500 then 2,001–2,200, …); a bank whose size lands in a gap licences the
-   tier that COVERS it, so we round UP to the next band (e.g. 2,000 → the 2,001–2,200
-   fee, £15,167.54). Pairs are [inclusive upper bound, annual fee]; top band unbounded.
+/* Annual BankStaff+ licence fee, ex VAT, banded by the number of workers on the bank
+   register. Supplied price list of September 2026, superseding the earlier G-Cloud band
+   list: ~14.5% lower at every band the two share, and continuous, so no bank size has to
+   round up through a gap. Pairs are [inclusive upper bound, annual fee]. The list ends at
+   100,000 users; above that the top fee is held and the real figure is quoted manually.
    Auto-linked to bank size; fully editable. */
-const GCLOUD_LICENCE = [[600,9486.54],[700,9855.27],[1000,11321.21],[1500,13280.66],[2200,15167.54],[3200,18400.20],[4200,20900.78],[5200,22793.38],[6500,25284.06],[Infinity,29101.79]];
+const LICENCE_BANDS = [
+  [600,8108],[700,8423],[800,8733],[900,9155],[1000,9676],[1100,10098],
+  [1200,10421],[1300,10725],[1400,11115],[1500,11351],[1600,11612],[1700,11937],
+  [1800,12170],[1900,12374],[2000,12480],[2200,12964],[2400,13547],[2600,14353],
+  [2800,14733],[3000,15265],[3200,15727],[3400,16102],[3600,16406],[3800,16932],
+  [4000,17418],[4200,17864],[4400,18178],[4600,18444],[4800,18887],[5000,19301],
+  [5200,19482],[5400,19695],[5600,20008],[5800,20362],[6000,20692],[6500,21610],
+  [7000,22838],[7500,24124],[8000,24873],[8500,25745],[9000,26612],[9500,27349],
+  [10000,28082],[10500,28878],[11000,29374],[11500,30061],[12000,30788],[12500,31466],
+  [13000,32179],[13500,32850],[14000,33551],[14500,34214],[15000,35026],[16000,36968],
+  [17000,38544],[18000,40122],[19000,41703],[20000,43286],[21000,45450],[22000,47614],
+  [23000,49779],[24000,51943],[25000,54107],[26000,56271],[27000,58436],[28000,60600],
+  [29000,62764],[30000,64929],[31000,67093],[32000,69257],[33000,71421],[34000,73586],
+  [35000,75750],[36000,77914],[37000,80079],[38000,82243],[39000,84407],[40000,86571],
+  [41000,88736],[42000,90900],[43000,93064],[44000,95229],[45000,97393],[46000,99557],
+  [47000,101721],[48000,103886],[49000,106050],[50000,108214],[51000,110379],[52000,112543],
+  [53000,114707],[54000,116872],[55000,119036],[56000,121200],[57000,123364],[58000,125529],
+  [59000,127693],[60000,129857],[61000,132021],[62000,134186],[63000,136350],[64000,138514],
+  [65000,140679],[66000,142843],[67000,145007],[68000,147172],[69000,149336],[70000,151500],
+  [71000,153664],[72000,155829],[73000,157993],[74000,160157],[75000,162322],[76000,164486],
+  [77000,166650],[78000,168814],[79000,170979],[80000,173143],[81000,175307],[82000,177472],
+  [83000,179636],[84000,181800],[85000,183964],[86000,186129],[87000,188293],[88000,190457],
+  [89000,192622],[90000,194786],[91000,196950],[92000,199114],[93000,201279],[94000,203443],
+  [95000,205607],[96000,207772],[97000,209936],[98000,212100],[99000,214264],[100000,216429]
+];
 function platformCostFor(totalBankHeadcount){
   const h = num(totalBankHeadcount);
-  for (const [ceil,fee] of GCLOUD_LICENCE) if (h <= ceil) return fee;
-  return GCLOUD_LICENCE[GCLOUD_LICENCE.length-1][1];
+  for (const [ceil,fee] of LICENCE_BANDS) if (h <= ceil) return fee;
+  return LICENCE_BANDS[LICENCE_BANDS.length-1][1];
 }
 /* Admin (Rev B): per member of the temporary staffing team. Client said 2.5 h/day @ £18; 2.5 is optimistic, default lower. */
 const ADMIN_HRS_PER_DAY_DEFAULT = 1.0;
@@ -991,7 +1015,7 @@ function App({onStartAgain}){
             <p className="step-sub">Conservative, sourced defaults: leave them as they are, or set the organisation's own rates.</p>
             <div className="params-grid">
               <Field label="Agency premium over bank (%)" value={premium} min="0" max="150" step={1} onChange={v=>setPremium(num(v))} info="What an agency charges over your own bank for the same shift. Default 20%; it varies by role and shift, so use the organisation's own rate where known. Sourced in Assumptions & methodology under the results." />
-              <Field label="BankStaff+ licence fee (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v)); setPcAuto(false); }} info="Auto-set from your bank size using G-Cloud pricing (ex VAT); fully editable. This is the ROI denominator: licence only (ex VAT); add implementation and change costs if material for your business case."/>
+              <Field label="BankStaff+ licence fee (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v)); setPcAuto(false); }} info="Auto-set from your bank size using the current Smart Match price list (ex VAT); fully editable. This is the ROI denominator: licence only (ex VAT); add implementation and change costs if material for your business case."/>
               <Field label="Displaceable share of agency (%)" value={Math.round(displaceableShare*100)} min="0" max="100" step={5} onChange={v=>setDS(Math.min(1,Math.max(0,num(v)/100)))} info="Only part of agency spend can realistically move to bank: excludes break-glass / safety-critical cover and hard-to-fill specialist roles bank can't cover. The confidence level applies to this share only (benchmark default 80%). Shared with the Detailed flow." hint="Benchmark default 80% · editable"/>
               <Field label="Shift length (hours)" value={shiftHours} min="1" step={0.5} onChange={v=>setSH(num(v))}/>
               <Field label="Bank on-cost (%)" value={oncost} min="0" step={1} onChange={v=>setOncost(num(v))} info="Employer NI + pension on bank pay, already included in the bank rate (default 20%, below the full ~30% NHS employer rate because bank-only workers often opt out of the pension; set your local loaded rate). It changes duty counts, not the cash saving, and is counted once, never added on top."/>
@@ -1070,7 +1094,7 @@ function App({onStartAgain}){
             </div>
             <div className="disp-note" style={{background:st.bg,color:st.color}}>{st.note}</div>
             <div className="params-grid" style={{marginTop:12}}>
-              <Field label="BankStaff+ licence fee (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v)); setPcAuto(false); }} info="Auto-set from your bank size using G-Cloud pricing (ex VAT); fully editable. This is the ROI denominator: licence only (ex VAT); add implementation and change costs if material for your business case." hint={pcAuto?"Auto-scaled to your size · editable":"Used for ROI & payback"}/>
+              <Field label="BankStaff+ licence fee (£/yr)" prefix="£" value={platformCost} min="0" step={1000} onChange={v=>{ setPC(num(v)); setPcAuto(false); }} info="Auto-set from your bank size using the current Smart Match price list (ex VAT); fully editable. This is the ROI denominator: licence only (ex VAT); add implementation and change costs if material for your business case." hint={pcAuto?"Auto-scaled to your size · editable":"Used for ROI & payback"}/>
               <SliderField label="Current agency fill rate" suffix="%" value={fillRateNow} min={0} max={30} step={0.1} format={v=>String(Math.round(num(v)*10)/10)} onChange={v=>setFill(num(v))} hint="Share of temp duties on agency (national avg 8.3%) · slide, or tap the number to type" info="Used for the capacity narrative (agency reliance reduced)."/>
               <Field label="Displaceable share of agency (%)" value={Math.round(displaceableShare*100)} min="0" max="100" step={5} onChange={v=>setDS(Math.min(1,Math.max(0,num(v)/100)))} info="Only part of agency spend can realistically move to bank: excludes break-glass / safety-critical cover and hard-to-fill specialist roles bank can't cover. Displacement is applied to this share only (benchmark default 80%), so the tool never implies 100% of agency is bankable." hint="Benchmark default 80% · editable"/>
             </div>
@@ -1272,8 +1296,8 @@ function App({onStartAgain}){
               <div className="arow explain"><span className="albl">Source: pay</span><span className="adesc">NHS Employers 2026/27 (+3.3% confirmed from 1 Apr 2026), band midpoints: Band 2 ~£25,272; Band 3 ~£26,618; Band 5 ~£35,558 (£32,073–£39,043); Band 6 ~£44,038 (£39,959–£48,117). Medics use the SAS / specialty-doctor scale (~£52.5k–£67.5k, 2026/27); medical T&amp;Cs, not AfC: medical contracts are 40 h/week and locum supply is priced hourly, so medic duty counts are approximate (their cash saving is unaffected, being anchored to spend). Add London HCAS (Inner 20% / Outer 15% / Fringe 5%) where relevant. Band 2/3 may rise further via the pending Staff Council structure reform.</span></div>
               <div className="arow"><span>Hourly divisor / shift length</span><span>1,957.5 h/yr · {shiftHours} h</span></div>
               <div className="arow explain"><span className="albl">What pay, hours &amp; on-cost do <span className="conf high">CORE</span></span><span className="adesc">They calibrate <b>duty counts and the capacity value only</b>. The cash saving is agency_spend × displaceable_share × displacement × premium/(1+premium), it does not change with pay, shift length or on-cost. The 20% on-cost default sits below the full ~30% NHS employer rate (NI + pension) because bank-only workers often opt out of the pension; set your local loaded rate.</span></div>
-              <div className="arow"><span>Licence fee (ROI denominator, G-Cloud)</span><span>{fmt(platformCost)}/yr</span></div>
-              <div className="arow explain"><span className="albl">Return &amp; payback basis</span><span className="adesc">Return = net annual saving ÷ licence fee (a net multiple, not a benefit–cost ratio). Payback = licence fee ÷ gross annual benefit, shown in days. The denominator is the G-Cloud licence only (ex VAT): implementation, integration and change costs are not included; add them for a full business case.</span></div>
+              <div className="arow"><span>Licence fee (ROI denominator)</span><span>{fmt(platformCost)}/yr</span></div>
+              <div className="arow explain"><span className="albl">Return &amp; payback basis</span><span className="adesc">Return = net annual saving ÷ licence fee (a net multiple, not a benefit–cost ratio). Payback = licence fee ÷ gross annual benefit, shown in days. The denominator is the Licence only (ex VAT): implementation, integration and change costs are not included; add them for a full business case.</span></div>
               <Method your={ noNet
                 ? <>No net cash saving at these inputs, so return and payback are shown as n/a: the {fmt(num(platformCost))} annual licence fee exceeds the {fmtK(r.grossBenefit)} modelled gross benefit{r.grossBenefit>0?<> (on gross benefit alone the fee would take {fmtDays(r.paybackMonths)} to recover)</>:""}.</>
                 : <>Payback: {fmt(num(platformCost))} licence fee ÷ ({fmt(Math.round(r.grossBenefit))} gross annual benefit ÷ 12 months) ≈ <b>{fmtDays(r.paybackMonths)}</b>. Return: {fmt(Math.round(r.netSaving))} net saving ÷ {fmt(num(platformCost))} licence fee ≈ <b>{fmtMult(r.roiMultiple)}</b>.</> }/>
