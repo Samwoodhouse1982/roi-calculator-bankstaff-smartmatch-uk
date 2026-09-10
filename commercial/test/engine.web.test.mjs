@@ -174,14 +174,14 @@ test('disabling admin removes its cash but keeps the time-saved co-headline', ()
   assert.equal(Math.round(d.netSaving), 260000 - 17000);   // premium minus licence only
 });
 
-test('platformCostFor follows the G-Cloud licence bands (rounds a gap size UP to the covering tier; parity with kiosk)', () => {
-  assert.equal(E.platformCostFor(300), 9486.54);
-  assert.equal(E.platformCostFor(600), 9486.54);    // upper edge of band 1
-  assert.equal(E.platformCostFor(660), 9855.27);
-  assert.equal(E.platformCostFor(1000), 11321.21);
-  assert.equal(E.platformCostFor(1500), 13280.66);  // upper edge of the 1,401–1,500 tier
-  assert.equal(E.platformCostFor(1501), 15167.54);  // one over -> rounds up to the next tier
-  assert.equal(E.platformCostFor(2000), 15167.54);  // covered by the 2,001–2,200 tier (kiosk default)
-  assert.equal(E.platformCostFor(5000), 22793.38);  // above the 4,200 tier -> 5,001–5,200 tier
-  assert.equal(E.platformCostFor(12000), 29101.79);  // top band caps large systems
+test('platformCostFor follows the supplied licence bands (continuous; parity with kiosk)', () => {
+  assert.equal(E.platformCostFor(300), 8108);
+  assert.equal(E.platformCostFor(600), 8108);     // upper edge of band 1
+  assert.equal(E.platformCostFor(660), 8423);
+  assert.equal(E.platformCostFor(1000), 9676);
+  assert.equal(E.platformCostFor(1500), 11351);
+  assert.equal(E.platformCostFor(1501), 11612);   // one over -> the next band, which now exists
+  assert.equal(E.platformCostFor(2000), 12480);
+  assert.equal(E.platformCostFor(5000), 19301);
+  assert.equal(E.platformCostFor(12000), 30788);
 });
