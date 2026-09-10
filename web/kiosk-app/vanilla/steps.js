@@ -29,7 +29,7 @@ export function BankStep(state, set) {
       Helper('Slide to adjust your number of bank staff who use Optima. Better utilisation of this pool is the mechanism that displaces expensive agency spend.'),
       h('div', { style: { marginTop: 16, padding: '14px 18px', background: C.accentSoft, borderRadius: 12, fontSize: F.small, color: C.textMid, lineHeight: 1.5, display: 'flex', alignItems: 'center', gap: 8 } },
         h('span', null, 'BankStaff+ licence at this size: ', fee),
-        InfoTip('G-Cloud pricing, ex VAT, banded by the number of licensed users. Your return and payback figures are measured against this annual fee.')),
+        InfoTip('Smart Match licence pricing, ex VAT, banded by the number of workers on your bank register. Your return and payback figures are measured against this annual fee.')),
       h('div', { style: { marginTop: 10, fontSize: F.tiny, color: C.textMuted, lineHeight: 1.5, display: 'flex', alignItems: 'center', gap: 8 } },
         h('span', null, `Shift costs: 2026/27 NHS Agenda for Change band-mix (~£${Math.round(SIMPLE_BLENDED_BANK_PAY / 1000)}k blended), ${Math.round(BANK_ONCOST * 100)}% employer on-cost included.`),
         InfoTip(`Base Agenda for Change pay of £${baseHr}/hr plus a ${Math.round(BANK_ONCOST * 100)}% employer on-cost (employer National Insurance and pension) gives £${allInHr}/hr all-in. ${Math.round(BANK_ONCOST * 100)}% sits below the full ~30% NHS employer rate because bank-only workers often opt out of the pension. On-costs change the modelled shift counts, not the cash saving, and are counted once, never added again.`))));

@@ -65,7 +65,7 @@ All logic lives in `roi-calculator.js`, assembled from these sections in order:
 
 | Section | Description |
 |---|---|
-| **Model constants** (top) | `AFC_DIVISOR`, `BANK_ONCOST`, `GCLOUD_LICENCE`, `AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP`, `DISPLACEABLE_SHARE_DEFAULT`, admin-time defaults. Every tuneable assumption is a named constant. |
+| **Model constants** (top) | `AFC_DIVISOR`, `BANK_ONCOST`, `LICENCE_BANDS`, `AGENCY_SPEND_PER_REGISTERED_BANK_WORKER_GBP`, `DISPLACEABLE_SHARE_DEFAULT`, admin-time defaults. Every tuneable assumption is a named constant. |
 | **`stance()`** | The three confidence levels (Conservative 13% / Moderate 26% / Optimistic 50%) and the note shown beside the slider. Wording is computed from the live value, never hard-coded. |
 | **`calc()`** | Pure function. Takes the inputs, returns every derived value. No side effects, no DOM. This is the whole financial model. |
 | **`calcDetailed()`, `ORG_TYPES`, `buildOrg()`** | The per-staff-group model used by the internal account-manager build. Not rendered by this UI; kept so both products share one engine. |

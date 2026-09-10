@@ -51,11 +51,27 @@ them.
 | HubSpot form | `3f860858-...` (interim, shared) | `7bbba4f2-2045-458d-a339-b06e5e7a16d7` (Smart Match) |
 | Failed submission | discarded silently | HubSpot's own reason logged to the browser console |
 | `context.pageUri` | `window.location.href` | resolved at run time, valid inside an inline embed |
+| Licence price list | older band list, with gaps a bank size had to round up through | current list, continuous from 1 to 100,000 users |
 
-The calculation engine is unchanged, so the figures a visitor sees are the same
-as before. That is not an assertion: both builds were driven through the full
-flow with identical inputs and every published figure matched exactly, down to
-the payback days and the return multiple.
+The calculation engine itself is unchanged. One input to it is not: the licence
+fee has been updated to the current price list, which is lower at every band the
+two lists share and, because it has no gaps, lower again for the bank sizes that
+previously had to round up to a higher tier. That moves the three figures
+measured against the fee, and only those three:
+
+| | Direction | Example, at a 3,500 worker bank |
+|---|---|---|
+| Net annual cash saving | slightly up | £657,699 to £662,194 |
+| Payback | faster | 11 days to 9 days |
+| Return multiple | up | 31.5x to 40.4x |
+
+The agency premium avoided, the admin time value, the hours released, the shift
+counts and the agency fill rates are all untouched, because none of them involve
+the licence fee.
+
+Both builds were driven through the full flow with identical inputs and every
+published figure matched exactly, down to the payback days and the return
+multiple, so the plain-JS and React versions cannot disagree.
 
 Dropping the framework also made the page lighter. It no longer fetches React,
 ReactDOM and Babel before it can draw anything, and it no longer compiles
