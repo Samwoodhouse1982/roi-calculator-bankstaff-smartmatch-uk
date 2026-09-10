@@ -129,7 +129,7 @@ export function ResultsPage({ r0, displacement, chosen, recalc, onDisplacement, 
   const banner = (body, borderColour, bg) => h('div', { style: { marginBottom: 14, padding: '14px 20px', background: bg || C.accentSoft, border: `1px solid ${borderColour || C.accent}`, borderRadius: 14, fontSize: F.small, color: C.text, lineHeight: 1.5, display: 'none' } }, body);
   const exceeds = banner(frag(h('strong', null, 'Check your inputs.'), ' The modelled saving exceeds your agency spend. Try a lower premium or a lower confidence level.'));
   const adminOnly = banner(frag(h('strong', null, 'Admin time only.'), ' No agency premium saving is modelled (agency spend is zero), so this figure is the admin-time value on its own.'));
-  const implausible = banner(frag(h('strong', { style: { color: C.amber } }, '⚠ Unusually high return.'), " At these inputs the modelled saving is more than 40 times the licence fee, which usually reflects a very large bank or agency book. Sense-check against your organisation's real agency spend before quoting it."), C.amber + '66', C.surface);
+  const implausible = banner(frag(h('strong', { style: { color: C.amber } }, '⚠ Unusually high return.'), " At these inputs the modelled saving is more than 100 times the licence fee, which usually means a figure has been entered wrongly rather than a genuinely large bank. Check your agency spend and licence fee before quoting it."), C.amber + '66', C.surface);
   track(res => {
     const noNet = res.netSaving <= 0;
     exceeds.style.display = res.exceedsSpend ? 'block' : 'none';

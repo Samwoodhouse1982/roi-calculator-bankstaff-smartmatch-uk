@@ -44,7 +44,7 @@ test('Quick agency spend: auto-estimate is £2,700/registered bank worker; an ex
   assert.equal(Math.round(own.agencySaving), 260000);         // same anchor as the acute preset → same saving
 });
 
-test('Quick default start (2,000 bank, Moderate 26%) sits well below the >40× warning', () => {
+test('Quick default start (2,000 bank, Moderate 26%) sits well below the >100x warning', () => {
   const start = calc({ bankPool: 2000, displacement: 26, platformCost: platformCostFor(2000) });
   assert.ok(start.roiPct > 1250 && start.roiPct < 1550);     // ~14× at £2,700/worker: legitimate scale
   assert.equal(start.implausibleRoi, false);
@@ -200,4 +200,37 @@ test('bank slider keeps the common range usable, which is why it is not linear',
   assert.ok(bankScale.toPos(2000) > 400 && bankScale.toPos(2000) < 600);
   // A linear track would put the old 12,000 maximum at 12% of the width; here it is past halfway.
   assert.ok(bankScale.toPos(12000) > 650);
+});
+
+/* ===== The >100x sense-check =====
+   It exists to catch a mistyped figure, not to comment on organisation size.
+   The multiple rises with bank size on its own (the licence gets cheaper per
+   worker), so any absolute threshold has to clear what the sliders can reach
+   unaided or it fires on legitimate inputs. These pin both halves of that. */
+
+test('the >100x warning never fires on inputs the sliders alone can produce', () => {
+  for (const displacement of [13, 26, 50]) {
+    for (const includeAdmin of [false, true]) {
+      let peak = 0, peakAt = 0;
+      for (let b = BANK_MIN; b <= BANK_MAX; b += 50) {
+        const r = calc({ bankPool: b, agencyFillRate: 8.3, numManagers: 12, displacement, includeAdmin,
+                         platformCost: platformCostFor(b) });
+        assert.equal(r.implausibleRoi, false,
+          `fired at ${b} workers, displacement ${displacement}, admin ${includeAdmin} (${r.roiMultiple}x)`);
+        if (r.roiMultiple > peak) { peak = r.roiMultiple; peakAt = b; }
+      }
+      // Headroom check: if the peak ever creeps up to the threshold, the warning
+      // starts firing on ordinary use and this test should be the thing that says so.
+      assert.ok(peak < 90, `peak ${peak.toFixed(1)}x at ${peakAt} workers leaves too little headroom under 100x`);
+    }
+  }
+});
+
+test('the >100x warning still catches a mistyped agency spend', () => {
+  const typo = calc({ bankPool: 2000, agencyFillRate: 8.3, numManagers: 12, displacement: 26,
+                      includeAdmin: true, agencySpend: 500000000, platformCost: platformCostFor(2000) });
+  assert.equal(typo.implausibleRoi, true);          // ~1,392x
+  const sane = calc({ bankPool: 2000, agencyFillRate: 8.3, numManagers: 12, displacement: 26,
+                      includeAdmin: true, agencySpend: 5400000, platformCost: platformCostFor(2000) });
+  assert.equal(sane.implausibleRoi, false);
 });

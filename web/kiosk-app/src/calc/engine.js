@@ -214,7 +214,15 @@ export function calc(inp) {
   const fillAfter = agencyFillRate * (1 - displaceableShare * d);   // reduction on the displaceable share only, consistent with the modelled counts
   const exceedsSpend = agencySaving > agencySpend && agencySpend > 0;
   const adminOnly = agencySaving <= 0 && adminSaving > 0;       // reachable check: saving is admin time only
-  const implausibleRoi = roiPct != null && roiPct > 4000;       // >40× flags genuinely extreme inputs; normal usage sits well below
+  /* >100x. The licence fee per worker falls with volume (from ~£13.51 at 600 workers
+     to a flat £2.16 above ~20,000), so the return multiple climbs with bank size and
+     plateaus: 21.7x on Conservative, 43.4x on Moderate, 83.3x on Optimistic, all peaking
+     around 20,000 workers. The old >40x line predated the slider reaching 100,000 and
+     would have fired for most large organisations on the default confidence, which makes
+     it wallpaper rather than a sense-check. 100x clears the 83.3x peak with room to
+     spare, matches the commercial build, and still catches what this is actually for:
+     a typo'd agency spend or licence fee (£500m spend on a 2,000 bank gives ~1,392x). */
+  const implausibleRoi = roiPct != null && roiPct > 10000;
   return { agencySpend, agencySaving, adminSaving, timeSavedWeek, grossBenefit, netSaving, roiPct, roiMultiple,
            paybackMonths, displaced, capacityValue, fillNow: agencyFillRate, fillAfter,
            exceedsSpend, adminOnly, implausibleRoi, premium, displacement, platformCost,
@@ -357,7 +365,7 @@ export function calcDetailed(input) {
     adminSaving, recruitSaving, timeSavedWeek, grossBenefit, netSaving, roiPct, roiMultiple, paybackMonths,
     exceedsSpend: totSaving > totSpend && totSpend > 0, adminOnly: totSaving <= 0 && (adminSaving > 0 || recruitSaving > 0),
     zeroPay: rows.some(x => x.spend > 0 && !(num(x.bankPay) > 0)),   // cash still counted; duty counts unavailable
-    implausibleRoi: roiPct != null && roiPct > 4000,   // >40× (M3 parity: ICS preset ~32× is legitimate scale)
+    implausibleRoi: roiPct != null && roiPct > 10000,   // >100x, same line as the quick model and the commercial build
     fillNow, fillAfter, premium, displacement, perGroupPremium, platformCost: num(platformCost), bankShiftCost, agencyShiftCost, shiftHours,
     displaceableShare, turnover: num(turnover), agencyPctOfTurnover: reg.pct, regime: reg.key,
     // aliases so the shared ResultsPage can render either model unchanged:
