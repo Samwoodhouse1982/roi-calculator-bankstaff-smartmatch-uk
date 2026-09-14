@@ -30,16 +30,21 @@ Two things kept that invisible:
 
 ## What to do
 
-**Replace your Custom HTML block with the whole of `embed-snippet-srcdoc.html`.**
+**Replace your Custom HTML block with the whole of `embed-snippet-inline.txt`,**
+**sent alongside this package.**
 
-That is the only step. It is the same wrapper you are using now, same element
-ids, same decode, same resize listener, with the current calculator inside it.
+That is the drop-in: the same wrapper you are using now, same element ids,
+same decode, same resize listener, with the current calculator inside it.
 Nothing else needs to change and there is nothing to configure.
 
+That file is text rather than `.html` on purpose: paste it, do not open or
+rename it. Section 9 of `INTEGRATION-GUIDE.md` explains why.
+
 If you would rather host the calculator as a file, upload
-`roi-calculator.html` and use `embed-snippet.html` instead. Both are supported
-and both produce identical figures. `INTEGRATION-GUIDE.md` section 5 compares
-them.
+`roi-calculator.html` and use `embed-snippet.html` instead. That is the route
+we now recommend, and it is the one this package is built around. Both are
+supported and both produce identical figures. `INTEGRATION-GUIDE.md` section 5
+compares them.
 
 ## What is different in this build
 

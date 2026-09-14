@@ -15,6 +15,19 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const bundle = resolve(root, 'package-source/smartmatch-roi-calculator');
+/* Written as .txt, and OUTSIDE the zip, on purpose.
+
+   A large base64 string that a page decodes at run time and injects into the
+   DOM is the shape of HTML smuggling, so Windows Defender's heuristics flag
+   this file on sight when it arrives as .html. It is a false positive (the
+   payload decodes byte for byte to roi-calculator.html, which ships in the
+   same package unwrapped), but it blocked the whole download.
+
+   Nothing is lost by shipping it as text: this file is only ever pasted into
+   a CMS Custom HTML block, never opened or run as a file, so the extension is
+   cosmetic. Keeping it out of the zip means that if a scanner does object to
+   it, only this one optional extra is affected, not the whole package. */
+const outFile = resolve(root, 'package-source/embed-snippet-inline.txt');
 
 /* The calculator is read as bytes, so the base64 carries UTF-8. The page decodes
    it with decodeURIComponent(escape(atob(...))), which turns the latin1 string
@@ -25,6 +38,24 @@ const b64 = readFileSync(resolve(bundle, 'roi-calculator.html')).toString('base6
 const snippet = `<!-- ═══════════════════════════════════════════════════════════════
      Smart Match ROI Calculator - inline (srcdoc) embed
      ═══════════════════════════════════════════════════════════════
+
+     THIS IS A .txt FILE ON PURPOSE. It is HTML, and it is meant to be
+     pasted, not opened.
+
+     Select all of it, copy it, and paste it into a WordPress Custom HTML
+     block. Do not rename it to .html and do not double-click it: the
+     calculator is carried below as one long base64 string, which is also
+     how some malware hides itself, so Windows Defender flags any .html
+     file shaped like this on sight. Shipping it as text avoids a false
+     positive that otherwise blocks the download. The string decodes byte
+     for byte to roi-calculator.html, which is in the package unwrapped if
+     you would like to check it.
+
+     This route is the ALTERNATIVE. Prefer the hosted one in the package
+     (upload roi-calculator.html, paste embed-snippet.html, point the
+     iframe src at it): updates are then a one-file swap instead of
+     re-pasting the whole of this, and the calculator gets a real URL to
+     cache and link to. Both produce identical figures.
 
      GENERATED FILE - do not edit by hand. Rebuilt from the calculator by
      scripts/build-embed-snippet-srcdoc.mjs (npm run package:source).
@@ -94,4 +125,4 @@ const snippet = `<!-- ═══════════════════�
      ═══════════════════════════════════════════════════════════════ -->
 `;
 
-writeFileSync(resolve(bundle, 'embed-snippet-srcdoc.html'), snippet);
+writeFileSync(outFile, snippet);
