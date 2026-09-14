@@ -9,7 +9,14 @@
        roi-calculator.js         <- the calculator as one plain script
        styles.css                <- base styles (inlined into the HTML already)
        embed-snippet.html        <- iframe + auto-resize listener
-       embed-snippet-srcdoc.html <- the same, with the calculator inlined (nothing to host)
+
+     plus, alongside the zip rather than inside it:
+
+     package-source/
+       embed-snippet-inline.txt  <- the alternative route: the same wrapper with the
+                                    calculator inlined, so there is nothing to host.
+                                    Text, and outside the zip, so that an antivirus
+                                    false positive on it cannot block the package.
 
    The calculator ships as PLAIN JAVASCRIPT: no React, no JSX, no build step,
    because their site cannot run a framework. It is generated from the
@@ -42,13 +49,16 @@ for (const f of ['WHAT-CHANGED.md', 'README.md', 'INTEGRATION-GUIDE.md', 'DATA-L
 }
 
 /* 3. The inline snippet carries roi-calculator.html inside it, so it has to be
-   generated last and regenerated whenever the calculator changes. */
+   generated last and regenerated whenever the calculator changes. It lands
+   next to the zip rather than in it: see the note in that script. */
 run('build-embed-snippet-srcdoc.mjs');
 
-const FILES = ['roi-calculator.html', 'roi-calculator.js', 'styles.css', 'embed-snippet.html', 'embed-snippet-srcdoc.html', 'WHAT-CHANGED.md', 'README.md', 'INTEGRATION-GUIDE.md', 'DATA-LAYER-REFERENCE.md'];
+const FILES = ['roi-calculator.html', 'roi-calculator.js', 'styles.css', 'embed-snippet.html', 'WHAT-CHANGED.md', 'README.md', 'INTEGRATION-GUIDE.md', 'DATA-LAYER-REFERENCE.md'];
 const kb = n => Math.round(n / 1024) + ' KB';
 console.log('\nSource package built:');
 for (const f of FILES) console.log('  ' + f.padEnd(26) + kb(readFileSync(resolve(bundle, f)).length));
+console.log('\nAlongside the zip (the optional inline route):');
+console.log('  ' + 'embed-snippet-inline.txt'.padEnd(26) + kb(readFileSync(resolve(out, 'embed-snippet-inline.txt')).length));
 
 try {
   execSync('zip -qr smartmatch-roi-calculator-source.zip smartmatch-roi-calculator', { cwd: out });

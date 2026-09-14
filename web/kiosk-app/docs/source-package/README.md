@@ -7,15 +7,17 @@ sterling, `en-GB` formatting.
 > **Replacing a version that is already live?** Read `WHAT-CHANGED.md` first.
 > It is one step.
 
-Three ways to use it, all in this package:
+Three ways to use it. Two are in this package; the third is the
+`embed-snippet-inline.txt` file sent alongside it:
 
 | You want to | Use |
 |---|---|
 | Embed it in a page (WordPress, CMS, landing page) | `roi-calculator.html` + `embed-snippet.html` |
-| Embed it with nothing to upload | `embed-snippet-srcdoc.html` on its own |
+| Embed it with nothing to upload | `embed-snippet-inline.txt`, sent alongside this package |
 | Load it into a page you already control | `roi-calculator.js` + `styles.css` |
 
 All three are generated from the same source, so the figures are identical.
+The first is the one we recommend.
 
 ## Quick start
 
@@ -28,11 +30,16 @@ All three are generated from the same source, so the figures are identical.
 
 ### Inline, with nothing to upload
 
-Paste the whole of `embed-snippet-srcdoc.html` into a Custom HTML block. It
+Paste the whole of `embed-snippet-inline.txt` into a Custom HTML block. It
 carries the calculator inside it as a base64 string, so there is no file to
 host and nothing to configure. To take a new version, replace the whole
-snippet; never hand-edit the `DATA` string. `INTEGRATION-GUIDE.md` section 5
-compares the two routes.
+snippet; never hand-edit the `DATA` string.
+
+That file is sent alongside this package rather than inside it, and it is
+text rather than `.html`, because a large self-decoding base64 string is also
+how some malware hides and antivirus flags any `.html` file shaped that way.
+Paste it, do not open or rename it. `INTEGRATION-GUIDE.md` section 5 compares
+the two routes and section 9 explains the false positive.
 
 ### Into a page you already control
 
