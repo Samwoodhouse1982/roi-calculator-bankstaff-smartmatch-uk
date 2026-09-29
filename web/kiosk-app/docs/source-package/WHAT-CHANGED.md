@@ -14,6 +14,18 @@ your site cannot run. The calculation engine, the wording and the figures are
 unchanged, and both builds share the same engine and the same lead-capture
 code, so nothing about the numbers has moved.
 
+**And the lead form now uses your `hbspt.forms.create()` embed style.** The
+calculator loads HubSpot's embed script itself and renders your actual
+HubSpot form (portal `27174408`, form `7bbba4f2-2045-458d-a339-b06e5e7a16d7`,
+region `eu1`) inside the lead card — the exact snippet your team sent, run by
+the calculator at the right moment, with the visitor's modelled figures
+prefilled into the form's hidden `message` field and the PDF download wired
+to the submission. Do not paste the snippet into the page separately; that
+would render a second, unconnected copy of the form. Where the embed script
+cannot load (ad-blockers block it routinely), the calculator automatically
+falls back to its own styled form and submits to the same HubSpot form via
+the Forms API, so no lead is lost either way.
+
 ## The problem
 
 The calculator on the page is an older build. Its lead form posts to an interim

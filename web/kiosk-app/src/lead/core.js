@@ -307,14 +307,19 @@ export async function generatePDF(r, lead, ctx) {
   doc.save("smart-match-roi-estimate" + orgSlug + ".pdf");
 }
 
-/* The whole submission, in the order that matters:
-     1. the visitor's PDF (the value exchange, never blocked on the network),
-     2. the local backup (so a lead survives a blocked network),
-     3. HubSpot, with the response checked.
-   Never throws: a failure at any stage must not cost the visitor their report. */
-export async function submitLead(r, lead, leadContext) {
-  try { await generatePDF(r, lead, leadContext); } catch (e) { console.warn("PDF failed:", e); }
+/* The calculator context that travels with every submission (the `message`
+   field), so each lead is self-describing in HubSpot. Built at submit time,
+   never render time: the visitor can move the confidence slider after the
+   form is on screen, and the lead must carry the figures they submitted on. */
+export function buildContextMessage(r, leadContext) {
+  return `Smart Match ROI (web) submission | Bank workers: ${fmtNum(leadContext.bankPool)} | Agency fill: ${leadContext.agencyFillRate}% | Team: ${leadContext.numManagers} | Confidence: ${leadContext.displacement}% (${leadContext.stance}) | Net annual saving: ${fmtK(r.netSaving)} | Hours/week released: ${fmtNum(r.timeSavedWeek)} | Est. agency spend: ${fmtK(r.agencySpend)}`;
+}
 
+/* PDF + local backup, shared by both submission routes. The embedded-widget
+   route calls this alone (HubSpot has already received the submission from
+   its own widget); the fallback route follows it with the Forms API POST. */
+export async function recordAndReport(r, lead, leadContext) {
+  try { await generatePDF(r, lead, leadContext); } catch (e) { console.warn("PDF failed:", e); }
   saveSubmission({
     timestamp: new Date().toISOString(),
     lead: { name: lead.name, email: lead.email, org: lead.org, role: lead.role },
@@ -326,10 +331,140 @@ export async function submitLead(r, lead, leadContext) {
       roiMultiple: r.roiMultiple, paybackMonths: r.paybackMonths,
     },
   });
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   HUBSPOT EMBEDDED FORM (hbspt.forms.create), the integration style the
+   client's marketing team uses everywhere else on their site.
+
+   The calculator tries this FIRST: it loads HubSpot's embed script and
+   renders the client's actual HubSpot form (same portal, same form GUID as
+   the API route) inside the lead card. If the script cannot load or the
+   widget does not render — ad-blockers block js-eu1.hsforms.net routinely,
+   and a strict host-page CSP can too — the calculator falls back to its own
+   styled form posting to the Forms API. Both routes land submissions in the
+   identical HubSpot form, so no lead is lost either way.
+   ──────────────────────────────────────────────────────────────────────── */
+export const HUBSPOT_EMBED_SRC = "https://js-eu1.hsforms.net/forms/embed/v2.js";
+
+let embedScriptPromise = null;
+export function loadHubSpotEmbed(timeoutMs = 8000) {
+  if (typeof window === "undefined" || typeof document === "undefined") return Promise.resolve(null);
+  if (window.hbspt && window.hbspt.forms) return Promise.resolve(window.hbspt);
+  if (!embedScriptPromise) {
+    embedScriptPromise = new Promise(resolve => {
+      const done = v => { clearTimeout(timer); resolve(v); };
+      const timer = setTimeout(() => done(null), timeoutMs);
+      const s = document.createElement("script");
+      s.src = HUBSPOT_EMBED_SRC; s.async = true; s.charset = "utf-8";
+      s.onload = () => done(window.hbspt && window.hbspt.forms ? window.hbspt : null);
+      s.onerror = () => done(null);
+      document.head.appendChild(s);
+    });
+  }
+  return embedScriptPromise;
+}
+
+/* HubSpot's v2 embed renders the form either inline or inside a SAME-ORIGIN
+   iframe it writes itself, so the parent page can reach the fields. Resolve
+   the document that actually holds the form, wherever it rendered. */
+function embeddedFormDoc(container) {
+  try {
+    const frame = container.querySelector("iframe");
+    return (frame && frame.contentDocument) || container.ownerDocument || document;
+  } catch (e) { return container.ownerDocument || document; }
+}
+function embeddedFormEl(container) {
+  try {
+    const doc = embeddedFormDoc(container);
+    return doc.querySelector("form.hs-form, form[data-form-id], form");
+  } catch (e) { return null; }
+}
+function setEmbeddedField(container, name, value) {
+  try {
+    const form = embeddedFormEl(container);
+    const field = form && form.querySelector(`[name="${name}"]`);
+    if (!field) return false;
+    field.value = value;
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+    field.dispatchEvent(new Event("change", { bubbles: true }));
+    return true;
+  } catch (e) { return false; }
+}
+function readEmbeddedFields(container) {
+  const out = {};
+  try {
+    const form = embeddedFormEl(container);
+    if (form) form.querySelectorAll("input[name], select[name], textarea[name]").forEach(f => {
+      if (f.type === "checkbox" || f.type === "radio") { if (f.checked) out[f.name] = f.value; }
+      else out[f.name] = f.value;
+    });
+  } catch (e) { /* cross-origin or detached: submissionValues covers it */ }
+  return out;
+}
+
+/* Render the client's HubSpot form into `container`.
+   - getMessage(): called at form-ready AND again just before submission, so
+     the hidden context field always carries the figures on screen. The form
+     needs a (hidden) field named "message" for this; without one the prefill
+     is a silent no-op and the lead simply arrives without calculator context.
+   - onSubmitted(lead): fires after HubSpot accepts the submission, with the
+     visitor's details recovered from the widget, for the PDF + local backup.
+   Resolves true only once the widget has VISIBLY rendered (script loading is
+   not enough: a bad GUID or blocked definition fetch renders nothing), so the
+   caller can keep its own form when anything in the chain fails. */
+export async function createEmbeddedLeadForm({ container, getMessage, onSubmitted }) {
+  const hbspt = await loadHubSpotEmbed();
+  if (!hbspt) return false;
+  let captured = {};
+  try {
+    hbspt.forms.create({
+      portalId: HUBSPOT_PORTAL_ID,
+      formId: HUBSPOT_FORM_GUID,
+      region: HUBSPOT_REGION,
+      target: container.id ? "#" + container.id : container,
+      onFormReady: () => {
+        try {
+          setEmbeddedField(container, "message", getMessage());
+          const form = embeddedFormEl(container);
+          // Capture-phase listener: refresh the context and snapshot the
+          // visitor's answers at the moment they press the widget's submit.
+          if (form) form.addEventListener("submit", () => {
+            setEmbeddedField(container, "message", getMessage());
+            captured = readEmbeddedFields(container);
+          }, true);
+        } catch (e) { /* prefill is best-effort */ }
+      },
+      onFormSubmitted: (_f, data) => {
+        const v = (data && data.submissionValues) || captured || {};
+        onSubmitted({
+          name: [v.firstname, v.lastname].filter(Boolean).join(" "),
+          email: v.email || "",
+          org: v.company || "",
+          role: v.jobtitle || "",
+        });
+      },
+    });
+  } catch (e) { return false; }
+  // Wait for the widget to actually appear (iframe or form) before declaring success.
+  for (let waited = 0; waited < 6000; waited += 200) {
+    await new Promise(res => setTimeout(res, 200));
+    if (container.querySelector("iframe, form")) return true;
+  }
+  return false;
+}
+
+/* The whole submission, in the order that matters:
+     1. the visitor's PDF (the value exchange, never blocked on the network),
+     2. the local backup (so a lead survives a blocked network),
+     3. HubSpot, with the response checked.
+   Never throws: a failure at any stage must not cost the visitor their report. */
+export async function submitLead(r, lead, leadContext) {
+  await recordAndReport(r, lead, leadContext);
 
   if (!HUBSPOT_PORTAL_ID || !HUBSPOT_FORM_GUID) return;
   try {
-    const context = `Smart Match ROI (web) submission | Bank workers: ${fmtNum(leadContext.bankPool)} | Agency fill: ${leadContext.agencyFillRate}% | Team: ${leadContext.numManagers} | Confidence: ${leadContext.displacement}% (${leadContext.stance}) | Net annual saving: ${fmtK(r.netSaving)} | Hours/week released: ${fmtNum(r.timeSavedWeek)} | Est. agency spend: ${fmtK(r.agencySpend)}`;
+    const context = buildContextMessage(r, leadContext);
     const uri = pageUri();
     const res = await fetch(`https://forms-${HUBSPOT_REGION}.hsforms.com/submissions/v3/integration/submit/${HUBSPOT_PORTAL_ID}/${HUBSPOT_FORM_GUID}`, {
       method: "POST",

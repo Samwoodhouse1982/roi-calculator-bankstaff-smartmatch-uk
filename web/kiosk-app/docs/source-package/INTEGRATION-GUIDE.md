@@ -34,13 +34,18 @@ const HUBSPOT_REGION    = "eu1";   // EU data centre
 This is the dedicated Smart Match form. To point the calculator at a different
 form, change `HUBSPOT_FORM_GUID` only. Nothing else in the code refers to it.
 
-> **If you are used to the `hbspt.forms.create()` embed script, note that this
-> is a different integration style.** That script renders HubSpot's own form
-> markup into a container div. This calculator renders its own form, styled to
-> match the results page, and POSTs the answers straight to the Forms API. Both
-> routes deliver to the same HubSpot form and the same submissions list, but
-> pasting the embed-script snippet into the page will not connect the
-> calculator's form to HubSpot. The GUID above is the only wiring needed.
+> **The calculator uses your `hbspt.forms.create()` embed style natively.**
+> When the results page renders, the calculator loads HubSpot's embed script
+> (`js-eu1.hsforms.net/forms/embed/v2.js`) itself and calls
+> `hbspt.forms.create()` with exactly the portal ID, form ID and region above,
+> rendering your actual HubSpot form inside the lead card. **Do not paste the
+> embed-script snippet into the page separately** — that would render a second,
+> unconnected copy of the form. If the embed script cannot load or the widget
+> cannot render (ad-blockers block `js-eu1.hsforms.net` routinely; a strict CSP
+> can too), the calculator automatically falls back to its own styled form and
+> POSTs the answers straight to the Forms API endpoint above. Both routes
+> deliver to the same HubSpot form and the same submissions list, so no lead
+> is lost either way.
 
 ### Fields submitted
 
@@ -68,18 +73,43 @@ cannot find a valid `http(s)` URL, so this needs no configuration.
 
 ### How it works
 
-No HubSpot form SDK is loaded. The calculator POSTs directly to the Forms API
-v3, which is lighter than the `hbspt.forms.create()` widget and preserves the
-calculator's own styling. **No HubSpot tracking script, cookies or pixels are
-used.** It is a single request, made only when a visitor presses submit.
+There are two routes to the same HubSpot form, tried in this order:
 
-The visitor's PDF never waits on HubSpot: it is generated and downloaded
-first, and the lead is written to the local browser backup below before the
-request goes out. But the response **is** checked. HubSpot answers 200 on
-success and 400 with a JSON reason on rejection, and a rejection is logged to
-the browser console with that reason, naming the likely cause. If you are
-testing the form and nothing arrives in HubSpot, open the browser console:
-the answer will be there.
+**1. The embedded HubSpot form (primary).** When the results page renders,
+the calculator loads `https://js-eu1.hsforms.net/forms/embed/v2.js` and calls
+`hbspt.forms.create()` with the IDs above, so visitors see and submit your
+actual HubSpot form — the same integration style as the rest of your site.
+The calculator prefills the form's `message` field with the visitor's
+modelled figures (add `message` to the form as a **hidden** field to receive
+this; without it the lead still arrives, just without the calculator
+context), refreshes it at the moment of submission so it matches what is on
+screen, and when HubSpot confirms the submission it generates the visitor's
+PDF and writes the local backup. Note the embed script is HubSpot's own and
+sets HubSpot cookies on the page: your cookie-consent setup should cover it,
+exactly as it does wherever else the snippet is used on your site.
+
+**2. The built-in form + Forms API (automatic fallback).** If the embed
+script cannot load or the widget does not render — ad-blockers commonly block
+`js-eu1.hsforms.net`, and a strict CSP can — the calculator shows its own
+styled form and POSTs the answers directly to the Forms API v3 endpoint. On
+this route no HubSpot script, cookies or pixels are involved; it is a single
+request, made only when the visitor presses submit. The fields POSTed must
+all exist on the form (see above).
+
+On the fallback route the visitor's PDF never waits on HubSpot: it is
+generated and downloaded first, and the lead is written to the local browser
+backup below before the request goes out. But the response **is** checked.
+HubSpot answers 200 on success and 400 with a JSON reason on rejection, and a
+rejection is logged to the browser console with that reason, naming the
+likely cause. If you are testing the form and nothing arrives in HubSpot,
+open the browser console: the answer will be there.
+
+**CSP for the embedded route:** if your page sets a Content-Security-Policy,
+the widget additionally needs `script-src https://js-eu1.hsforms.net` and
+`connect-src` / `img-src` allowances for HubSpot's `*.hsforms.com` /
+`*.hubspot.com` endpoints. The fallback route needs only
+`connect-src https://forms-eu1.hsforms.com`. If the widget is blocked by
+policy, nothing breaks — visitors simply get the fallback form.
 
 ### Optional: custom HubSpot properties
 
@@ -133,7 +163,9 @@ If your page or its host sets a strict CSP, allow these:
 
 | Directive | Host | Needed for |
 |---|---|---|
-| `connect-src` | `https://forms-eu1.hsforms.com` | Lead submission |
+| `script-src` | `https://js-eu1.hsforms.net` | The embedded HubSpot form (primary lead route); if blocked, the fallback form takes over |
+| `connect-src` / `img-src` | `https://*.hsforms.com` `https://*.hsforms.net` `https://*.hubspot.com` | The embedded HubSpot form's own requests |
+| `connect-src` | `https://forms-eu1.hsforms.com` | Lead submission on the fallback route |
 | `script-src` | `https://cdnjs.cloudflare.com` `https://cdn.jsdelivr.net` `https://unpkg.com` | jsPDF, and only when a visitor downloads a report |
 | `font-src` / `style-src` | `https://fonts.googleapis.com` `https://fonts.gstatic.com` | DM Sans (falls back to system fonts if blocked) |
 

@@ -86,8 +86,11 @@
                least: allow-scripts allow-same-origin allow-popups
                allow-downloads
 
-     Lead form: submits to RLDatix HubSpot (EU). If your page sets a
-               strict Content-Security-Policy, allow
+     Lead form: renders your HubSpot form (hbspt.forms.create) inside the
+               calculator when HubSpot's embed script can load, and falls
+               back to its own form submitting to RLDatix HubSpot (EU)
+               otherwise. If your page sets a strict Content-Security-Policy,
+               allow script-src https://js-eu1.hsforms.net and
                connect-src https://forms-eu1.hsforms.com
                (see INTEGRATION-GUIDE.md). If submissions are not arriving,
                open the browser console: the calculator logs HubSpot's own

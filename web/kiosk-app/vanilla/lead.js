@@ -10,14 +10,24 @@
 import { h } from './dom';
 import { Icon } from './icons';
 import { C, F, fmtK, fmtNum } from '../src/theme';
-import { ROLE_OPTIONS, readSubmissions, clearSubmissions, submissionsCSV, submitLead } from '../src/lead/core';
+import {
+  ROLE_OPTIONS, readSubmissions, clearSubmissions, submissionsCSV, submitLead,
+  createEmbeddedLeadForm, buildContextMessage, recordAndReport, generatePDF,
+} from '../src/lead/core';
 
 /* `getR` and `getContext` are read at submit time, not at render time: the
    visitor can move the confidence slider after this form is on screen, and
-   the report they receive must be the figures they are looking at. */
+   the report they receive must be the figures they are looking at.
+
+   Submission is embed-first: the card tries to render the client's actual
+   HubSpot form (hbspt.forms.create). While it loads, and whenever it cannot
+   render (ad-blockers, CSP), the calculator's own styled form stands in and
+   posts to the same HubSpot form via the Forms API, so the flow and the
+   destination are identical either way. */
 export function LeadCapture(getR, getContext) {
   const lead = { name: '', email: '', org: '', role: '' };
   let sending = false;
+  let touched = false;
 
   // Light fields on the navy card: near-white so they read as inputs, dark text.
   const inputStyle = {
@@ -28,7 +38,7 @@ export function LeadCapture(getR, getContext) {
 
   const field = (key, attrs) => {
     const el = h('input', { ...attrs, style: inputStyle });
-    el.addEventListener('input', e => { lead[key] = e.target.value; refresh(); });
+    el.addEventListener('input', e => { touched = true; lead[key] = e.target.value; refresh(); });
     return el;
   };
 
@@ -39,7 +49,7 @@ export function LeadCapture(getR, getContext) {
   const role = h('select', { 'aria-label': 'Your role', style: { ...inputStyle, color: C.textMuted } },
     h('option', { value: '', style: { color: C.text } }, 'Your role'),
     ...ROLE_OPTIONS.map(o => h('option', { value: o, style: { color: C.text } }, o)));
-  role.addEventListener('change', e => { lead.role = e.target.value; role.style.color = lead.role ? C.text : C.textMuted; });
+  role.addEventListener('change', e => { touched = true; lead.role = e.target.value; role.style.color = lead.role ? C.text : C.textMuted; });
 
   const button = h('button', { type: 'button' }, 'Download PDF report');
   const refresh = () => {
@@ -54,15 +64,51 @@ export function LeadCapture(getR, getContext) {
   };
   refresh();
 
-  const card = h('div', { style: { marginBottom: 28, padding: 'clamp(18px, 3vw, 28px)', borderRadius: 18, background: `linear-gradient(135deg, ${C.navy} 0%, ${C.navyMid} 100%)`, border: 'none' } },
-    h('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 } },
-      Icon('download', 22, C.seafoam),
-      h('h3', { style: { fontSize: F.h3, fontWeight: 800, margin: 0, color: '#fff' } }, 'Get your report')),
-    h('p', { style: { fontSize: F.small, color: 'rgba(255,255,255,0.75)', marginTop: 6, marginBottom: 18 } }, 'Download a formatted summary ready to share with your team or board.'),
+  const subcopy = h('p', { style: { fontSize: F.small, color: 'rgba(255,255,255,0.75)', marginTop: 6, marginBottom: 18 } }, 'Download a formatted summary ready to share with your team or board.');
+
+  // The calculator's own form, kept as the always-working fallback route.
+  const fallbackWrap = h('div', null,
     h('div', { style: { display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 } }, name, email),
     h('div', { style: { display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 } }, org, role),
     button,
     h('p', { style: { fontSize: F.tiny, color: 'rgba(255,255,255,0.55)', marginTop: 12, marginBottom: 0 } }, "By submitting your details, you agree to share your name and email address so we can reach out to see if we can help with your programme. Details are processed in line with RLDatix's privacy notice."));
+
+  // HubSpot's embedded form renders in here; white panel so its styling stays legible on navy.
+  const widgetWrap = h('div', { id: 'smartmatch-hs-form', style: { display: 'none', background: '#fff', borderRadius: 12, padding: '14px 16px' } });
+
+  const card = h('div', { style: { marginBottom: 28, padding: 'clamp(18px, 3vw, 28px)', borderRadius: 18, background: `linear-gradient(135deg, ${C.navy} 0%, ${C.navyMid} 100%)`, border: 'none' } },
+    h('div', { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 } },
+      Icon('download', 22, C.seafoam),
+      h('h3', { style: { fontSize: F.h3, fontWeight: 800, margin: 0, color: '#fff' } }, 'Get your report')),
+    subcopy, widgetWrap, fallbackWrap);
+
+  const thanks = (who, viaEmbed) => {
+    const first = (who || '').split(' ')[0];
+    const again = h('button', { type: 'button', style: { marginTop: 14, padding: '10px 22px', background: 'rgba(255,255,255,0.14)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: '999px', fontSize: F.small, fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' } }, 'Download the report again');
+    again.addEventListener('click', () => generatePDF(getR(), lead, getContext()));
+    card.replaceWith(h('div', { style: { marginBottom: 28, padding: '26px 28px', borderRadius: 18, background: `linear-gradient(135deg, ${C.navy} 0%, ${C.navyMid} 100%)`, border: 'none', textAlign: 'center' } },
+      h('div', { style: { fontSize: F.h3, fontWeight: 800, color: C.seafoam, marginBottom: 8 } }, first ? `Thanks, ${first}, your report has downloaded.` : 'Thanks, your report has downloaded.'),
+      h('div', { style: { fontSize: F.small, color: 'rgba(255,255,255,0.8)', lineHeight: 1.6 } }, "An RLDatix BankStaff specialist can validate these figures against your organisation's own bank and agency rates. We'll be in touch."),
+      ...(viaEmbed ? [again] : [])));
+  };
+
+  // Embed-first: swap the widget in once it has rendered, unless the visitor
+  // has already started typing into the fallback form.
+  createEmbeddedLeadForm({
+    container: widgetWrap,
+    getMessage: () => buildContextMessage(getR(), getContext()),
+    onSubmitted: async (widgetLead) => {
+      Object.assign(lead, widgetLead);
+      await recordAndReport(getR(), lead, getContext());
+      thanks(lead.name, true);
+    },
+  }).then(rendered => {
+    if (rendered && !touched) {
+      widgetWrap.style.display = 'block';
+      fallbackWrap.style.display = 'none';
+      subcopy.textContent = 'Complete the form and your formatted summary downloads, ready to share with your team or board.';
+    }
+  });
 
   button.addEventListener('click', async () => {
     if (!lead.name || !lead.email || sending) return;
@@ -71,9 +117,7 @@ export function LeadCapture(getR, getContext) {
     refresh();
     await submitLead(getR(), lead, getContext());
     sending = false;
-    card.replaceWith(h('div', { style: { marginBottom: 28, padding: '26px 28px', borderRadius: 18, background: `linear-gradient(135deg, ${C.navy} 0%, ${C.navyMid} 100%)`, border: 'none', textAlign: 'center' } },
-      h('div', { style: { fontSize: F.h3, fontWeight: 800, color: C.seafoam, marginBottom: 8 } }, `Thanks, ${lead.name.split(' ')[0]}, your report has downloaded.`),
-      h('div', { style: { fontSize: F.small, color: 'rgba(255,255,255,0.8)', lineHeight: 1.6 } }, "An RLDatix BankStaff specialist can validate these figures against your organisation's own bank and agency rates. We'll be in touch.")));
+    thanks(lead.name, false);
   });
 
   return card;
