@@ -17,6 +17,12 @@
      The script below only listens for resize/scroll messages from the
      calculator, verified against its origin. To move to an RLDatix
      custom domain later, change the src URL and nothing else.
+
+     NOTE: the hosted calculator only allows embedding from rldatix.com
+     pages (frame-ancestors). Pasted anywhere else (CodePen, a sandbox,
+     a different staging domain) the iframe will show nothing - that is
+     the embedding lock working, not a fault. Ask RLDatix to allow a
+     staging domain if you need to test on one.
      ═══════════════════════════════════════════════════════════════ -->
 
 <iframe

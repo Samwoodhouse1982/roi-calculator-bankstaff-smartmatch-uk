@@ -39,6 +39,11 @@ automatically. Use this to be live today; move to self-hosting below
 whenever you prefer (the routes are interchangeable and identical to
 visitors).
 
+The hosted calculator only permits embedding from `rldatix.com` pages
+(`frame-ancestors`), so this route shows nothing on other domains — if you
+need it on a staging domain, ask RLDatix to allow that domain. Self-hosted
+copies (the routes below) carry no such lock.
+
 ### Standalone / iframe
 
 1. Upload `roi-calculator.html` anywhere static, over HTTPS. It is fully
