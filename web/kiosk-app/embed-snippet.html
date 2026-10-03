@@ -36,6 +36,11 @@
   (function () {
     var iframe = document.getElementById("smartmatch-roi");
     var motion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    // Announce the host page so HubSpot leads are attributed to it, not the iframe URL.
+    var announce = function () {
+      try { iframe.contentWindow.postMessage({ type: "smartmatch-roi-host", href: location.href }, "*"); } catch (e) {}
+    };
+    iframe.addEventListener("load", function () { announce(); setTimeout(announce, 1200); });
     window.addEventListener("message", function (e) {
       var d = e.data || {};
       // Optional hardening: verify e.origin === "https://YOUR-DOMAIN" before acting.

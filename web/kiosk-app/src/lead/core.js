@@ -45,8 +45,26 @@ export const ROLE_OPTIONS = [
    and the referrer carries it otherwise. pageUri is optional in the Forms API,
    so if none of the three is usable we omit the field rather than send junk. */
 export const isHttpUrl = u => /^https?:/i.test(u || "");
+
+/* The HOST page's URL, announced by the embed snippet via postMessage
+   ({type:"smartmatch-roi-host", href}). Inside a cross-origin iframe,
+   location.href is the calculator's own origin (e.g. the Vercel URL), not the
+   page the visitor is actually on (e.g. rldatix.com/en-uki/smart-match-roi-
+   calculator/), and the default referrer policy strips the parent's path. The
+   snippet tells us, so leads are attributed to the real page. Data only: the
+   value is used solely as a URL string, and only if it parses as http(s). */
+let hostPageHref = null;
+if (typeof window !== "undefined") {
+  window.addEventListener("message", e => {
+    const d = e.data;
+    if (d && d.type === "smartmatch-roi-host" && typeof d.href === "string" && isHttpUrl(d.href)) hostPageHref = d.href;
+  });
+}
+export const hostHref = () => hostPageHref;
+
 export function pageUri() {
   return [
+    hostPageHref,
     typeof location !== "undefined" ? location.href : null,
     typeof document !== "undefined" ? document.baseURI : null,
     typeof document !== "undefined" ? document.referrer : null,
@@ -312,7 +330,10 @@ export async function generatePDF(r, lead, ctx) {
    never render time: the visitor can move the confidence slider after the
    form is on screen, and the lead must carry the figures they submitted on. */
 export function buildContextMessage(r, leadContext) {
-  return `Smart Match ROI (web) submission | Bank workers: ${fmtNum(leadContext.bankPool)} | Agency fill: ${leadContext.agencyFillRate}% | Team: ${leadContext.numManagers} | Confidence: ${leadContext.displacement}% (${leadContext.stance}) | Net annual saving: ${fmtK(r.netSaving)} | Hours/week released: ${fmtNum(r.timeSavedWeek)} | Est. agency spend: ${fmtK(r.agencySpend)}`;
+  // The host page (when embedded) rides along so the widget route, whose own
+  // page attribution sees only the iframe's origin, still names the real page.
+  const page = hostPageHref ? ` | Page: ${hostPageHref}` : "";
+  return `Smart Match ROI (web) submission | Bank workers: ${fmtNum(leadContext.bankPool)} | Agency fill: ${leadContext.agencyFillRate}% | Team: ${leadContext.numManagers} | Confidence: ${leadContext.displacement}% (${leadContext.stance}) | Net annual saving: ${fmtK(r.netSaving)} | Hours/week released: ${fmtNum(r.timeSavedWeek)} | Est. agency spend: ${fmtK(r.agencySpend)}${page}`;
 }
 
 /* PDF + local backup, shared by both submission routes. The embedded-widget

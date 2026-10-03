@@ -32,6 +32,16 @@
 (function () {
   var frame = document.getElementById("smartmatch-roi");
   var origin = new URL(frame.src).origin;   // accept messages from the calculator only
+
+  // Tell the calculator which page it is embedded on, so HubSpot leads are
+  // attributed to this page (e.g. rldatix.com/en-uki/smart-match-roi-calculator/)
+  // rather than the calculator's own hosting URL. Sent on load and once more
+  // shortly after, in case the first arrives before the calculator's listener.
+  function announce() {
+    try { frame.contentWindow.postMessage({ type: "smartmatch-roi-host", href: location.href }, origin); } catch (e) {}
+  }
+  frame.addEventListener("load", function () { announce(); setTimeout(announce, 1200); });
+
   window.addEventListener("message", function (e) {
     if (e.origin !== origin || !e.data || typeof e.data !== "object") return;
 

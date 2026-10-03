@@ -21,6 +21,16 @@
 ></iframe>
 
 <script>
+  // Tell the calculator which page it is embedded on, so HubSpot leads are
+  // attributed to this page rather than the hosted .html file's own URL.
+  (function () {
+    var f = document.getElementById("smartmatch-roi");
+    var announce = function () {
+      try { f.contentWindow.postMessage({ type: "smartmatch-roi-host", href: location.href }, "*"); } catch (e) {}
+    };
+    f.addEventListener("load", function () { announce(); setTimeout(announce, 1200); });
+  })();
+
   window.addEventListener("message", function (e) {
     // Optional hardening: check e.origin against your calculator's domain.
     if (!e.data || typeof e.data !== "object") return;
