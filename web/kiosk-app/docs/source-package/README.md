@@ -30,6 +30,15 @@ The first is the one we recommend.
 > (option 1) or as a **paste-safe armoured snippet** (option 2); only the
 > short wrapper snippets are ever pasted into a page.
 
+### Fastest: zero setup, hosted by RLDatix
+
+Paste the whole of `embed-snippet-hosted.html` into a Custom HTML block.
+Done. The calculator is served from RLDatix's hosting, so there is nothing
+to upload, HubSpot works with no page changes, and updates reach your page
+automatically. Use this to be live today; move to self-hosting below
+whenever you prefer (the routes are interchangeable and identical to
+visitors).
+
 ### Standalone / iframe
 
 1. Upload `roi-calculator.html` anywhere static, over HTTPS. It is fully

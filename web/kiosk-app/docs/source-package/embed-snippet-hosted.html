@@ -1,0 +1,53 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     Smart Match ROI Calculator - ZERO-SETUP EMBED (hosted by RLDatix)
+     ═══════════════════════════════════════════════════════════════
+
+     The simplest route: copy this WHOLE file and paste it into a
+     WordPress Custom HTML block (or any page). That is the entire job.
+
+       - Nothing to upload and nothing to configure: the calculator is
+         served from RLDatix's hosting at the URL below, so updates
+         reach your page automatically.
+       - The HubSpot lead form works out of the box: it runs inside the
+         iframe on RLDatix's origin, so your page needs no HubSpot
+         script, no CSP changes and no other code.
+       - Paste-safe: this block is small and carries no code your editor
+         can damage.
+
+     The script below only listens for resize/scroll messages from the
+     calculator, verified against its origin. To move to an RLDatix
+     custom domain later, change the src URL and nothing else.
+     ═══════════════════════════════════════════════════════════════ -->
+
+<iframe
+  id="smartmatch-roi"
+  src="https://rld-smartmatch-web-from-kiosk.vercel.app/"
+  style="width: 100%; border: none; overflow: hidden; min-height: 720px; display: block; background: #EEF7F2; border-radius: 12px;"
+  scrolling="no"
+  title="Smart Match Workforce ROI Calculator"
+  loading="lazy"
+></iframe>
+
+<script>
+(function () {
+  var frame = document.getElementById("smartmatch-roi");
+  var origin = new URL(frame.src).origin;   // accept messages from the calculator only
+  window.addEventListener("message", function (e) {
+    if (e.origin !== origin || !e.data || typeof e.data !== "object") return;
+
+    // Auto-resize: the calculator reports its content height on change.
+    if (e.data.type === "smartmatch-roi-resize" && typeof e.data.height === "number") {
+      frame.style.height = Math.max(400, e.data.height) + "px";
+    }
+
+    // Step changes: bring the top of the calculator back into view.
+    if (e.data.type === "smartmatch-roi-scroll-top") {
+      var top = frame.getBoundingClientRect().top;
+      if (top < 0) frame.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    // Optional analytics: e.data.type === "smartmatch-roi-data" carries every
+    // figure the visitor sees, on every change (see DATA-LAYER-REFERENCE.md).
+  });
+})();
+</script>

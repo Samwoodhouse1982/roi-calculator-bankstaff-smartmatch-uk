@@ -44,7 +44,7 @@ run('build-vanilla.mjs');
 
 /* 2. Documentation and the hosted-file embed snippet. */
 cpSync(resolve(docs, 'styles.css'), resolve(bundle, 'styles.css'));
-for (const f of ['WHAT-CHANGED.md', 'README.md', 'INTEGRATION-GUIDE.md', 'DATA-LAYER-REFERENCE.md', 'embed-snippet.html']) {
+for (const f of ['WHAT-CHANGED.md', 'README.md', 'INTEGRATION-GUIDE.md', 'DATA-LAYER-REFERENCE.md', 'embed-snippet.html', 'embed-snippet-hosted.html']) {
   cpSync(resolve(docs, f), resolve(bundle, f));
 }
 
@@ -53,7 +53,7 @@ for (const f of ['WHAT-CHANGED.md', 'README.md', 'INTEGRATION-GUIDE.md', 'DATA-L
    next to the zip rather than in it: see the note in that script. */
 run('build-embed-snippet-srcdoc.mjs');
 
-const FILES = ['roi-calculator.html', 'roi-calculator.js', 'styles.css', 'embed-snippet.html', 'WHAT-CHANGED.md', 'README.md', 'INTEGRATION-GUIDE.md', 'DATA-LAYER-REFERENCE.md'];
+const FILES = ['roi-calculator.html', 'roi-calculator.js', 'styles.css', 'embed-snippet.html', 'embed-snippet-hosted.html', 'WHAT-CHANGED.md', 'README.md', 'INTEGRATION-GUIDE.md', 'DATA-LAYER-REFERENCE.md'];
 const kb = n => Math.round(n / 1024) + ' KB';
 console.log('\nSource package built:');
 for (const f of FILES) console.log('  ' + f.padEnd(26) + kb(readFileSync(resolve(bundle, f)).length));
