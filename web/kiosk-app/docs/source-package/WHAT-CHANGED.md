@@ -49,6 +49,13 @@ That is the drop-in: the same wrapper you are using now, same element ids,
 same decode, same resize listener, with the current calculator inside it.
 Nothing else needs to change and there is nothing to configure.
 
+> **The one thing that cannot work: pasting `roi-calculator.html` itself into
+> a page.** CMS editors rewrite characters the script depends on (`&&`, `<=`),
+> breaking it mid-file — the console then shows `Uncaught SyntaxError` followed
+> by `SmartMatchROI is not defined`. Only the two short wrapper snippets and
+> the armoured inline file are paste-safe; `roi-calculator.html` is a file to
+> *upload*, never content to paste.
+
 That file is text rather than `.html` on purpose: paste it, do not open or
 rename it. Section 9 of `INTEGRATION-GUIDE.md` explains why.
 

@@ -21,12 +21,25 @@ The first is the one we recommend.
 
 ## Quick start
 
+> **Do not paste the contents of `roi-calculator.html` (or `.js`) into a CMS
+> page or editor.** WordPress and similar editors rewrite characters that
+> JavaScript depends on (`&&` becomes `&amp;&amp;`, `<=` becomes `&lt;=`), which
+> breaks the 2,500-line script somewhere in the middle. The tell-tale console
+> pair is `Uncaught SyntaxError: Invalid or unexpected token` followed by
+> `SmartMatchROI is not defined`. The calculator ships as **files to host**
+> (option 1) or as a **paste-safe armoured snippet** (option 2); only the
+> short wrapper snippets are ever pasted into a page.
+
 ### Standalone / iframe
 
 1. Upload `roi-calculator.html` anywhere static, over HTTPS. It is fully
-   self-contained: no build step, no bundler, no server code.
-2. Paste the snippet from `embed-snippet.html` into your page and point the
-   iframe `src` at the file from step 1.
+   self-contained: no build step, no bundler, no server code. (A WordPress
+   page is not a host for it: upload it as a *file*, e.g. under
+   `wp-content/uploads/` via SFTP or a file-manager plugin, or to any static
+   hosting/CDN. The WordPress media library blocks `.html` uploads by
+   default, hence the plugin or SFTP.)
+2. Paste the snippet from `embed-snippet.html` into your page (WordPress: a
+   **Custom HTML** block) and point the iframe `src` at the file from step 1.
 
 ### Inline, with nothing to upload
 
