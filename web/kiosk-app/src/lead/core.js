@@ -424,6 +424,73 @@ function readEmbeddedFields(container) {
   return out;
 }
 
+/* ── Styling the embedded form ────────────────────────────────────────────
+   On the client's own site HubSpot forms are styled by the SITE's
+   stylesheet, but inside the calculator's iframe that stylesheet cannot
+   reach, and a form set to "raw HTML" mode in HubSpot arrives with no CSS
+   at all: bare browser inputs and a grey Submit button. So the calculator
+   styles the widget itself, in its own design system, and the form looks
+   right regardless of how it is configured in HubSpot or where the
+   calculator is embedded. */
+function embeddedFormCSS(p) {
+  return `
+${p}.hs-form, ${p}.hs-form * { box-sizing: border-box; }
+${p}.hs-form { font-family: 'DM Sans', 'DM Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: #0F4146; }
+${p}.hs-form fieldset { max-width: none; border: 0; padding: 0; margin: 0; }
+${p}.hs-form .hs-form-field { margin-bottom: 14px; }
+${p}.hs-form label { display: block; font-size: 0.9rem; font-weight: 600; color: #3D5A5E; margin-bottom: 6px; }
+${p}.hs-form .input { margin: 0 !important; }
+${p}.hs-form input.hs-input, ${p}.hs-form select.hs-input, ${p}.hs-form textarea.hs-input {
+  width: 100% !important; padding: 11px 14px; border: 1px solid #D4E0DD; border-radius: 10px;
+  font-family: inherit; font-size: 0.95rem; color: #0F4146; background: #fff; appearance: auto;
+}
+${p}.hs-form input.hs-input:focus, ${p}.hs-form select.hs-input:focus, ${p}.hs-form textarea.hs-input:focus {
+  outline: none; border-color: #1A8A7A; box-shadow: 0 0 0 3px rgba(26, 138, 122, 0.15);
+}
+${p}.hs-form input.hs-input[type="checkbox"], ${p}.hs-form input.hs-input[type="radio"] { width: auto !important; accent-color: #0F4146; }
+${p}.hs-form ul.inputs-list, ${p}.hs-form ul.hs-error-msgs { list-style: none; margin: 4px 0 0; padding: 0; }
+${p}.hs-form .hs-error-msg, ${p}.hs-form .hs-error-msgs label { color: #B42318; font-size: 0.78rem; font-weight: 600; margin: 4px 0 0; }
+${p}.hs-form .hs_error_rollup { margin-bottom: 10px; }
+${p}.hs-form .hs-richtext, ${p}.hs-form .legal-consent-container, ${p}.hs-form .legal-consent-container p {
+  font-size: 0.78rem; color: #5F787C; line-height: 1.5; margin: 0 0 10px;
+}
+${p}.hs-form .hs_submit { margin-top: 4px; }
+${p}.hs-form input.hs-button, ${p}.hs-form .hs-button {
+  width: auto; background: #0F4146; color: #fff; border: none; border-radius: 999px;
+  padding: 13px 32px; font-family: inherit; font-size: 1rem; font-weight: 800; cursor: pointer;
+}
+${p}.hs-form input.hs-button:hover, ${p}.hs-form .hs-button:hover { background: #1A5459; }
+${p}.submitted-message { font-family: 'DM Sans', system-ui, sans-serif; font-size: 0.95rem; color: #0F4146; line-height: 1.6; }
+`;
+}
+
+function styleEmbeddedForm(container) {
+  try {
+    const doc = embeddedFormDoc(container);
+    const ownDoc = container.ownerDocument || document;
+    const inIframe = doc !== ownDoc;
+    const STYLE_ID = "smartmatch-hs-form-style";
+    if (!(inIframe ? doc.getElementById(STYLE_ID) : container.querySelector("#" + STYLE_ID))) {
+      const style = doc.createElement("style");
+      style.id = STYLE_ID;
+      // Inside HubSpot's own same-origin iframe the selectors stand alone (and
+      // the calculator's font is not loaded there, so fetch it, with the stack
+      // falling back to system fonts if that host is blocked). Rendered inline,
+      // they are scoped under the widget container so nothing leaks.
+      style.textContent = (inIframe ? "@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap');\nbody { margin: 0; padding: 0; }\n" : "")
+        + embeddedFormCSS(inIframe ? "" : `#${container.id || "smartmatch-hs-form"} `);
+      (inIframe ? (doc.head || doc.documentElement) : container).appendChild(style);
+    }
+    // Collapse the empty wrappers HubSpot renders around hidden fields (the
+    // hidden calculator-context field otherwise leaves a blank gap at the top).
+    const form = embeddedFormEl(container);
+    if (form) form.querySelectorAll("input[type=hidden]").forEach(f => {
+      const wrap = f.closest(".hs-form-field");
+      if (wrap && !wrap.querySelector("input:not([type=hidden]), select, textarea")) wrap.style.display = "none";
+    });
+  } catch (e) { /* styling is best-effort; the form still works unstyled */ }
+}
+
 /* Render the client's HubSpot form into `container`.
    - getMessage(): called at form-ready AND again just before submission, so
      the hidden context field always carries the figures on screen. The form
@@ -446,6 +513,7 @@ export async function createEmbeddedLeadForm({ container, getMessage, onSubmitte
       target: container.id ? "#" + container.id : container,
       onFormReady: () => {
         try {
+          styleEmbeddedForm(container);
           setEmbeddedField(container, "message", getMessage());
           const form = embeddedFormEl(container);
           // Capture-phase listener: refresh the context and snapshot the
@@ -470,7 +538,12 @@ export async function createEmbeddedLeadForm({ container, getMessage, onSubmitte
   // Wait for the widget to actually appear (iframe or form) before declaring success.
   for (let waited = 0; waited < 6000; waited += 200) {
     await new Promise(res => setTimeout(res, 200));
-    if (container.querySelector("iframe, form")) return true;
+    if (container.querySelector("iframe, form")) {
+      // Again here: when HubSpot renders into its own iframe, that document
+      // may not exist yet at onFormReady time.
+      styleEmbeddedForm(container);
+      return true;
+    }
   }
   return false;
 }
