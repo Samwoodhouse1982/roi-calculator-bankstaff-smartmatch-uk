@@ -80,6 +80,13 @@ const snippet = `<!-- ═══════════════════�
 (function () {
   var DATA = "${b64}";
   var frame = document.getElementById("smroi-frame");
+  // Tell the calculator which page it is on, so HubSpot leads are attributed
+  // to this page. Sent on load and once more shortly after, in case the first
+  // arrives before the calculator's listener is ready.
+  var announce = function () {
+    try { frame.contentWindow.postMessage({ type: "smartmatch-roi-host", href: location.href }, "*"); } catch (e) {}
+  };
+  frame.addEventListener("load", function () { announce(); setTimeout(announce, 1200); });
   try {
     frame.srcdoc = decodeURIComponent(escape(window.atob(DATA)));
   } catch (e) {
@@ -90,6 +97,12 @@ const snippet = `<!-- ═══════════════════�
     if (d && d.type === "smartmatch-roi-resize" && d.height) {
       frame.style.height = d.height + "px";
     }
+    // Step changes: bring the top of the calculator back into view, since
+    // the iframe cannot scroll the page itself.
+    if (d && d.type === "smartmatch-roi-scroll-top") {
+      var top = frame.getBoundingClientRect().top;
+      if (top < 0) frame.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   });
 })();
 </script>
@@ -97,21 +110,12 @@ const snippet = `<!-- ═══════════════════�
 <!-- ═══════════════════════════════════════════════════════════════
      OPTIONAL EXTRAS
 
-     The calculator posts two more messages the listener above ignores.
-     Add either inside the same listener if you want them.
+     The calculator posts one more message the listener above ignores.
+     Add it inside the same listener if you want it.
 
-     1. Scroll back to the top of the calculator when a visitor changes
-        step or presses "Start over". Without this they can be left
-        looking at the middle of a page that has just changed under them,
-        because the iframe cannot scroll the page itself.
-
-          if (d && d.type === "smartmatch-roi-scroll-top") {
-            frame.scrollIntoView({ behavior: "smooth", block: "start" });
-          }
-
-     2. Data layer: every figure the visitor is looking at, on every
-        change, for GTM or your own analytics. Full field list in
-        DATA-LAYER-REFERENCE.md.
+     Data layer: every figure the visitor is looking at, on every
+     change, for GTM or your own analytics. Full field list in
+     DATA-LAYER-REFERENCE.md.
 
           if (d && d.type === "smartmatch-roi-data") {
             window.dataLayer = window.dataLayer || [];
