@@ -387,18 +387,35 @@ export function loadHubSpotEmbed(timeoutMs = 8000) {
 }
 
 /* HubSpot's v2 embed renders the form either inline or inside a SAME-ORIGIN
-   iframe it writes itself, so the parent page can reach the fields. Resolve
-   the document that actually holds the form, wherever it rendered. */
+   iframe it writes itself, so the parent page can reach the fields. The
+   container can ALSO hold other iframes that are not the form: a hidden
+   submission-target helper, or a reCAPTCHA frame. Resolving "the first
+   iframe" therefore picks the wrong document whenever one of those is
+   present, and the styling, the gap-collapse and the context prefill all
+   silently no-op against an empty helper document while the real form sits
+   inline, untouched. Resolve by looking for the document that actually
+   holds a form, with the container's own document taking precedence. */
+const FORM_SELECTOR = "form.hs-form, form[data-form-id], form";
 function embeddedFormDoc(container) {
   try {
-    const frame = container.querySelector("iframe");
-    return (frame && frame.contentDocument) || container.ownerDocument || document;
-  } catch (e) { return container.ownerDocument || document; }
+    if (container.querySelector(FORM_SELECTOR)) return container.ownerDocument || document;
+    for (const frame of container.querySelectorAll("iframe")) {
+      try {
+        const d = frame.contentDocument;
+        if (d && d.querySelector(FORM_SELECTOR)) return d;
+      } catch (e) { /* cross-origin helper (e.g. reCAPTCHA): not the form */ }
+    }
+  } catch (e) { /* fall through */ }
+  return container.ownerDocument || document;
 }
 function embeddedFormEl(container) {
   try {
     const doc = embeddedFormDoc(container);
-    return doc.querySelector("form.hs-form, form[data-form-id], form");
+    // Inline, scope to the container so the calculator's own fallback
+    // controls can never be mistaken for the widget.
+    return doc === (container.ownerDocument || document)
+      ? container.querySelector(FORM_SELECTOR)
+      : doc.querySelector(FORM_SELECTOR);
   } catch (e) { return null; }
 }
 function setEmbeddedField(container, name, value) {
@@ -492,6 +509,12 @@ function styleEmbeddedForm(container) {
     if (form) form.querySelectorAll(".hs-form-field").forEach(w => {
       if (!w.querySelector("input:not([type=hidden]), select, textarea")) w.style.display = "none";
     });
+    // One breadcrumb for live diagnosis: says the widget was found and
+    // styled, and in which rendering mode, without spamming the console.
+    if (form && !styleEmbeddedForm.logged) {
+      styleEmbeddedForm.logged = true;
+      console.info(`Smart Match ROI: HubSpot widget styled (${inIframe ? "iframe" : "inline"} render).`);
+    }
   } catch (e) { /* styling is best-effort; the form still works unstyled */ }
 }
 
