@@ -9,7 +9,8 @@
     "test": "node --test",
     "package": "npm run build:single && node scripts/package.mjs",
     "build:single": "vite build --config vite.single.config.js",
-    "package:source": "node scripts/build-source-package.mjs"
+    "package:source": "node scripts/build-source-package.mjs",
+    "check:isolation": "node scripts/check-embed-isolation.mjs"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.2.8",
