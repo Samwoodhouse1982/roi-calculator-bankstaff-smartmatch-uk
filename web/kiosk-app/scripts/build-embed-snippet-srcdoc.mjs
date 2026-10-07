@@ -12,6 +12,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const bundle = resolve(root, 'package-source/smartmatch-roi-calculator');
@@ -33,7 +34,13 @@ const outFile = resolve(root, 'package-source/embed-snippet-inline.txt');
    it with decodeURIComponent(escape(atob(...))), which turns the latin1 string
    atob() returns back into UTF-8: without that the pound signs, multiplication
    signs and box-drawing characters in the file come out mangled. */
-const b64 = readFileSync(resolve(bundle, 'roi-calculator.html')).toString('base64');
+const payload = readFileSync(resolve(bundle, 'roi-calculator.html'));
+const b64 = payload.toString('base64');
+/* Stamped into the wrapper in PLAIN text (the payload itself is base64), so
+   "which build is live?" is answerable from view-source: find "payload:" in
+   the pasted block and compare the hash against this script's output. */
+const payloadSha = createHash('sha1').update(payload).digest('hex').slice(0, 8);
+const buildDate = new Date().toISOString().slice(0, 10);
 
 const snippet = `<!-- ═══════════════════════════════════════════════════════════════
      Smart Match ROI Calculator - inline (srcdoc) embed
@@ -73,8 +80,9 @@ const snippet = `<!-- ═══════════════════�
      version exists because it needs no file upload at all.
      ═══════════════════════════════════════════════════════════════ -->
 
+<!-- payload: roi-calculator.html sha1 ${payloadSha} · built ${buildDate} -->
 <div id="smroi-wrap" style="width:100%;">
-  <iframe id="smroi-frame" style="width:100%;border:0;min-height:1000px;display:block;" title="Smart Match ROI Calculator"></iframe>
+  <iframe id="smroi-frame" style="width:100%;border:0;min-height:1000px;display:block;overflow:hidden;background:#EEF7F2;" scrolling="no" title="Smart Match ROI Calculator"></iframe>
 </div>
 <script>
 (function () {
