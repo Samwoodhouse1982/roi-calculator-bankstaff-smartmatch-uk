@@ -437,6 +437,10 @@ function embeddedFormCSS(p) {
 ${p}.hs-form, ${p}.hs-form * { box-sizing: border-box; }
 ${p}.hs-form { font-family: 'DM Sans', 'DM Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: #0F4146; }
 ${p}.hs-form fieldset { max-width: none; border: 0; padding: 0; margin: 0; }
+${p}.hs-form fieldset.form-columns-2 { display: flex; gap: 12px; }
+${p}.hs-form fieldset.form-columns-2 .hs-form-field { flex: 1 1 0; width: auto !important; float: none !important; }
+${p}.hs-form fieldset.form-columns-1 .hs-form-field, ${p}.hs-form fieldset.form-columns-3 .hs-form-field { width: 100% !important; float: none !important; }
+@media (max-width: 480px) { ${p}.hs-form fieldset.form-columns-2 { display: block; } }
 ${p}.hs-form .hs-form-field { margin-bottom: 14px; }
 ${p}.hs-form label { display: block; font-size: 0.9rem; font-weight: 600; color: #3D5A5E; margin-bottom: 6px; }
 ${p}.hs-form .input { margin: 0 !important; }
@@ -481,12 +485,12 @@ function styleEmbeddedForm(container) {
         + embeddedFormCSS(inIframe ? "" : `#${container.id || "smartmatch-hs-form"} `);
       (inIframe ? (doc.head || doc.documentElement) : container).appendChild(style);
     }
-    // Collapse the empty wrappers HubSpot renders around hidden fields (the
-    // hidden calculator-context field otherwise leaves a blank gap at the top).
+    // Collapse field wrappers with nothing visible in them, such as the one
+    // HubSpot renders around the hidden calculator-context field, which
+    // otherwise leaves a blank gap at the top of the form.
     const form = embeddedFormEl(container);
-    if (form) form.querySelectorAll("input[type=hidden]").forEach(f => {
-      const wrap = f.closest(".hs-form-field");
-      if (wrap && !wrap.querySelector("input:not([type=hidden]), select, textarea")) wrap.style.display = "none";
+    if (form) form.querySelectorAll(".hs-form-field").forEach(w => {
+      if (!w.querySelector("input:not([type=hidden]), select, textarea")) w.style.display = "none";
     });
   } catch (e) { /* styling is best-effort; the form still works unstyled */ }
 }
@@ -539,9 +543,14 @@ export async function createEmbeddedLeadForm({ container, getMessage, onSubmitte
   for (let waited = 0; waited < 6000; waited += 200) {
     await new Promise(res => setTimeout(res, 200));
     if (container.querySelector("iframe, form")) {
-      // Again here: when HubSpot renders into its own iframe, that document
-      // may not exist yet at onFormReady time.
+      // HubSpot can rebuild the widget's DOM, or rewrite its iframe's
+      // document, AFTER our first styling pass, discarding the injected
+      // stylesheet. Keep re-applying for a short window; styleEmbeddedForm
+      // is idempotent (it keys on the style element's id), so the passes
+      // where nothing was discarded cost nothing.
       styleEmbeddedForm(container);
+      const reapply = setInterval(() => styleEmbeddedForm(container), 400);
+      setTimeout(() => clearInterval(reapply), 10000);
       return true;
     }
   }
