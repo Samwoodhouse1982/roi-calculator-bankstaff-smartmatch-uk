@@ -451,6 +451,7 @@ function readEmbeddedFields(container) {
    calculator is embedded. */
 function embeddedFormCSS(p) {
   return `
+${p}iframe[name^="target_iframe"] { display: none !important; }
 ${p}.hs-form, ${p}.hs-form * { box-sizing: border-box; }
 ${p}.hs-form { font-family: 'DM Sans', 'DM Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: #0F4146; }
 ${p}.hs-form fieldset { max-width: none; border: 0; padding: 0; margin: 0; }
@@ -508,6 +509,20 @@ function styleEmbeddedForm(container) {
     const form = embeddedFormEl(container);
     if (form) form.querySelectorAll(".hs-form-field").forEach(w => {
       if (!w.querySelector("input:not([type=hidden]), select, textarea")) w.style.display = "none";
+    });
+    // When the form renders inline, HubSpot also drops helper iframes into
+    // the container around it (the hidden submission-target frame chief
+    // among them). One without its own hiding style renders at the default
+    // 300x150, which is the blank block above the first field. Hide every
+    // container iframe that does not itself hold the form; reCAPTCHA's
+    // frames live inside the form element, so they are never touched.
+    if (!inIframe) container.querySelectorAll("iframe").forEach(frame => {
+      if (form && form.contains(frame)) return;
+      try {
+        const d = frame.contentDocument;
+        if (d && d.querySelector(FORM_SELECTOR)) return;
+      } catch (e) { /* cross-origin: still not the form, hide it */ }
+      frame.style.display = "none";
     });
     // One breadcrumb for live diagnosis: says the widget was found and
     // styled, and in which rendering mode, without spamming the console.
