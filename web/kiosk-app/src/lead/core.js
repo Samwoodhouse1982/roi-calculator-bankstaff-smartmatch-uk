@@ -510,20 +510,50 @@ function styleEmbeddedForm(container) {
     if (form) form.querySelectorAll(".hs-form-field").forEach(w => {
       if (!w.querySelector("input:not([type=hidden]), select, textarea")) w.style.display = "none";
     });
-    // When the form renders inline, HubSpot also drops helper iframes into
-    // the container around it (the hidden submission-target frame chief
-    // among them). One without its own hiding style renders at the default
-    // 300x150, which is the blank block above the first field. Hide every
-    // container iframe that does not itself hold the form; reCAPTCHA's
-    // frames live inside the form element, so they are never touched.
-    if (!inIframe) container.querySelectorAll("iframe").forEach(frame => {
-      if (form && form.contains(frame)) return;
-      try {
-        const d = frame.contentDocument;
-        if (d && d.querySelector(FORM_SELECTOR)) return;
-      } catch (e) { /* cross-origin: still not the form, hide it */ }
-      frame.style.display = "none";
-    });
+    // When the form renders inline, HubSpot also drops scaffolding into the
+    // container around it: a hidden submission-target iframe, hidden-field
+    // markup, wrappers that vary between portal configurations. Any of it
+    // can occupy height while showing nothing, which reads as a blank block
+    // above the first field. Rather than enumerating the variants, collapse
+    // by MEASUREMENT: an element is hidden only when it takes up space yet
+    // contains no text, no visible control and no visible media, so real
+    // content can never be caught.
+    if (!inIframe && form) {
+      // An iframe is "content" only when it is cross-origin (reCAPTCHA and
+      // friends: unreadable, assume visible) or holds the form itself; a
+      // same-origin frame without a form is HubSpot's blank helper.
+      const iframeIsContent = frame => {
+        try {
+          const d = frame.contentDocument;   // null (not an exception) when cross-origin
+          if (!d) return true;
+          return !!d.querySelector(FORM_SELECTOR);
+        } catch (e) { return true; }
+      };
+      const showsSomething = el => {
+        if (el.tagName === "IFRAME") return iframeIsContent(el);
+        if ((el.innerText || "").trim()) return true;
+        for (const n of el.querySelectorAll("input, select, textarea, button, img, svg, iframe")) {
+          if (n.type === "hidden") continue;
+          if (n.tagName === "IFRAME") { if (iframeIsContent(n)) return true; continue; }
+          if (n.offsetWidth || n.offsetHeight || n.getClientRects().length) return true;
+        }
+        return false;
+      };
+      const candidates = new Set();
+      for (const c of container.children) {
+        candidates.add(c);
+        for (const cc of c.children) candidates.add(cc);
+      }
+      for (const fc of form.children) candidates.add(fc);
+      candidates.forEach(el => {
+        try {
+          if (el === form || el.contains(form) || el.tagName === "STYLE" || el.tagName === "SCRIPT") return;
+          if (el.getBoundingClientRect().height < 8) return;
+          if (showsSomething(el)) return;
+          el.style.display = "none";
+        } catch (e) { /* leave it */ }
+      });
+    }
     // One breadcrumb for live diagnosis: says the widget was found and
     // styled, and in which rendering mode, without spamming the console.
     if (form && !styleEmbeddedForm.logged) {
