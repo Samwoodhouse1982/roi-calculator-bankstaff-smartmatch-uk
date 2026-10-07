@@ -148,7 +148,7 @@ Defined in the `C` constant:
 | Deep teal (primary) | `#0F4146` |
 | Teal mid (accent) | `#1A8A7A` |
 | Seafoam (highlight) | `#34DEC2` |
-| Pale green (page wash) | `#EEF7F2` |
+| Pale green (page wash) | `#EEF7F1` — identical to rldatix.com's `--wp--preset--color--off-white`, so the calculator's surface matches the site wash exactly where the sticky header overlaps it |
 | Surface / cards | `#FFFFFF` |
 | Border | `#D4E0DD` |
 

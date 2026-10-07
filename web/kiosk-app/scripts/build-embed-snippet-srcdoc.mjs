@@ -82,7 +82,7 @@ const snippet = `<!-- ═══════════════════�
 
 <!-- payload: roi-calculator.html sha1 ${payloadSha} · built ${buildDate} -->
 <div id="smroi-wrap" style="width:100%;">
-  <iframe id="smroi-frame" style="width:100%;border:0;min-height:1000px;display:block;overflow:hidden;background:#EEF7F2;" scrolling="no" title="Smart Match ROI Calculator"></iframe>
+  <iframe id="smroi-frame" style="width:100%;border:0;min-height:1000px;display:block;overflow:hidden;background:#EEF7F1;" scrolling="no" title="Smart Match ROI Calculator"></iframe>
 </div>
 <script>
 (function () {

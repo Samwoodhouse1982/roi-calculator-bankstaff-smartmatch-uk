@@ -27,7 +27,9 @@ body {
   width: 100%;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
-  background: #EEF7F2;                                   /* pale green page wash */
+  background: #EEF7F1;   /* pale green page wash = rldatix.com --off-white, exact,
+                             so the wash matches the site where the transparent
+                             sticky header overlaps the calculator */
   font-family: 'DM Sans Variable', 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
@@ -71,7 +73,7 @@ select {
 
 /* ── Scrollbars (WebKit) ── */
 ::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #EEF7F2; }
+::-webkit-scrollbar-track { background: #EEF7F1; }
 ::-webkit-scrollbar-thumb { background: #C2D4D0; border-radius: 4px; }
 
 /* ── Reduced motion ──────────────────────────────────────────────
